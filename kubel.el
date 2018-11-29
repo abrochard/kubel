@@ -190,7 +190,7 @@ P is the port as integer."
   "Popup for kubel log menu"
   'kubel
   :switches '((?f "Follow" "-f"))
-  :options '((?n "lines" kubel-log-tail-n))
+  :options '((?n "lines" "100"))
   :actions '("Kubel Log Menu"
              (?l "Tail logs for pod" kubel-get-pod-logs)))
 
