@@ -179,9 +179,10 @@ NAMESPACE is the namespace."
 P is the port as integer."
   (interactive "nPort: ")
   (let ((port (format "%s" p)))
-    (shell-command (concat
-                    (kubel--get-command-prefix) " port-forward "
-                    (kubel--get-pod-under-cursor) " " port ":" port " &"))))
+    (kubel--run-command
+     (concat (kubel--get-command-prefix) " port-forward "
+             (kubel--get-pod-under-cursor) " " port ":" port " &")
+     (concat "*kubel - port-forward - " (kubel--get-pod-under-cursor) ":" port "*"))))
 
 
 ;; popups
