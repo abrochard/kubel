@@ -159,7 +159,8 @@ POD-NAME is the name of the pod."
 
 NAMESPACE is the namespace."
   (interactive "MNamespace: ")
-  (setq kubel-namespace namespace))
+  (setq kubel-namespace namespace)
+  (kubel))
 
 (defun kubel-set-context ()
   "Set the context.  Should remove helm dependency."
@@ -169,7 +170,8 @@ NAMESPACE is the namespace."
          "Select context: "
          (split-string (shell-command-to-string
                         "kubectl config view -o jsonpath='{.contexts[*].name}'")
-                       " "))))
+                       " ")))
+  (kubel))
 
 (defun kubel-port-forward-pod (p)
   "Port forward a pod to your local machine.
