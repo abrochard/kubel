@@ -89,8 +89,7 @@ BUFFER-NAME is the name of the temp buffer.  Default to *kubel-command*"
       (setq buffer-name "*kubel-command*"))
   (with-output-to-temp-buffer buffer-name
     (shell-command command
-                   buffer-name
-                   "*Messages*")
+                   buffer-name)
     (pop-to-buffer buffer-name)))
 
 (defun kubel--get-pod-under-cursor ()
