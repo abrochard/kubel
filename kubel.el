@@ -1,4 +1,4 @@
-;;; kubel.el --- extension for controlling Kubernetes with limited permissions
+;;; kubel.el --- extension for controlling Kubernetes with limited permissions -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2018, Adrien Brochard
 
@@ -21,10 +21,10 @@
 
 ;; Version: 1.0
 ;; Author: Adrien Brochard
-;; Keywords: kubernetes
+;; Keywords: kubernetes k8s tools processes
 ;; URL: https://github.com/abrochard/kubel
 ;; License: GNU General Public License >= 3
-;; Package-Requires: ((magit "2.90.0") (emacs "26.1"))
+;; Package-Requires: ((magit-popup "2.4.0") (emacs "26.1"))
 
 ;;; Commentary:
 
@@ -67,9 +67,6 @@
 ;;; Code:
 
 (require 'magit-popup)
-
-(defgroup kubel nil
-  "Kubel customization group")
 
 (defconst kubel--list-format
   [("Name" 50 t)
