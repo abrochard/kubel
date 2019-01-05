@@ -109,7 +109,7 @@
   "Utility function to pop to buffer or create it.
 
 NAME is the buffer name."
-  (if (not (get-buffer name))
+  (unless (get-buffer name)
       (get-buffer-create name))
   (pop-to-buffer name))
 
@@ -118,7 +118,7 @@ NAME is the buffer name."
 
 COMMAND is the command string.
 BUFFER-NAME is the name of the temp buffer.  Default to *kubel-command*"
-  (if (not buffer-name)
+  (unless buffer-name
       (setq buffer-name "*kubel-command*"))
   (with-output-to-temp-buffer buffer-name
     (shell-command command
@@ -132,9 +132,9 @@ BUFFER-NAME is the name of the temp buffer.  Default to *kubel-command*"
 (defun kubel--get-command-prefix ()
   "Utility function to prefix the kubectl command with proper context and namespace."
   (concat "kubectl"
-          (if (not (equal kubel-context ""))
+          (unless (equal kubel-context "")
               (concat " --context " kubel-context))
-          (if (not (equal kubel-namespace ""))
+          (unless (equal kubel-namespace "")
               (concat " -n " kubel-namespace))))
 
 (defun kubel--get-containers (pod-name)
@@ -160,7 +160,7 @@ POD-NAME is the name of the pod."
   (interactive)
   (let* ((containers (kubel--get-containers (kubel--get-pod-under-cursor)))
          (container (car containers)))
-    (if (not (equal (length containers) 1))
+    (unless (equal (length containers) 1)
         (setq container (helm-comp-read "Select container: " containers)))
     (kubel--run-command
      (concat (kubel--get-command-prefix)
@@ -168,7 +168,7 @@ POD-NAME is the name of the pod."
              " --tail=" kubel-log-tail-n " "
              (kubel--get-pod-under-cursor) " "
              container
-             (if magit-current-popup-args
+             (when magit-current-popup-args
                  " -f &"))
      (concat "*kubel - logs - " (kubel--get-pod-under-cursor) " - " container "*"))))
 
