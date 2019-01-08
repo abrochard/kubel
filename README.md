@@ -42,6 +42,7 @@ C => set context
 n => set namespace
 g => refresh pods
 p => port forward pod
+i => describe ingress
 l => lop popup
 c => copy popup
 ```

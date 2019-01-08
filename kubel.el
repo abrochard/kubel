@@ -56,6 +56,7 @@
 ;; n => set namespace
 ;; g => refresh pods
 ;; p => port forward pod
+;; i => describe ingress
 ;; l => lop popup
 ;; c => copy popup
 ;;
@@ -217,6 +218,12 @@ P is the port as integer."
          (buffer-name (format "*kubel - port-forward - %s:%s*" pod port)))
     (kubel--exec buffer-name t (list "port-forward" pod (format "%s:%s" port port)))))
 
+(defun kubel-describe-ingress ()
+  "Show the ingress details."
+  (interactive)
+  (kubel--exec "*kubel - ingress*" nil (list "describe" "ingress"))
+  (beginning-of-buffer))
+
 
 ;; popups
 (magit-define-popup kubel-log-popup
@@ -245,7 +252,8 @@ P is the port as integer."
              (?g "Refresh" kubel-mode)
              (?p "Port forward" kubel-port-forward-pod)
              (?l "Logs" kubel-log-popup)
-             (?c "Copy" kubel-copy-popup)))
+             (?c "Copy" kubel-copy-popup)
+             (?i "Ingress" kubel-describe-ingress)))
 
 ;; mode map
 (defvar kubel-mode-map
@@ -258,6 +266,7 @@ P is the port as integer."
     (define-key map (kbd "l") 'kubel-log-popup)
     (define-key map (kbd "c") 'kubel-copy-popup)
     (define-key map (kbd "h") 'kubel-help-popup)
+    (define-key map (kbd "i") 'kubel-describe-ingress)
    map)
   "Keymap for `kubel-mode'.")
 
