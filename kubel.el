@@ -62,7 +62,7 @@
 
 ;;; Customize:
 
-;; By default, kubel log tails from the last 100 lintes, you can change the `kubel-log-tail-n` variable to set another line number.
+;; By default, kubel log tails from the last 100 lines, you can change the `kubel-log-tail-n` variable to set another line number.
 
 ;;; Code:
 
@@ -113,29 +113,36 @@ NAME is the buffer name."
       (get-buffer-create name))
   (pop-to-buffer name))
 
-(defun kubel--run-command (command &optional buffer-name)
-  "Utility function to run a command in a temp buffer.
+(defun kubel--exec (buffer-name async args)
+  "Utility function to run commands in the proper context and namespace.
 
-COMMAND is the command string.
-BUFFER-NAME is the name of the temp buffer.  Default to *kubel-command*"
-  (unless buffer-name
-      (setq buffer-name "*kubel-command*"))
-  (with-output-to-temp-buffer buffer-name
-    (shell-command command
-                   buffer-name)
-    (pop-to-buffer buffer-name)))
+\"BUFFER-NAME\" is the buffer-name. Default to *kubel-command*.
+ASYNC is a bool. If true will run async.
+ARGS is a ist of arguments."
+  (when (equal buffer-name "")
+    (setq buffer-name "*kubel-command*"))
+  (when (get-buffer buffer-name)
+    (kill-buffer buffer-name))
+  (if async
+      (apply #'start-process buffer-name buffer-name "kubectl" (append (kubel--get-context-namespace) args))
+    (apply #'call-process "kubectl" nil buffer-name nil (append (kubel--get-context-namespace) args)))
+  (pop-to-buffer buffer-name))
 
 (defun kubel--get-pod-under-cursor ()
   "Utility function to get the name of the pod under the cursor."
   (aref (tabulated-list-get-entry) 0))
 
+(defun kubel--get-context-namespace ()
+  "Utility function to return the proper context and namespace arguments."
+  (append
+   (unless (equal kubel-context "")
+     (list "--context" kubel-context))
+   (unless (equal kubel-namespace "")
+     (list "-n" kubel-namespace))))
+
 (defun kubel--get-command-prefix ()
   "Utility function to prefix the kubectl command with proper context and namespace."
-  (concat "kubectl"
-          (unless (equal kubel-context "")
-              (concat " --context " kubel-context))
-          (unless (equal kubel-namespace "")
-              (concat " -n " kubel-namespace))))
+  (mapconcat 'identity (append '("kubectl") (kubel--get-context-namespace)) " "))
 
 (defun kubel--get-containers (pod-name)
   "List the containers in a pod.
@@ -143,34 +150,31 @@ BUFFER-NAME is the name of the temp buffer.  Default to *kubel-command*"
 POD-NAME is the name of the pod."
   (split-string
    (shell-command-to-string
-    (concat (kubel--get-command-prefix)
-            " get pod " pod-name
-            " -o jsonpath='{.spec.containers[*].name}'")) " "))
+    (format "%s get pod %s -o jsonpath='{.spec.containers[*].name}'" (kubel--get-command-prefix) pod-name)) " "))
 
 ;; interactive
 (defun kubel-get-pod-details ()
-  "Get the dertails of the pod under the cursor."
+  "Get the details of the pod under the cursor."
   (interactive)
-  (kubel--run-command (concat
-                    (kubel--get-command-prefix)
-                    " describe pod " (kubel--get-pod-under-cursor))))
+  (let* ((pod (kubel--get-pod-under-cursor))
+         (buffer-name (format "*kubel - pod - %s*" pod)))
+    (kubel--exec buffer-name nil (list "describe" "pod" (kubel--get-pod-under-cursor)))
+    (beginning-of-buffer)))
 
 (defun kubel-get-pod-logs ()
   "Get the last N logs of the pod under the cursor."
   (interactive)
-  (let* ((containers (kubel--get-containers (kubel--get-pod-under-cursor)))
-         (container (car containers)))
+  (let* ((pod (kubel--get-pod-under-cursor))
+         (containers (kubel--get-containers pod))
+         (container (car containers))
+         (buffer-name (format "*kubel - logs - %s - %s*" pod container))
+         (async nil))
     (unless (equal (length containers) 1)
-        (setq container (helm-comp-read "Select container: " containers)))
-    (kubel--run-command
-     (concat (kubel--get-command-prefix)
-             " logs "
-             " --tail=" kubel-log-tail-n " "
-             (kubel--get-pod-under-cursor) " "
-             container
-             (when magit-current-popup-args
-                 " -f &"))
-     (concat "*kubel - logs - " (kubel--get-pod-under-cursor) " - " container "*"))))
+      (setq container (completing-read "Select container: " containers)))
+    (when magit-current-popup-args
+      (setq async t))
+    (kubel--exec buffer-name async (remove nil (list "logs" (format  "--tail=%s" kubel-log-tail-n) pod container
+                                                     (when magit-current-popup-args "-f"))))))
 
 (defun kubel-copy-pod-name ()
   "Copy the name of the pod under the cursor."
@@ -195,14 +199,12 @@ NAMESPACE is the namespace."
   (kubel))
 
 (defun kubel-set-context ()
-  "Set the context.  Should remove helm dependency."
+  "Set the context."
   (interactive)
   (setq kubel-context
         (completing-read
          "Select context: "
-         (split-string (shell-command-to-string
-                        "kubectl config view -o jsonpath='{.contexts[*].name}'")
-                       " ")))
+         (split-string (shell-command-to-string "kubectl config view -o jsonpath='{.contexts[*].name}'") " ")))
   (kubel))
 
 (defun kubel-port-forward-pod (p)
@@ -210,11 +212,10 @@ NAMESPACE is the namespace."
 
 P is the port as integer."
   (interactive "nPort: ")
-  (let ((port (format "%s" p)))
-    (kubel--run-command
-     (concat (kubel--get-command-prefix) " port-forward "
-             (kubel--get-pod-under-cursor) " " port ":" port " &")
-     (concat "*kubel - port-forward - " (kubel--get-pod-under-cursor) ":" port "*"))))
+  (let* ((port (format "%s" p))
+         (pod (kubel--get-pod-under-cursor))
+         (buffer-name (format "*kubel - port-forward - %s:%s*" pod port)))
+    (kubel--exec buffer-name t (list "port-forward" pod (format "%s:%s" port port)))))
 
 
 ;; popups
