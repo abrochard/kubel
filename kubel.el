@@ -167,11 +167,11 @@ POD-NAME is the name of the pod."
   (interactive)
   (let* ((pod (kubel--get-pod-under-cursor))
          (containers (kubel--get-containers pod))
-         (container (car containers))
+         (container (if (equal (length containers) 1)
+                        (car containers)
+                      (completing-read "Select container: " containers)))
          (buffer-name (format "*kubel - logs - %s - %s*" pod container))
          (async nil))
-    (unless (equal (length containers) 1)
-      (setq container (completing-read "Select container: " containers)))
     (when magit-current-popup-args
       (setq async t))
     (kubel--exec buffer-name async (remove nil (list "logs" (format  "--tail=%s" kubel-log-tail-n) pod container
@@ -224,6 +224,13 @@ P is the port as integer."
   (kubel--exec "*kubel - ingress*" nil (list "describe" "ingress"))
   (beginning-of-buffer))
 
+
+(defun kubel-describe-service ()
+  "Descibe a service."
+  (interactive)
+  (let* ((service (completing-read "Service: " (split-string (shell-command-to-string "kubectl -n qa12 get services -o=jsonpath='{.items[*].metadata.name}'") " ")))
+         (buffer-name (format "*kubel - service - %s*" service)))
+    (kubel--exec buffer-name nil (list "get" "service" service "-o" "yaml"))))
 
 ;; popups
 (magit-define-popup kubel-log-popup
