@@ -43,6 +43,7 @@ n => set namespace
 g => refresh pods
 p => port forward pod
 i => describe ingress
+s => describe service
 l => lop popup
 c => copy popup
 ```
