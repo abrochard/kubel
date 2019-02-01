@@ -24,7 +24,7 @@
 ;; Keywords: kubernetes k8s tools processes
 ;; URL: https://github.com/abrochard/kubel
 ;; License: GNU General Public License >= 3
-;; Package-Requires: ((magit-popup "2.4.0") (emacs "26.1"))
+;; Package-Requires: ((magit-popup "2.4.0") (emacs "25.3"))
 
 ;;; Commentary:
 
