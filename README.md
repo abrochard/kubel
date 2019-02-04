@@ -1,3 +1,5 @@
+[![MELPA](https://melpa.org/packages/kubel-badge.svg)](https://melpa.org/#/kubel)
+
 # kubel
 
 Emacs extension for controlling Kubernetes with limited permissions.
