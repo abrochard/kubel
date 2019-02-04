@@ -46,6 +46,8 @@ g => refresh pods
 p => port forward pod
 i => describe ingress
 s => describe service
+m => describe configmap
+d => describe deployment
 l => lop popup
 c => copy popup
 ```
@@ -53,3 +55,22 @@ c => copy popup
 ## Customize
 
 By default, kubel log tails from the last 100 lintes, you can change the `kubel-log-tail-n` variable to set another line number.
+
+
+## TODO
+- [x] Pods
+- [x] Deployments
+- [x] Services
+- [x] Config map
+- [ ] Jobs
+- [x] Ingress
+- [ ] HPA
+- [ ] Endpoints
+- [ ] Accounts
+- [ ] Secrets
+- [ ] Delete pods
+- [x] View logs
+- [x] Describe
+- [ ] Edit
+- [x] Switch clusters
+- [ ] Apply manifest

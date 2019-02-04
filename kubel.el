@@ -242,6 +242,15 @@ P is the port as integer."
     (kubel--exec buffer-name nil (list "describe" "configmap" configmap))
     (beginning-of-buffer)))
 
+(defun kubel-describe-deployment ()
+  "Describe a deployment."
+  (interactive)
+  (let* ((cmd (concat (kubel--get-command-prefix) " get deployments -o=jsonpath='{.items[*].metadata.name}'"))
+         (deployment (completing-read "Deployment: " (split-string (shell-command-to-string cmd) " ")))
+         (buffer-name (format "*kubel - deployement - %s*" deployment)))
+    (kubel--exec buffer-name nil (list "describe" "deployment" deployment))
+    (beginning-of-buffer)))
+
 ;; popups
 (magit-define-popup kubel-log-popup
   "Popup for kubel log menu"
@@ -263,7 +272,7 @@ P is the port as integer."
   "Popup for kubel menu"
   'kubel
   :actions '("Kubel Menu"
-             (?d "Pod details" kubel-get-pod-details)
+             (? <return> "Pod details" kubel-get-pod-details)
              (?C "Set context" kubel-set-context)
              (?n "Set namespace" kubel-set-namespace)
              (?g "Refresh" kubel-mode)
@@ -272,7 +281,8 @@ P is the port as integer."
              (?c "Copy" kubel-copy-popup)
              (?i "Ingress" kubel-describe-ingress)
              (?s "Services" kubel-describe-service)
-             (?m "Configmaps" kubel-describe-configmaps)))
+             (?m "Configmaps" kubel-describe-configmaps)
+             (?d "Deployements" kubel-describe-deployment)))
 
 ;; mode map
 (defvar kubel-mode-map
@@ -288,6 +298,7 @@ P is the port as integer."
     (define-key map (kbd "i") 'kubel-describe-ingress)
     (define-key map (kbd "s") 'kubel-describe-service)
     (define-key map (kbd "m") 'kubel-describe-configmaps)
+    (define-key map (kbd "d") 'kubel-describe-deployment)
    map)
   "Keymap for `kubel-mode'.")
 
