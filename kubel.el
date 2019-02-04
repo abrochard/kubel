@@ -228,10 +228,19 @@ P is the port as integer."
 (defun kubel-describe-service ()
   "Descibe a service."
   (interactive)
-  (let* ((cmd "kubectl -n qa12 get services -o=jsonpath='{.items[*].metadata.name}'")
+  (let* ((cmd (concat (kubel--get-command-prefix)  " get services -o=jsonpath='{.items[*].metadata.name}'"))
          (service (completing-read "Service: " (split-string (shell-command-to-string cmd) " ")))
          (buffer-name (format "*kubel - service - %s*" service)))
     (kubel--exec buffer-name nil (list "get" "service" service "-o" "yaml"))))
+
+(defun kubel-describe-configmaps ()
+  "Describe a configmap."
+  (interactive)
+  (let* ((cmd (concat (kubel--get-command-prefix) " get configmaps -o=jsonpath='{.items[*].metadata.name}'"))
+         (configmap (completing-read "Configmap: " (split-string (shell-command-to-string cmd) " ")))
+         (buffer-name (format "*kubel - configmap - %s*" configmap)))
+    (kubel--exec buffer-name nil (list "describe" "configmap" configmap))
+    (beginning-of-buffer)))
 
 ;; popups
 (magit-define-popup kubel-log-popup
@@ -262,7 +271,8 @@ P is the port as integer."
              (?l "Logs" kubel-log-popup)
              (?c "Copy" kubel-copy-popup)
              (?i "Ingress" kubel-describe-ingress)
-             (?s "Services" kubel-describe-service)))
+             (?s "Services" kubel-describe-service)
+             (?m "Configmaps" kubel-describe-configmaps)))
 
 ;; mode map
 (defvar kubel-mode-map
@@ -277,6 +287,7 @@ P is the port as integer."
     (define-key map (kbd "h") 'kubel-help-popup)
     (define-key map (kbd "i") 'kubel-describe-ingress)
     (define-key map (kbd "s") 'kubel-describe-service)
+    (define-key map (kbd "m") 'kubel-describe-configmaps)
    map)
   "Keymap for `kubel-mode'.")
 
