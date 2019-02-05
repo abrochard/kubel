@@ -206,6 +206,12 @@ NAME is the string name of the resource to decribe."
                     (kubel--get-pod-under-cursor)))
   (message "Log command copied to kill-ring"))
 
+(defun kubel-copy-command-prefix ()
+  "Copy the kubectl command prefix."
+  (interactive)
+  (kill-new (kubel--get-command-prefix))
+  (message "Command prefix copied to kill-ring"))
+
 (defun kubel-set-namespace (namespace)
   "Set the namespace.
 
@@ -278,13 +284,14 @@ P is the port as integer."
   'kubel
   :actions '("Kubel Copy Menu"
              (?c "Copy pod name" kubel-copy-pod-name)
-             (?l "Copy pod log command" kubel-copy-log-command)))
+             (?l "Copy pod log command" kubel-copy-log-command)
+             (?p "Copy command prefix" kubel-copy-command-prefix)))
 
 (magit-define-popup kubel-help-popup
   "Popup for kubel menu"
   'kubel
   :actions '("Kubel Menu"
-             (? <return> "Pod details" kubel-get-pod-details)
+             (?⏎ "Pod details" kubel-get-pod-details)
              (?C "Set context" kubel-set-context)
              (?n "Set namespace" kubel-set-namespace)
              (?g "Refresh" kubel-mode)
