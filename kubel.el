@@ -56,6 +56,7 @@
 ;; n => set namespace
 ;; g => refresh pods
 ;; p => port forward pod
+;; e => exec into pod
 ;; i => describe ingress
 ;; s => describe service
 ;; m => describe configmap
@@ -269,6 +270,17 @@ P is the port as integer."
   (interactive)
   (kubel--describe-resource "job"))
 
+(defun kubel-exec-pod ()
+  "Kubectl exec into the pod under the cursor."
+  (interactive)
+  (let* ((pod (kubel--get-pod-under-cursor))
+         (containers (kubel--get-containers pod))
+         (container (if (equal (length containers) 1)
+                        (car containers)
+                      (completing-read "Select container: " containers))))
+    (eshell)
+    (insert (format "%s exec -it %s -c %s /bin/sh" (kubel--get-command-prefix) pod container))))
+
 ;; popups
 (magit-define-popup kubel-log-popup
   "Popup for kubel log menu"
@@ -302,7 +314,8 @@ P is the port as integer."
              (?s "Services" kubel-describe-service)
              (?m "Configmaps" kubel-describe-configmaps)
              (?d "Deployments" kubel-describe-deployment)
-             (?j "Jobs" kubel-describe-job)))
+             (?j "Jobs" kubel-describe-job)
+             (?e "Exec" kubel-exec-pod)))
 
 ;; mode map
 (defvar kubel-mode-map
@@ -320,6 +333,7 @@ P is the port as integer."
     (define-key map (kbd "m") 'kubel-describe-configmaps)
     (define-key map (kbd "d") 'kubel-describe-deployment)
     (define-key map (kbd "j") 'kubel-describe-job)
+    (define-key map (kbd "e") 'kubel-exec-pod)
    map)
   "Keymap for `kubel-mode'.")
 

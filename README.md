@@ -44,6 +44,7 @@ C => set context
 n => set namespace
 g => refresh pods
 p => port forward pod
+e => exec into pod
 i => describe ingress
 s => describe service
 m => describe configmap
@@ -75,3 +76,4 @@ By default, kubel log tails from the last 100 lintes, you can change the `kubel-
 - [ ] Edit
 - [x] Switch clusters
 - [ ] Apply manifest
+- [x] exec
