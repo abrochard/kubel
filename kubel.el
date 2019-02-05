@@ -57,7 +57,11 @@
 ;; g => refresh pods
 ;; p => port forward pod
 ;; i => describe ingress
-;; l => lop popup
+;; s => describe service
+;; m => describe configmap
+;; d => describe deployment
+;; j => describe job
+;; l => log popup
 ;; c => copy popup
 ;;
 
@@ -153,6 +157,17 @@ POD-NAME is the name of the pod."
    (shell-command-to-string
     (format "%s get pod %s -o jsonpath='{.spec.containers[*].name}'" (kubel--get-command-prefix) pod-name)) " "))
 
+(defun kubel--describe-resource (name)
+  "Describe a specific resource.
+
+NAME is the string name of the resource to decribe."
+  (let* ((cmd (format "%s get %s -o=jsonpath='{.items[*].metadata.name}'" (kubel--get-command-prefix) name))
+         (resource (completing-read (concat (s-upper-camel-case name) ": ")
+                                    (split-string (shell-command-to-string cmd) " ")))
+         (buffer-name (format "*kubel - %s - %s*" name resource)))
+    (kubel--exec buffer-name nil (list "describe" name resource))
+    (beginning-of-buffer)))
+
 ;; interactive
 (defun kubel-get-pod-details ()
   "Get the details of the pod under the cursor."
@@ -236,20 +251,17 @@ P is the port as integer."
 (defun kubel-describe-configmaps ()
   "Describe a configmap."
   (interactive)
-  (let* ((cmd (concat (kubel--get-command-prefix) " get configmaps -o=jsonpath='{.items[*].metadata.name}'"))
-         (configmap (completing-read "Configmap: " (split-string (shell-command-to-string cmd) " ")))
-         (buffer-name (format "*kubel - configmap - %s*" configmap)))
-    (kubel--exec buffer-name nil (list "describe" "configmap" configmap))
-    (beginning-of-buffer)))
+  (kubel--describe-resource "configmap"))
 
 (defun kubel-describe-deployment ()
   "Describe a deployment."
   (interactive)
-  (let* ((cmd (concat (kubel--get-command-prefix) " get deployments -o=jsonpath='{.items[*].metadata.name}'"))
-         (deployment (completing-read "Deployment: " (split-string (shell-command-to-string cmd) " ")))
-         (buffer-name (format "*kubel - deployement - %s*" deployment)))
-    (kubel--exec buffer-name nil (list "describe" "deployment" deployment))
-    (beginning-of-buffer)))
+  (kubel--describe-resource "deployment"))
+
+(defun kubel-describe-job ()
+  "Describe a job."
+  (interactive)
+  (kubel--describe-resource "job"))
 
 ;; popups
 (magit-define-popup kubel-log-popup
@@ -282,7 +294,8 @@ P is the port as integer."
              (?i "Ingress" kubel-describe-ingress)
              (?s "Services" kubel-describe-service)
              (?m "Configmaps" kubel-describe-configmaps)
-             (?d "Deployements" kubel-describe-deployment)))
+             (?d "Deployments" kubel-describe-deployment)
+             (?j "Jobs" kubel-describe-job)))
 
 ;; mode map
 (defvar kubel-mode-map
@@ -299,6 +312,7 @@ P is the port as integer."
     (define-key map (kbd "s") 'kubel-describe-service)
     (define-key map (kbd "m") 'kubel-describe-configmaps)
     (define-key map (kbd "d") 'kubel-describe-deployment)
+    (define-key map (kbd "j") 'kubel-describe-job)
    map)
   "Keymap for `kubel-mode'.")
 

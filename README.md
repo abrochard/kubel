@@ -48,7 +48,8 @@ i => describe ingress
 s => describe service
 m => describe configmap
 d => describe deployment
-l => lop popup
+j => describe job
+l => log popup
 c => copy popup
 ```
 
@@ -62,7 +63,7 @@ By default, kubel log tails from the last 100 lintes, you can change the `kubel-
 - [x] Deployments
 - [x] Services
 - [x] Config map
-- [ ] Jobs
+- [x] Jobs
 - [x] Ingress
 - [ ] HPA
 - [ ] Endpoints
