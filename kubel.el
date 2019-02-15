@@ -64,6 +64,7 @@
 ;; j => describe job
 ;; l => log popup
 ;; c => copy popup
+;; k => delete pod
 ;;
 
 ;;; Customize:
@@ -281,6 +282,13 @@ P is the port as integer."
     (eshell)
     (insert (format "%s exec -it %s -c %s /bin/sh" (kubel--get-command-prefix) pod container))))
 
+(defun kubel-delete-pod ()
+  "Kubectl delete pod under cursor."
+  (interactive)
+  (let* ((pod (kubel--get-pod-under-cursor))
+         (buffer-name (format "*kubel - delete pod -%s" pod)))
+    (kubel--exec buffer-name t (list "delete" "pod" pod))))
+
 ;; popups
 (magit-define-popup kubel-log-popup
   "Popup for kubel log menu"
@@ -315,7 +323,8 @@ P is the port as integer."
              (?m "Configmaps" kubel-describe-configmaps)
              (?d "Deployments" kubel-describe-deployment)
              (?j "Jobs" kubel-describe-job)
-             (?e "Exec" kubel-exec-pod)))
+             (?e "Exec" kubel-exec-pod)
+             (?k "Delete" kubel-delete-pod)))
 
 ;; mode map
 (defvar kubel-mode-map
@@ -334,6 +343,7 @@ P is the port as integer."
     (define-key map (kbd "d") 'kubel-describe-deployment)
     (define-key map (kbd "j") 'kubel-describe-job)
     (define-key map (kbd "e") 'kubel-exec-pod)
+    (define-key map (kbd "k") 'kubel-delete-pod)
    map)
   "Keymap for `kubel-mode'.")
 
