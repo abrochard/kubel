@@ -52,6 +52,7 @@ d => describe deployment
 j => describe job
 l => log popup
 c => copy popup
+k => delete pod
 ```
 
 ## Customize
