@@ -286,8 +286,11 @@ P is the port as integer."
   "Kubectl delete pod under cursor."
   (interactive)
   (let* ((pod (kubel--get-pod-under-cursor))
-         (buffer-name (format "*kubel - delete pod -%s" pod)))
-    (kubel--exec buffer-name t (list "delete" "pod" pod))))
+         (buffer-name (format "*kubel - delete pod -%s" pod))
+         (args (list "delete" "pod" pod)))
+    (when magit-current-popup-args
+      (setq args (append args (list "--force" "--grace-period=0"))))
+    (kubel--exec buffer-name t args)))
 
 ;; popups
 (magit-define-popup kubel-log-popup
@@ -307,6 +310,13 @@ P is the port as integer."
              (?l "Copy pod log command" kubel-copy-log-command)
              (?p "Copy command prefix" kubel-copy-command-prefix)))
 
+(magit-define-popup kubel-delete-popup
+  "Popup for Kubel delete menu"
+  'kubel
+  :switches '((?f "Force" "--force --grace-period=0"))
+  :actions '("Kubel Delete Menu"
+             (?k "Delete pod" kubel-delete-pod)))
+
 (magit-define-popup kubel-help-popup
   "Popup for kubel menu"
   'kubel
@@ -324,7 +334,7 @@ P is the port as integer."
              (?d "Deployments" kubel-describe-deployment)
              (?j "Jobs" kubel-describe-job)
              (?e "Exec" kubel-exec-pod)
-             (?k "Delete" kubel-delete-pod)))
+             (?k "Delete" kubel-delete-popup)))
 
 ;; mode map
 (defvar kubel-mode-map
@@ -343,7 +353,7 @@ P is the port as integer."
     (define-key map (kbd "d") 'kubel-describe-deployment)
     (define-key map (kbd "j") 'kubel-describe-job)
     (define-key map (kbd "e") 'kubel-exec-pod)
-    (define-key map (kbd "k") 'kubel-delete-pod)
+    (define-key map (kbd "k") 'kubel-delete-popup)
    map)
   "Keymap for `kubel-mode'.")
 
