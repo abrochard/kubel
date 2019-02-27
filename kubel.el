@@ -87,6 +87,14 @@
   '("Name" . nil)
   "Sort table on this key.")
 
+(defconst kubel--status-colors
+  '(("Running" . "green")
+    ("Error" . "red")
+    ("Completed" . "yellow")
+    ("CrashLoopBackOff" . "red")
+    ("Terminating" . "blue"))
+  "Associative list of status to color.")
+
 (defvar kubel-namespace ""
   "Current namespace.")
 (defvar kubel-context
@@ -101,6 +109,15 @@
   "Return kubel buffer name."
   (concat "*kubel (" kubel-namespace ") [" kubel-context "]*"))
 
+(defun kubel--propertize-status (status)
+  "Return the status in proper font color.
+
+STATUS is the pod status string."
+  (let ((pair (cdr (assoc status kubel--status-colors))))
+    (if pair
+        (propertize status 'font-lock-face `(:foreground ,pair))
+      status)))
+
 (defun kubel--list-entries ()
   "Create the entries for the service list."
   (let ((temp (list)))
@@ -108,7 +125,7 @@
       (insert (shell-command-to-string (concat (kubel--get-command-prefix) " get pods --no-headers=true")))
       (goto-char (point-min))
       (while (re-search-forward "^\\([a-z0-9\-]+\\) +\\([0-9]+/[0-9]+\\) +\\(\\w+\\) +\\([0-9]+\\) +\\([0-9a-z]+\\)$" (point-max) t)
-        (setq temp (append temp (list (list "id" (vector (match-string 1) (match-string 2) (match-string 3) (match-string 4) (match-string 5)))))))
+        (setq temp (append temp (list (list (match-string 1) (vector (match-string 1) (match-string 2) (kubel--propertize-status (match-string 3)) (match-string 4) (match-string 5)))))))
       )
     temp))
 
