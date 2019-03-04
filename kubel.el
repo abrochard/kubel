@@ -51,17 +51,13 @@
 ;; On the kubel screen, place your cursor on the pod
 ;;
 ;; enter => get pod details
-;; h => help pop up
+;; h => help popup
 ;; C => set context
 ;; n => set namespace
 ;; g => refresh pods
 ;; p => port forward pod
 ;; e => exec into pod
-;; i => describe ingress
-;; s => describe service
-;; m => describe configmap
-;; d => describe deployment
-;; j => describe job
+;; d => describe popup
 ;; l => log popup
 ;; c => copy popup
 ;; k => delete pod
@@ -176,15 +172,20 @@ POD-NAME is the name of the pod."
    (shell-command-to-string
     (format "%s get pod %s -o jsonpath='{.spec.containers[*].name}'" (kubel--get-command-prefix) pod-name)) " "))
 
-(defun kubel--describe-resource (name)
+(defun kubel--describe-resource (name &optional yaml)
   "Describe a specific resource.
 
-NAME is the string name of the resource to decribe."
+NAME is the string name of the resource to decribe.
+YAML is boolean to show resource as yaml"
   (let* ((cmd (format "%s get %s -o=jsonpath='{.items[*].metadata.name}'" (kubel--get-command-prefix) name))
          (resource (completing-read (concat (s-upper-camel-case name) ": ")
                                     (split-string (shell-command-to-string cmd) " ")))
          (buffer-name (format "*kubel - %s - %s*" name resource)))
-    (kubel--exec buffer-name nil (list "describe" name resource))
+    (if yaml
+        (kubel--exec buffer-name nil (list "get" name "-o" "yaml" resource))
+      (kubel--exec buffer-name nil (list "describe" name resource)))
+    (when yaml
+      (yaml-mode))
     (beginning-of-buffer)))
 
 ;; interactive
@@ -258,35 +259,51 @@ P is the port as integer."
          (buffer-name (format "*kubel - port-forward - %s:%s*" pod port)))
     (kubel--exec buffer-name t (list "port-forward" pod (format "%s:%s" port port)))))
 
-(defun kubel-describe-ingress ()
-  "Show the ingress details."
-  (interactive)
-  (kubel--exec "*kubel - ingress*" nil (list "describe" "ingress"))
-  (beginning-of-buffer))
+(defun kubel-describe-ingress (&optional arg)
+  "Show the ingress details.
+
+ARG is the optional param to see yaml."
+  (interactive "P")
+  (if (or arg magit-current-popup-args)
+      (kubel--describe-resource "ingress" t)
+    (kubel--describe-resource "ingress")))
 
 
-(defun kubel-describe-service ()
-  "Descibe a service."
-  (interactive)
-  (let* ((cmd (concat (kubel--get-command-prefix)  " get services -o=jsonpath='{.items[*].metadata.name}'"))
-         (service (completing-read "Service: " (split-string (shell-command-to-string cmd) " ")))
-         (buffer-name (format "*kubel - service - %s*" service)))
-    (kubel--exec buffer-name nil (list "get" "service" service "-o" "yaml"))))
+(defun kubel-describe-service (&optional arg)
+  "Descibe a service.
 
-(defun kubel-describe-configmaps ()
-  "Describe a configmap."
-  (interactive)
-  (kubel--describe-resource "configmap"))
+ARG is the optional param to see yaml."
+  (interactive "P")
+  (if (or arg magit-current-popup-args)
+      (kubel--describe-resource "service" t)
+    (kubel--describe-resource "service")))
 
-(defun kubel-describe-deployment ()
-  "Describe a deployment."
-  (interactive)
-  (kubel--describe-resource "deployment"))
+(defun kubel-describe-configmaps (&optional arg)
+  "Describe a configmap.
 
-(defun kubel-describe-job ()
-  "Describe a job."
-  (interactive)
-  (kubel--describe-resource "job"))
+ARG is the optional param to see yaml."
+  (interactive "P")
+  (if (or arg magit-current-popup-args)
+      (kubel--describe-resource "configmap" t)
+    (kubel--describe-resource "configmap")))
+
+(defun kubel-describe-deployment (&optional arg)
+  "Describe a deployment.
+
+ARG is the optional param to see yaml."
+  (interactive "P")
+  (if (or arg magit-current-popup-args)
+      (kubel--describe-resource "deployment" t)
+    (kubel--describe-resource "deployment")))
+
+(defun kubel-describe-job (&optional arg)
+  "Describe a job.
+
+ARG is the optional param to see yaml."
+  (interactive "P")
+  (if (or arg magit-current-popup-args)
+      (kubel--describe-resource "job" t)
+    (kubel--describe-resource "job")))
 
 (defun kubel-exec-pod ()
   "Kubectl exec into the pod under the cursor."
@@ -334,6 +351,17 @@ P is the port as integer."
   :actions '("Kubel Delete Menu"
              (?k "Delete pod" kubel-delete-pod)))
 
+(magit-define-popup kubel-describe-popup
+  "Popup for kubel describe menu"
+  'kubel
+  :switches '((?y "Yaml" "-o yaml"))
+  :actions '("Kubel Describe Menu"
+             (?d "Deployment" kubel-describe-deployment)
+             (?s "Service" kubel-describe-service)
+             (?j "Job" kubel-describe-job)
+             (?i "Ingress" kubel-describe-ingress)
+             (?c "Configmap" kubel-describe-configmaps)))
+
 (magit-define-popup kubel-help-popup
   "Popup for kubel menu"
   'kubel
@@ -345,11 +373,7 @@ P is the port as integer."
              (?p "Port forward" kubel-port-forward-pod)
              (?l "Logs" kubel-log-popup)
              (?c "Copy" kubel-copy-popup)
-             (?i "Ingress" kubel-describe-ingress)
-             (?s "Services" kubel-describe-service)
-             (?m "Configmaps" kubel-describe-configmaps)
-             (?d "Deployments" kubel-describe-deployment)
-             (?j "Jobs" kubel-describe-job)
+             (?d "Describe" kubel-describe-popup)
              (?e "Exec" kubel-exec-pod)
              (?k "Delete" kubel-delete-popup)))
 
@@ -364,11 +388,7 @@ P is the port as integer."
     (define-key map (kbd "l") 'kubel-log-popup)
     (define-key map (kbd "c") 'kubel-copy-popup)
     (define-key map (kbd "h") 'kubel-help-popup)
-    (define-key map (kbd "i") 'kubel-describe-ingress)
-    (define-key map (kbd "s") 'kubel-describe-service)
-    (define-key map (kbd "m") 'kubel-describe-configmaps)
-    (define-key map (kbd "d") 'kubel-describe-deployment)
-    (define-key map (kbd "j") 'kubel-describe-job)
+    (define-key map (kbd "d") 'kubel-describe-popup)
     (define-key map (kbd "e") 'kubel-exec-pod)
     (define-key map (kbd "k") 'kubel-delete-popup)
    map)
