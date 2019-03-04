@@ -39,17 +39,13 @@ does not have permissions to list namespaces.
 On the kubel screen, place your cursor on the pod
 ```
 enter => get pod details
-h => help pop up
+h => help popup
 C => set context
 n => set namespace
 g => refresh pods
 p => port forward pod
 e => exec into pod
-i => describe ingress
-s => describe service
-m => describe configmap
-d => describe deployment
-j => describe job
+d => describe popup
 l => log popup
 c => copy popup
 k => delete pod
@@ -71,7 +67,7 @@ By default, kubel log tails from the last 100 lintes, you can change the `kubel-
 - [ ] Endpoints
 - [ ] Accounts
 - [ ] Secrets
-- [ ] Delete pods
+- [x] Delete pods
 - [x] View logs
 - [x] Describe
 - [ ] Edit
