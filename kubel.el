@@ -237,6 +237,8 @@ YAML is boolean to show resource as yaml"
 
 NAMESPACE is the namespace."
   (interactive "MNamespace: ")
+  (when (get-buffer (kubel--buffer-name))
+    (kill-buffer (kubel--buffer-name)))
   (setq kubel-namespace namespace)
   (kubel))
 
