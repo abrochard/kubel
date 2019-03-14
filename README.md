@@ -49,6 +49,7 @@ d => describe popup
 l => log popup
 c => copy popup
 k => delete pod
+j => jab deployment to force rolling update
 ```
 
 ## Customize

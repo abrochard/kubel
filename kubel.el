@@ -61,6 +61,7 @@
 ;; l => log popup
 ;; c => copy popup
 ;; k => delete pod
+;; j => jab deployment to force rolling update
 ;;
 
 ;;; Customize:
@@ -172,14 +173,21 @@ POD-NAME is the name of the pod."
    (shell-command-to-string
     (format "%s get pod %s -o jsonpath='{.spec.containers[*].name}'" (kubel--get-command-prefix) pod-name)) " "))
 
+(defun kubel--select-resource (name)
+  "Prompt user to select an instance out of a list of resources.
+
+NAME is the string name of the resource."
+  (let ((cmd (format "%s get %s -o=jsonpath='{.items[*].metadata.name}'"
+                     (kubel--get-command-prefix) name)))
+    (completing-read (concat (s-upper-camel-case name) ": ")
+                     (split-string (shell-command-to-string cmd) " "))))
+
 (defun kubel--describe-resource (name &optional yaml)
   "Describe a specific resource.
 
 NAME is the string name of the resource to decribe.
 YAML is boolean to show resource as yaml"
-  (let* ((cmd (format "%s get %s -o=jsonpath='{.items[*].metadata.name}'" (kubel--get-command-prefix) name))
-         (resource (completing-read (concat (s-upper-camel-case name) ": ")
-                                    (split-string (shell-command-to-string cmd) " ")))
+  (let* ((resource (kubel--select-resource name))
          (buffer-name (format "*kubel - %s - %s*" name resource)))
     (if yaml
         (kubel--exec buffer-name nil (list "get" name "-o" "yaml" resource))
@@ -328,6 +336,17 @@ ARG is the optional param to see yaml."
       (setq args (append args (list "--force" "--grace-period=0"))))
     (kubel--exec buffer-name t args)))
 
+(defun kubel-jab-deployment ()
+  "Make a trivial patch to force a new deployment.
+
+See https://github.com/kubernetes/kubernetes/issues/27081"
+  (interactive)
+  (let* ((deployment (kubel--select-resource "deployment"))
+         (buffer-name (format "*kubel - bouncing - %s*" deployment)))
+    (kubel--exec buffer-name nil (list "patch" "deployment" deployment "-p"
+                        (format "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"%s\"}}}}}"
+                                (round (time-to-seconds)))))))
+
 ;; popups
 (magit-define-popup kubel-log-popup
   "Popup for kubel log menu"
@@ -377,7 +396,8 @@ ARG is the optional param to see yaml."
              (?c "Copy" kubel-copy-popup)
              (?d "Describe" kubel-describe-popup)
              (?e "Exec" kubel-exec-pod)
-             (?k "Delete" kubel-delete-popup)))
+             (?k "Delete" kubel-delete-popup)
+             (?j "Jab" kubel-jab-deployment)))
 
 ;; mode map
 (defvar kubel-mode-map
@@ -393,6 +413,7 @@ ARG is the optional param to see yaml."
     (define-key map (kbd "d") 'kubel-describe-popup)
     (define-key map (kbd "e") 'kubel-exec-pod)
     (define-key map (kbd "k") 'kubel-delete-popup)
+    (define-key map (kbd "j") 'kubel-jab-deployment)
    map)
   "Keymap for `kubel-mode'.")
 
