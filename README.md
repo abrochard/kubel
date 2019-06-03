@@ -17,7 +17,7 @@ This is mostly pod management for now. More may come.
 
 ## Installation
 
-For now copy and load the `kubel.el` file.
+Get it from Melpa, or copy and load the `kubel.el` file.
 
 ## Usage
 
@@ -75,3 +75,4 @@ By default, kubel log tails from the last 100 lintes, you can change the `kubel-
 - [x] Switch clusters
 - [ ] Apply manifest
 - [x] exec
+- [ ] logs for previous instance
