@@ -24,7 +24,7 @@
 ;; Keywords: kubernetes k8s tools processes
 ;; URL: https://github.com/abrochard/kubel
 ;; License: GNU General Public License >= 3
-;; Package-Requires: ((magit-popup "2.4.0") (emacs "25.3"))
+;; Package-Requires: ((transient "0.1.0") (emacs "25.3"))
 
 ;;; Commentary:
 
@@ -70,7 +70,7 @@
 
 ;;; Code:
 
-(require 'magit-popup)
+(require 'transient)
 
 (defconst kubel--list-format
   [("Name" 50 t)
@@ -205,9 +205,21 @@ YAML is boolean to show resource as yaml"
     (kubel--exec buffer-name nil (list "describe" "pod" (kubel--get-pod-under-cursor)))
     (beginning-of-buffer)))
 
-(defun kubel-get-pod-logs ()
-  "Get the last N logs of the pod under the cursor."
-  (interactive)
+(defun kubel--default-tail-arg (args)
+  "Ugly function to make sure that there is at least the default tail.
+
+ARGS is the arg list from transient."
+  (if (car (remove nil (mapcar (lambda (x)
+                                 (string-prefix-p "--tail=" x)) args)))
+      args
+    (append args (list (concat "--tail=" kubel-log-tail-n)))))
+
+(defun kubel-get-pod-logs (&optional args)
+  "Get the last N logs of the pod under the cursor.
+
+ARGS is the arguments list from transient."
+  (interactive
+   (list (transient-args 'kubel-log-popup)))
   (let* ((pod (kubel--get-pod-under-cursor))
          (containers (kubel--get-containers pod))
          (container (if (equal (length containers) 1)
@@ -215,10 +227,10 @@ YAML is boolean to show resource as yaml"
                       (completing-read "Select container: " containers)))
          (buffer-name (format "*kubel - logs - %s - %s*" pod container))
          (async nil))
-    (when magit-current-popup-args
+    (when (member "-f" args)
       (setq async t))
-    (kubel--exec buffer-name async (remove nil (list "logs" (format  "--tail=%s" kubel-log-tail-n) pod container
-                                                     (when magit-current-popup-args "-f"))))))
+    (kubel--exec buffer-name async
+                 (append '("logs") (kubel--default-tail-arg args) (list pod container)))))
 
 (defun kubel-copy-pod-name ()
   "Copy the name of the pod under the cursor."
@@ -274,7 +286,7 @@ P is the port as integer."
 
 ARG is the optional param to see yaml."
   (interactive "P")
-  (if (or arg magit-current-popup-args)
+  (if (or arg (transient-args 'kubel-describe-popup))
       (kubel--describe-resource "ingress" t)
     (kubel--describe-resource "ingress")))
 
@@ -284,7 +296,7 @@ ARG is the optional param to see yaml."
 
 ARG is the optional param to see yaml."
   (interactive "P")
-  (if (or arg magit-current-popup-args)
+  (if (or arg (transient-args 'kubel-describe-popup))
       (kubel--describe-resource "service" t)
     (kubel--describe-resource "service")))
 
@@ -293,7 +305,7 @@ ARG is the optional param to see yaml."
 
 ARG is the optional param to see yaml."
   (interactive "P")
-  (if (or arg magit-current-popup-args)
+  (if (or arg (transient-args 'kubel-describe-popup))
       (kubel--describe-resource "configmap" t)
     (kubel--describe-resource "configmap")))
 
@@ -302,7 +314,7 @@ ARG is the optional param to see yaml."
 
 ARG is the optional param to see yaml."
   (interactive "P")
-  (if (or arg magit-current-popup-args)
+  (if (or arg (transient-args 'kubel-describe-popup))
       (kubel--describe-resource "deployment" t)
     (kubel--describe-resource "deployment")))
 
@@ -311,7 +323,7 @@ ARG is the optional param to see yaml."
 
 ARG is the optional param to see yaml."
   (interactive "P")
-  (if (or arg magit-current-popup-args)
+  (if (or arg (transient-args 'kubel-describe-popup))
       (kubel--describe-resource "job" t)
     (kubel--describe-resource "job")))
 
@@ -332,7 +344,7 @@ ARG is the optional param to see yaml."
   (let* ((pod (kubel--get-pod-under-cursor))
          (buffer-name (format "*kubel - delete pod -%s" pod))
          (args (list "delete" "pod" pod)))
-    (when magit-current-popup-args
+    (when (transient-args 'kubel-delete-popup)
       (setq args (append args (list "--force" "--grace-period=0"))))
     (kubel--exec buffer-name t args)))
 
@@ -348,56 +360,68 @@ See https://github.com/kubernetes/kubernetes/issues/27081"
                                 (round (time-to-seconds)))))))
 
 ;; popups
-(magit-define-popup kubel-log-popup
-  "Popup for kubel log menu"
-  'kubel
-  :switches '((?f "Follow" "-f"))
-  :options '((?n "lines" "100"))
-  :actions '("Kubel Log Menu"
-             (?l "Tail logs for pod" kubel-get-pod-logs)))
+;; (magit-define-popup kubel-log-popup
+;;   "Popup for kubel log menu"
+;;   'kubel
+;;   :switches '((?f "Follow" "-f") (?p "Previous" "-p"))
+;;   :options '((?n "lines" "100"))
+;;   :actions '("Kubel Log Menu"
+;;              (?l "Tail logs for pod" kubel-get-pod-logs)))
 
+(define-infix-argument kubel-log-popup:--tail ()
+  :description "Tail"
+  :class 'transient-option
+  :shortarg "-n"
+  :argument "--tail=")
 
-(magit-define-popup kubel-copy-popup
-  "Popup for kubel copy menu"
-  'kubel
-  :actions '("Kubel Copy Menu"
-             (?c "Copy pod name" kubel-copy-pod-name)
-             (?l "Copy pod log command" kubel-copy-log-command)
-             (?p "Copy command prefix" kubel-copy-command-prefix)))
+(define-transient-command kubel-log-popup ()
+  "Kubel Log Menu"
+  ["Arguments"
+   ("-f" "Follow" "-f")
+   ("-p" "Previous" "-p")
+   (kubel-log-popup:--tail)]
+  ["Actions"
+   ("l" "Tail pod logs" kubel-get-pod-logs)])
 
-(magit-define-popup kubel-delete-popup
-  "Popup for Kubel delete menu"
-  'kubel
-  :switches '((?f "Force" "--force --grace-period=0"))
-  :actions '("Kubel Delete Menu"
-             (?k "Delete pod" kubel-delete-pod)))
+(define-transient-command kubel-copy-popup ()
+  "Kubel Copy Menu"
+  ["Actions"
+   ("c" "Copy pod name" kubel-copy-pod-name)
+   ("l" "Copy pod log command" kubel-copy-log-command)
+   ("p" "Copy command prefix" kubel-copy-command-prefix)])
 
-(magit-define-popup kubel-describe-popup
-  "Popup for kubel describe menu"
-  'kubel
-  :switches '((?y "Yaml" "-o yaml"))
-  :actions '("Kubel Describe Menu"
-             (?d "Deployment" kubel-describe-deployment)
-             (?s "Service" kubel-describe-service)
-             (?j "Job" kubel-describe-job)
-             (?i "Ingress" kubel-describe-ingress)
-             (?c "Configmap" kubel-describe-configmaps)))
+(define-transient-command kubel-delete-popup ()
+  "Kubel Delete menu"
+  ["Arguments"
+   ("-f" "Force" "--force --grace-period=0")]
+  ["Actions"
+   ("k" "Delete pod" kubel-delete-pod)])
 
-(magit-define-popup kubel-help-popup
-  "Popup for kubel menu"
-  'kubel
-  :actions '("Kubel Menu"
-             (?⏎ "Pod details" kubel-get-pod-details)
-             (?C "Set context" kubel-set-context)
-             (?n "Set namespace" kubel-set-namespace)
-             (?g "Refresh" kubel-mode)
-             (?p "Port forward" kubel-port-forward-pod)
-             (?l "Logs" kubel-log-popup)
-             (?c "Copy" kubel-copy-popup)
-             (?d "Describe" kubel-describe-popup)
-             (?e "Exec" kubel-exec-pod)
-             (?k "Delete" kubel-delete-popup)
-             (?j "Jab" kubel-jab-deployment)))
+(define-transient-command kubel-describe-popup ()
+  "Kubel Describe Menu"
+  ["Arguments"
+   ("-y" "Yaml" "-o yaml")]
+  ["Actions"
+   ("d" "Deployment" kubel-describe-deployment)
+   ("s" "Service" kubel-describe-service)
+   ("j" "Job" kubel-describe-job)
+   ("i" "Ingress" kubel-describe-ingress)
+   ("c" "Configmap" kubel-describe-configmaps)])
+
+(define-transient-command kubel-help-popup ()
+  "Kubel Menu"
+  ["Actions"
+   ("ENTER" "Pod details" kubel-get-pod-details)
+   ("C" "Set context" kubel-set-context)
+   ("n" "Set namespace" kubel-set-namespace)
+   ("g" "Refresh" kubel-mode)
+   ("p" "Port forward" kubel-port-forward-pod)
+   ("l" "Logs" kubel-log-popup)
+   ("c" "Copy" kubel-copy-popup)
+   ("d" "Describe" kubel-describe-popup)
+   ("e" "Exec" kubel-exec-pod)
+   ("k" "Delete" kubel-delete-popup)
+   ("j" "Jab" kubel-jab-deployment)])
 
 ;; mode map
 (defvar kubel-mode-map
