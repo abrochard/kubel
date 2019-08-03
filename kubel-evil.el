@@ -54,17 +54,17 @@
 
 (evil-set-initial-state 'kubel-mode 'motion)
 (evil-define-key 'motion kubel-mode-map
-  (kbd "RET") 'kubel-get-pod-details
-  (kbd "C") 'kubel-set-context
-  (kbd "n") 'kubel-set-namespace
-  (kbd "g") 'kubel-mode
-  (kbd "p") 'kubel-port-forward-pod
-  (kbd "l") 'kubel-log-popup
-  (kbd "c") 'kubel-copy-popup
-  (kbd "?") 'kubel-help-popup
-  (kbd "o") 'kubel-describe-popup
-  (kbd "e") 'kubel-exec-pod
-  (kbd "d") 'kubel-delete-popup
-  (kbd "a") 'kubel-jab-deployment)
+  (kbd "RET") #'kubel-get-pod-details
+  (kbd "C") #'kubel-set-context
+  (kbd "n") #'kubel-set-namespace
+  (kbd "g") #'kubel-mode
+  (kbd "p") #'kubel-port-forward-pod
+  (kbd "l") #'kubel-log-popup
+  (kbd "c") #'kubel-copy-popup
+  (kbd "?") #'kubel-help-popup
+  (kbd "o") #'kubel-describe-popup
+  (kbd "e") #'kubel-exec-pod
+  (kbd "d") #'kubel-delete-popup
+  (kbd "a") #'kubel-jab-deployment)
 
 (provide 'kubel-evil)
