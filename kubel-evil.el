@@ -35,7 +35,7 @@
 ;; On the kubel screen, place your cursor on the pod
 ;;
 ;; enter => get pod details
-;; ? => help popup
+;; h => help popup
 ;; C => set context
 ;; n => set namespace
 ;; g => refresh pods
@@ -52,6 +52,21 @@
 (require 'evil)
 (require 'kubel)
 
+(define-transient-command kubel-evil-help-popup ()
+  "Kubel Evil Menu"
+  ["Actions"
+   ("ENTER" "Pod details" kubel-get-pod-details)
+   ("C" "Set Context" kubel-set-context)
+   ("n" "Set namespace" kubel-set-namespace)
+   ("g" "Refresh" kubel-mode)
+   ("p" "Port forward" kubel-port-forward-pod)
+   ("l" "Logs" kubel-log-popup)
+   ("c" "Copy" kubel-copy-popup)
+   ("o" "Describe" kubel-describe-popup)
+   ("e" "Exec" kubel-exec-pod)
+   ("d" "Delete" kubel-delete-popup)
+   ("a" "Jab" kubel-jab-deployment)])
+
 (evil-set-initial-state 'kubel-mode 'motion)
 (evil-define-key 'motion kubel-mode-map
   (kbd "RET") #'kubel-get-pod-details
@@ -61,7 +76,7 @@
   (kbd "p") #'kubel-port-forward-pod
   (kbd "l") #'kubel-log-popup
   (kbd "c") #'kubel-copy-popup
-  (kbd "?") #'kubel-help-popup
+  (kbd "h") #'kubel-evil-help-popup
   (kbd "o") #'kubel-describe-popup
   (kbd "e") #'kubel-exec-pod
   (kbd "d") #'kubel-delete-popup
