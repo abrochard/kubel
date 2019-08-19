@@ -54,7 +54,7 @@ j => jab deployment to force rolling update
 
 ## Customize
 
-By default, kubel log tails from the last 100 lintes, you can change the `kubel-log-tail-n` variable to set another line number.
+By default, kubel log tails from the last 100 lines, you can change the `kubel-log-tail-n` variable to set another line number.
 
 
 ## TODO
