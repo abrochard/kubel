@@ -360,26 +360,13 @@ See https://github.com/kubernetes/kubernetes/issues/27081"
                                 (round (time-to-seconds)))))))
 
 ;; popups
-;; (magit-define-popup kubel-log-popup
-;;   "Popup for kubel log menu"
-;;   'kubel
-;;   :switches '((?f "Follow" "-f") (?p "Previous" "-p"))
-;;   :options '((?n "lines" "100"))
-;;   :actions '("Kubel Log Menu"
-;;              (?l "Tail logs for pod" kubel-get-pod-logs)))
-
-(define-infix-argument kubel-log-popup:--tail ()
-  :description "Tail"
-  :class 'transient-option
-  :shortarg "-n"
-  :argument "--tail=")
 
 (define-transient-command kubel-log-popup ()
   "Kubel Log Menu"
   ["Arguments"
    ("-f" "Follow" "-f")
    ("-p" "Previous" "-p")
-   (kubel-log-popup:--tail)]
+   ("-n" "Tail" "--tail=")]
   ["Actions"
    ("l" "Tail pod logs" kubel-get-pod-logs)])
 
