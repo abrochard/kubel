@@ -19,6 +19,9 @@ This is mostly pod management for now. More may come.
 
 Get it from Melpa, or copy and load the `kubel.el` file.
 
+If you want to have the evil compatibility package, get it from Melpa as well or
+load the `kubel-evil.el` file.
+
 ## Usage
 
 To list the pods in your current context and namespace, call
