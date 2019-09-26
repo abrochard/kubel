@@ -99,12 +99,22 @@
    "\n" "" (shell-command-to-string "kubectl config current-context"))
   "Current context.  Tries to smart default.")
 
+(defvar kubel-pod-filter "")
+
 (defvar kubel-log-tail-n "100"
   "Number of lines to tail.")
 
 (defun kubel--buffer-name ()
   "Return kubel buffer name."
   (concat "*kubel (" kubel-namespace ") [" kubel-context "]*"))
+
+(defun kubel--propertize-pod-name (name)
+  "Return the pod name in proper font color based on active filter.
+
+NAME is the pod name."
+  (if (or (equal kubel-pod-filter "") (string-match-p kubel-pod-filter name))
+        name
+      (propertize name 'font-lock-face '(:foreground "darkgrey"))))
 
 (defun kubel--propertize-status (status)
   "Return the status in proper font color.
@@ -122,8 +132,12 @@ STATUS is the pod status string."
       (insert (shell-command-to-string (concat (kubel--get-command-prefix) " get pods --no-headers=true")))
       (goto-char (point-min))
       (while (re-search-forward "^\\([a-z0-9\-]+\\) +\\([0-9]+/[0-9]+\\) +\\(\\w+\\) +\\([0-9]+\\) +\\([0-9a-z]+\\)$" (point-max) t)
-        (setq temp (append temp (list (list (match-string 1) (vector (match-string 1) (match-string 2) (kubel--propertize-status (match-string 3)) (match-string 4) (match-string 5)))))))
-      )
+        (setq temp (append temp (list (list (match-string 1)
+                                            (vector (kubel--propertize-pod-name (match-string 1))
+                                                    (match-string 2)
+                                                    (kubel--propertize-status (match-string 3))
+                                                    (match-string 4)
+                                                    (match-string 5))))))))
     temp))
 
 (defun kubel--pop-to-buffer (name)
@@ -359,6 +373,14 @@ See https://github.com/kubernetes/kubernetes/issues/27081"
                         (format "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"%s\"}}}}}"
                                 (round (time-to-seconds)))))))
 
+(defun kubel-set-filter (filter)
+  "Set the pod filter.
+
+FILTER is the filter string."
+  (interactive "MFilter: ")
+  (setq kubel-pod-filter filter)
+  (kubel-mode))
+
 ;; popups
 
 (define-transient-command kubel-log-popup ()
@@ -408,7 +430,8 @@ See https://github.com/kubernetes/kubernetes/issues/27081"
    ("d" "Describe" kubel-describe-popup)
    ("e" "Exec" kubel-exec-pod)
    ("k" "Delete" kubel-delete-popup)
-   ("j" "Jab" kubel-jab-deployment)])
+   ("j" "Jab" kubel-jab-deployment)
+   ("f" "Filter" kubel-set-filter)])
 
 ;; mode map
 (defvar kubel-mode-map
@@ -425,6 +448,7 @@ See https://github.com/kubernetes/kubernetes/issues/27081"
     (define-key map (kbd "e") 'kubel-exec-pod)
     (define-key map (kbd "k") 'kubel-delete-popup)
     (define-key map (kbd "j") 'kubel-jab-deployment)
+    (define-key map (kbd "f") 'kubel-set-filter)
    map)
   "Keymap for `kubel-mode'.")
 
