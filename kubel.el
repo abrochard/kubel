@@ -108,13 +108,27 @@
   "Return kubel buffer name."
   (concat "*kubel (" kubel-namespace ") [" kubel-context "]*"))
 
-(defun kubel--propertize-pod-name (name)
-  "Return the pod name in proper font color based on active filter.
+(defun kubel--extract-pod-line ()
+  "Return a vector from the pod line."
+  (let ((name (match-string 1))
+         (ready (match-string 2))
+         (status (match-string 3))
+         (restarts (match-string 4))
+         (age (match-string 5)))
+    (vector (kubel--propertize-pod-attribute name name)
+            (kubel--propertize-pod-attribute name ready)
+            (kubel--propertize-status status)
+            (kubel--propertize-pod-attribute name restarts)
+            (kubel--propertize-pod-attribute name age))))
 
-NAME is the pod name."
+(defun kubel--propertize-pod-attribute (name attribute)
+  "Return the pod attribute in proper font color based on active filter.
+
+NAME is the pod name.
+ATTRIBUTE is the attribute to propertize."
   (if (or (equal kubel-pod-filter "") (string-match-p kubel-pod-filter name))
-        name
-      (propertize name 'font-lock-face '(:foreground "darkgrey"))))
+        attribute
+      (propertize attribute 'font-lock-face '(:foreground "darkgrey"))))
 
 (defun kubel--propertize-status (status)
   "Return the status in proper font color.
@@ -132,12 +146,7 @@ STATUS is the pod status string."
       (insert (shell-command-to-string (concat (kubel--get-command-prefix) " get pods --no-headers=true")))
       (goto-char (point-min))
       (while (re-search-forward "^\\([a-z0-9\-]+\\) +\\([0-9]+/[0-9]+\\) +\\(\\w+\\) +\\([0-9]+\\) +\\([0-9a-z]+\\)$" (point-max) t)
-        (setq temp (append temp (list (list (match-string 1)
-                                            (vector (kubel--propertize-pod-name (match-string 1))
-                                                    (match-string 2)
-                                                    (kubel--propertize-status (match-string 3))
-                                                    (match-string 4)
-                                                    (match-string 5))))))))
+        (setq temp (append temp (list (list (match-string 1) (kubel--extract-pod-line)))))))
     temp))
 
 (defun kubel--pop-to-buffer (name)
