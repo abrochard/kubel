@@ -79,3 +79,4 @@ By default, kubel log tails from the last 100 lines, you can change the `kubel-l
 - [ ] Apply manifest
 - [x] exec
 - [ ] logs for previous instance
+- [ ] logs for multiple pods

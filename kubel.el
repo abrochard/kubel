@@ -288,6 +288,8 @@ NAMESPACE is the namespace."
 (defun kubel-set-context ()
   "Set the context."
   (interactive)
+  (when (get-buffer (kubel--buffer-name)) ;; kill buffer for previous context if possible
+    (kill-buffer (kubel--buffer-name)))
   (setq kubel-context
         (completing-read
          "Select context: "
