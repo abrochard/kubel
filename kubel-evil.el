@@ -86,6 +86,4 @@
 
 (provide 'kubel-evil)
 
-(provide 'kubel-evil)
-
 ;;; kubel-evil.el ends here
