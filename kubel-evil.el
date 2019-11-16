@@ -1,4 +1,4 @@
-;;; kubel-evil.el --- extension for kubel to provide evil keybindings -*- lexical-binding: t; -*-
+;;; kubel-evil.el --- Extension for kubel to provide evil keybindings -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2019, Marcel Patzwahl
 
