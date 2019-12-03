@@ -1,4 +1,4 @@
-;;; kubel-evil.el --- extension for kubel to provide evil keybindings
+;;; kubel-evil.el --- Extension for kubel to provide evil keybindings -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2019, Marcel Patzwahl
 
@@ -24,7 +24,7 @@
 ;; Keywords: kubernetes k8s tools processes evil keybindings
 ;; URL: https://github.com/abrochard/kubel
 ;; License: GNU General Public License >= 3
-;; Package-Requires: ((kubel "1.0") (evil "1.0"))
+;; Package-Requires: ((kubel "1.0") (evil "1.0") (emacs "25.3"))
 
 ;;; Commentary:
 
@@ -51,6 +51,8 @@
 ;;; Customize:
 (require 'evil)
 (require 'kubel)
+
+;;; Code:
 
 (define-transient-command kubel-evil-help-popup ()
   "Kubel Evil Menu"
@@ -83,3 +85,5 @@
   (kbd "a") #'kubel-jab-deployment)
 
 (provide 'kubel-evil)
+
+;;; kubel-evil.el ends here
