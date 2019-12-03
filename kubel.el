@@ -216,10 +216,27 @@ YAML is boolean to show resource as yaml"
         (kubel--exec buffer-name nil (list "get" name "-o" "yaml" resource))
       (kubel--exec buffer-name nil (list "describe" name resource)))
     (when yaml
-      (yaml-mode))
+      (yaml-mode)
+      (kubel-yaml-editing-mode))
     (beginning-of-buffer)))
 
 ;; interactive
+(define-minor-mode kubel-yaml-editing-mode
+  :init-value nil
+  :keymap (let ((map (make-sparse-keymap)))
+            (define-key map (kbd "C-c C-c") 'kubel-apply)
+            map))
+
+(defun kubel-apply ()
+  "Save the current buffer to a temp file and try to kubectl apply it."
+  (interactive)
+  (let ((filename (format "/tmp/kubel/%s-%s.yaml"
+                          (replace-regexp-in-string "\*\\| " "" (buffer-name))
+                          (floor (float-time)))))
+    (write-region (point-min) (point-max) filename)
+    (kubel--exec (format "*kubectl - apply - %s*" filename) nil (list "apply" "-f" filename))
+    (message "Applied %s" filename)))
+
 (defun kubel-get-pod-details ()
   "Get the details of the pod under the cursor."
   (interactive)

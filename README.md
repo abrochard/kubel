@@ -55,6 +55,12 @@ k => delete pod
 j => jab deployment to force rolling update
 ```
 
+# Editing a resource
+
+After describing a resource in YAML format, you can edit the buffer and hit `C-c C-c` to apply your changes.
+
+For example, if you want to edit a deployment, you can hit the key sequence `d -y d`, then select your deployment, edit the buffer, and hit `C-c C-c` to apply.
+
 ## Customize
 
 By default, kubel log tails from the last 100 lines, you can change the `kubel-log-tail-n` variable to set another line number.
@@ -80,3 +86,5 @@ By default, kubel log tails from the last 100 lines, you can change the `kubel-l
 - [x] exec
 - [ ] logs for previous instance
 - [ ] logs for multiple pods
+- [ ] top po command + sort by usage
+- [ ] tramp like
