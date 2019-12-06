@@ -14,6 +14,9 @@ This is mostly pod management for now. More may come.
 - copy pod name to clipboard
 - copy container log command to clipboard
 - port forward a pod to your localhost
+- describe and live edit a resource (deployment,service,job,ingress,configmap)
+- show rollout history for a resource
+- highlight a pod by name
 
 ## Installation
 
@@ -53,6 +56,8 @@ l => log popup
 c => copy popup
 k => delete pod
 j => jab deployment to force rolling update
+f => set a substring filter for pod name
+r => see the rollout history for resource
 ```
 
 # Editing a resource
@@ -67,24 +72,12 @@ By default, kubel log tails from the last 100 lines, you can change the `kubel-l
 
 
 ## TODO
-- [x] Pods
-- [x] Deployments
-- [x] Services
-- [x] Config map
-- [x] Jobs
-- [x] Ingress
 - [ ] HPA
 - [ ] Endpoints
 - [ ] Accounts
 - [ ] Secrets
-- [x] Delete pods
-- [x] View logs
-- [x] Describe
-- [ ] Edit
-- [x] Switch clusters
-- [ ] Apply manifest
-- [x] exec
 - [ ] logs for previous instance
 - [ ] logs for multiple pods
 - [ ] top po command + sort by usage
 - [ ] tramp like
+- [ ] rollback
