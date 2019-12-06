@@ -398,16 +398,29 @@ ARG is the optional param to see yaml."
       (kubel--describe-resource "job" t)
     (kubel--describe-resource "job")))
 
+;; deprecated. will remove soon
+;; (defun kubel-exec-pod ()
+;;   "Kubectl exec into the pod under the cursor."
+;;   (interactive)
+;;   (let* ((pod (kubel--get-pod-under-cursor))
+;;          (containers (kubel--get-containers pod))
+;;          (container (if (equal (length containers) 1)
+;;                         (car containers)
+;;                       (completing-read "Select container: " containers))))
+;;     (eshell)
+;;     (insert (format "%s exec -it %s -c %s /bin/sh" (kubel--get-command-prefix) pod container))))
+
 (defun kubel-exec-pod ()
-  "Kubectl exec into the pod under the cursor."
+  "Setup a TRAMP to exec into the pod under the cursor."
   (interactive)
-  (let* ((pod (kubel--get-pod-under-cursor))
-         (containers (kubel--get-containers pod))
-         (container (if (equal (length containers) 1)
-                        (car containers)
-                      (completing-read "Select container: " containers))))
-    (eshell)
-    (insert (format "%s exec -it %s -c %s /bin/sh" (kubel--get-command-prefix) pod container))))
+  (setq tramp-methods (delete (assoc "kubectl" tramp-methods) tramp-methods)) ;; cleanup previous tramp method
+  (add-to-list 'tramp-methods
+               `("kubectl"
+                 (tramp-login-program      "kubectl")
+                 (tramp-login-args         (,(kubel--get-context-namespace) ("exec" "-it") ("-u" "%u") ("%h") ("sh")))
+                 (tramp-remote-shell       "sh")
+                 (tramp-remote-shell-args  ("-i" "-c")))) ;; add the current context/namespace to tramp methods
+  (find-file (format "/kubectl:%s:/" (kubel--get-pod-under-cursor))))
 
 (defun kubel-delete-pod ()
   "Kubectl delete pod under cursor."

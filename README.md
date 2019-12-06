@@ -17,6 +17,7 @@ This is mostly pod management for now. More may come.
 - describe and live edit a resource (deployment,service,job,ingress,configmap)
 - show rollout history for a resource
 - highlight a pod by name
+- exec into a pod using tramp
 
 ## Installation
 
@@ -79,5 +80,4 @@ By default, kubel log tails from the last 100 lines, you can change the `kubel-l
 - [ ] logs for previous instance
 - [ ] logs for multiple pods
 - [ ] top po command + sort by usage
-- [ ] tramp like
 - [ ] rollback
