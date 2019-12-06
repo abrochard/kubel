@@ -101,7 +101,11 @@
    "\n" "" (shell-command-to-string "kubectl config current-context"))
   "Current context.  Tries to smart default.")
 
-(defvar kubel-pod-filter "")
+(defvar kubel-pod-filter ""
+  "Substring filter for pod name.")
+
+(defvar kubel-namespace-history '()
+  "List of previously used namespaces.")
 
 (defvar kubel-log-tail-n "100"
   "Number of lines to tail.")
@@ -321,15 +325,16 @@ ARGS is the arguments list from transient."
   (kill-new (kubel--get-command-prefix))
   (message "Command prefix copied to kill-ring"))
 
-(defun kubel-set-namespace (namespace)
-  "Set the namespace.
-
-NAMESPACE is the namespace."
-  (interactive "MNamespace: ")
-  (when (get-buffer (kubel--buffer-name))
-    (kill-buffer (kubel--buffer-name)))
-  (setq kubel-namespace namespace)
-  (kubel))
+(defun kubel-set-namespace ()
+  "Set the namespace."
+  (interactive)
+  (let ((namespace (completing-read "Namespace: " kubel-namespace-history)))
+    (when (get-buffer (kubel--buffer-name))
+      (kill-buffer (kubel--buffer-name)))
+    (setq kubel-namespace namespace)
+    (unless (member namespace kubel-namespace-history)
+      (push namespace kubel-namespace-history))
+    (kubel)))
 
 (defun kubel-set-context ()
   "Set the context."
