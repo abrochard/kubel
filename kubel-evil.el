@@ -1,4 +1,4 @@
-;;; kubel-evil.el --- Extension for kubel to provide evil keybindings -*- lexical-binding: t; -*-
+;;; kubel-evil.el --- extension for kubel to provide evil keybindings -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2019, Marcel Patzwahl
 
@@ -53,6 +53,13 @@
 (require 'kubel)
 
 ;;; Code:
+(define-minor-mode kubel-evil-mode
+  "Brings evil keybindings to kubel"
+  :lighter " kubel-evil"
+  :keymap (make-sparse-keymap)
+  :group 'kubel-evil)
+
+(add-hook 'kubel-mode-hook 'kubel-evil-mode)
 
 (define-transient-command kubel-evil-help-popup ()
   "Kubel Evil Menu"
@@ -70,6 +77,7 @@
    ("a" "Jab" kubel-jab-deployment)])
 
 (evil-set-initial-state 'kubel-mode 'motion)
+
 (evil-define-key 'motion kubel-mode-map
   (kbd "RET") #'kubel-get-pod-details
   (kbd "C") #'kubel-set-context
