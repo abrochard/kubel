@@ -330,10 +330,12 @@ ARGS is the arguments list from transient."
 (defun kubel-set-namespace ()
   "Set the namespace."
   (interactive)
-  (let ((namespace (completing-read "Namespace: " kubel-namespace-history)))
+  (let ((namespace (completing-read "Namespace: " kubel-namespace-history
+                                    nil nil nil nil "(empty)")))
     (when (get-buffer (kubel--buffer-name))
       (kill-buffer (kubel--buffer-name)))
-    (setq kubel-namespace namespace)
+    (setq kubel-namespace
+          (if (equal "(empty)" namespace) "" namespace))
     (unless (member namespace kubel-namespace-history)
       (push namespace kubel-namespace-history))
     (kubel)))
