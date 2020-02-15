@@ -96,6 +96,10 @@
 
 (defvar kubel-namespace ""
   "Current namespace.")
+
+(defvar kubel-resource "pods"
+  "Current resource.")
+
 (defvar kubel-context
   (replace-regexp-in-string
    "\n" "" (shell-command-to-string "kubectl config current-context"))
@@ -145,11 +149,11 @@ STATUS is the pod status string."
         (propertize status 'font-lock-face `(:foreground ,pair))
       status)))
 
-(defun kubel--list-entries ()
+(defun kubel--list-entries (resource)
   "Create the entries for the service list."
   (let ((temp (list)))
     (with-temp-buffer
-      (insert (shell-command-to-string (concat (kubel--get-command-prefix) " get pods --no-headers=true")))
+      (insert (shell-command-to-string (concat (kubel--get-command-prefix) " get " resource " --no-headers=true")))
       (goto-char (point-min))
       (while (re-search-forward "^\\([a-z0-9\-]+\\) +\\([0-9]+/[0-9]+\\) +\\(\\w+\\) +\\([0-9]+\\) +\\([0-9a-z]+\\)$" (point-max) t)
         (setq temp (append temp (list (list (match-string 1) (kubel--extract-pod-line)))))))
@@ -584,7 +588,7 @@ FILTER is the filter string."
   (setq major-mode 'kubel-mode)
   (use-local-map kubel-mode-map)
   (setq tabulated-list-format kubel--list-format)
-  (setq tabulated-list-entries 'kubel--list-entries)
+  (setq tabulated-list-entries '(kubel--list-entries kubel-resource))
   (setq tabulated-list-sort-key kubel--list-sort-key)
   (tabulated-list-init-header)
   (tabulated-list-print)
