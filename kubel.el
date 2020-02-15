@@ -74,7 +74,7 @@
 
 (require 'transient)
 
-(defconst kubel--list-format
+(defvar kubel--list-format
   [("Name" 50 t)
    ("Ready" 10 t)
    ("Status" 20 t)
@@ -113,6 +113,83 @@
 
 (defvar kubel-log-tail-n "100"
   "Number of lines to tail.")
+
+(defun kubel--populate-list ()
+  (let  ((body (shell-command-to-string (concat (kubel--get-command-prefix) " get " kubel-resource)))
+	  )
+    (list (kubel--get-list-format body) (kubel--get-list-entries body))
+    )
+  )
+
+    (defun kubel--column-entry (temp-file)
+      (lexical-let ((temp-file temp-file))
+	(function
+	 (lambda (colnum)
+	   (list (kubel--column-header temp-file colnum) (kubel--column-width temp-file colnum) t)
+	   )
+
+	 )
+
+	)
+      )
+
+
+(defun kubel--get-list-format (body)
+  (let* ((temp-file (make-temp-file "kubel-" nil nil body)))
+(defun kubel--get-column-entry (colnum)
+  (let ((kubel--get-entry (kubel--column-entry temp-file)))
+    (funcall kubel--get-entry colnum)
+    )
+
+  )
+
+
+    (cl-map 'vector #'kubel--get-column-entry (number-sequence 1 (kubel--ncols temp-file)) )
+    )
+  )
+
+(defun kubel--get-list-entries (body)
+  (let ((entrylist (vector)))
+    (with-temp-buffer
+      (insert body)
+      (goto-char (point-min))
+      (forward-line)
+      (setq morelines 1)
+      (while morelines
+	(beginning-of-line)
+	(setq firstchar (point))
+	(end-of-line)
+	(setq lastchar (point))
+	(setq theline (split-string (buffer-substring firstchar lastchar) ))
+	(setq entrylist (append entrylist (list (list (car theline) (vconcat [] theline)))))
+	(setq morelines (= 0 (forward-line 1)))
+	)
+
+      )
+    entrylist
+    )   ; (vector (split-string ((temp-file))) )
+  )
+
+
+(defun kubel--ncols (temp-file)
+  (string-to-number (shell-command-to-string (concat "awk 'END{print NF}' " temp-file)) )
+  )
+
+(defun kubel--nrows (temp-file)
+  (string-to-number (shell-command-to-string (concat "awk 'END{print NR}' " temp-file)) )
+  )
+
+
+(defun kubel--column-header (temp-file colnum)
+  (replace-regexp-in-string "\n" "" (shell-command-to-string (concat "awk 'NR==1 {print $" (number-to-string colnum) "}' " temp-file)) )
+  )
+
+(defun kubel--column-width (temp-file colnum)
+  (+ 4 (string-to-number (shell-command-to-string (concat "awk 'BEGIN{maxlen = 0}{if(length($" (number-to-string colnum)
+							  ") > maxlen){maxlen = length($" (number-to-string colnum )
+							  ")}}END{print maxlen}' " temp-file))
+			 ) ))
+
 
 (defun kubel--buffer-name ()
   "Return kubel buffer name."
@@ -597,8 +674,9 @@ FILTER is the filter string."
   (setq mode-name "Kubel")
   (setq major-mode 'kubel-mode)
   (use-local-map kubel-mode-map)
-  (setq tabulated-list-format kubel--list-format)
-  (setq tabulated-list-entries 'kubel--list-entries)
+  (setq entries (kubel--populate-list))
+  (setq tabulated-list-format (car entries))
+  (setq tabulated-list-entries (cdr entries))
   (setq tabulated-list-sort-key kubel--list-sort-key)
   (tabulated-list-init-header)
   (tabulated-list-print)
