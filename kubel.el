@@ -355,6 +355,16 @@ ARGS is the arguments list from transient."
          (split-string (shell-command-to-string "kubectl config view -o jsonpath='{.contexts[*].name}'") " ")))
   (kubel))
 
+(defun kubel-set-resource ()
+  "Set the resource."
+  (interactive)
+    (setq kubel-resource
+        (completing-read
+         "Select resource: "
+         (split-string (shell-command-to-string "kubectl api-resources -o name --no-headers=true") "\n")))
+  (kubel))
+
+
 (defun kubel-port-forward-pod (p)
   "Port forward a pod to your local machine.
 
