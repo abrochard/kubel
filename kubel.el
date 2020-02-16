@@ -117,7 +117,7 @@
 (defun kubel--populate-list ()
   (let  ((body (shell-command-to-string (concat (kubel--get-command-prefix) " get " kubel-resource)))
 	  )
-    (list (kubel--get-list-format body) (kubel--get-list-entries body))
+    (list (kubel--get-list-format body) (nbutlast (kubel--get-list-entries body) ))
     )
   )
 
@@ -678,8 +678,8 @@ FILTER is the filter string."
   (use-local-map kubel-mode-map)
   (setq entries (kubel--populate-list))
   (setq tabulated-list-format (car entries))
-  (setq tabulated-list-entries (nbutlast (cadr entries)))   ; TODO handle "No resource found"
-  ;(setq tabulated-list-sort-key kubel--list-sort-key)  ; TODO debug failing sort
+  (setq tabulated-list-entries (cadr entries))   ; TODO handle "No resource found"
+  (setq tabulated-list-sort-key kubel--list-sort-key)
   (setq tabulated-list-sort-key nil)
   (tabulated-list-init-header)
   (tabulated-list-print)
