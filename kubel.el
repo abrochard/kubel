@@ -83,7 +83,7 @@
   "List format.")
 
 (defconst kubel--list-sort-key
-  '("Name" . nil)
+  '("NAME" . nil)
   "Sort table on this key.")
 
 (defconst kubel--status-colors
@@ -636,7 +636,8 @@ FILTER is the filter string."
    ("k" "Delete" kubel-delete-popup)
    ("j" "Jab" kubel-jab-deployment)
    ("f" "Filter" kubel-set-filter)
-   ("r" "Rollout" kubel-rollout-popup)])
+   ("r" "Rollout" kubel-rollout-popup)
+   ("R" "Set resource" kubel-set-resource)])
 
 ;; mode map
 (defvar kubel-mode-map
@@ -655,6 +656,7 @@ FILTER is the filter string."
     (define-key map (kbd "j") 'kubel-jab-deployment)
     (define-key map (kbd "f") 'kubel-set-filter)
     (define-key map (kbd "r") 'kubel-rollout-popup)
+    (define-key map (kbd "R") 'kubel-set-resource)
    map)
   "Keymap for `kubel-mode'.")
 
@@ -676,8 +678,9 @@ FILTER is the filter string."
   (use-local-map kubel-mode-map)
   (setq entries (kubel--populate-list))
   (setq tabulated-list-format (car entries))
-  (setq tabulated-list-entries (cdr entries))
-  (setq tabulated-list-sort-key kubel--list-sort-key)
+  (setq tabulated-list-entries (nbutlast (cadr entries)))   ; TODO handle "No resource found"
+  ;(setq tabulated-list-sort-key kubel--list-sort-key)  ; TODO debug failing sort
+  (setq tabulated-list-sort-key nil)
   (tabulated-list-init-header)
   (tabulated-list-print)
   (hl-line-mode 1)

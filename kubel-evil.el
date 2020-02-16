@@ -81,7 +81,8 @@
    ("o" "Describe" kubel-describe-popup)
    ("e" "Exec" kubel-exec-pod)
    ("d" "Delete" kubel-delete-popup)
-   ("a" "Jab" kubel-jab-deployment)])
+   ("a" "Jab" kubel-jab-deployment)
+   ("R" "Set Resource" kubel-set-resource)])
 
 (evil-set-initial-state 'kubel-mode 'motion)
 
@@ -97,6 +98,7 @@
   (kbd "o") #'kubel-describe-popup
   (kbd "e") #'kubel-exec-pod
   (kbd "d") #'kubel-delete-popup
+  (kbd "R") #'kubel-set-resource
   (kbd "a") #'kubel-jab-deployment)
 
 (provide 'kubel-evil)
