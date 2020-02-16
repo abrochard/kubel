@@ -115,36 +115,39 @@
   "Number of lines to tail.")
 
 (defun kubel--populate-list ()
+  "Return a list with a tabulated list format and tabulated-list-entries."
   (let  ((body (shell-command-to-string (concat (kubel--get-command-prefix) " get " kubel-resource)))
-	  )
+	 )
     (if (s-starts-with? "No resources found" body)
 	(message "No resources found")
-	)
+      )
     (list (kubel--get-list-format body) (nbutlast (kubel--get-list-entries body) ))
     )
   )
 
-    (defun kubel--column-entry (temp-file)
-      (lexical-let ((temp-file temp-file))
-	(function
-	 (lambda (colnum)
-	   (list (kubel--column-header temp-file colnum) (kubel--column-width temp-file colnum) t)
-	   )
+(defun kubel--column-entry (temp-file)
+  "Define column properties for tabulated-list-format."
+  (lexical-let ((temp-file temp-file))
+    (function
+     (lambda (colnum)
+       (list (kubel--column-header temp-file colnum) (kubel--column-width temp-file colnum) t)
+       )
 
-	 )
+     )
 
-	)
-      )
+    )
+  )
 
 
 (defun kubel--get-list-format (body)
+  "Generate tabulated-list-format based on kubectl header row."
   (let* ((temp-file (make-temp-file "kubel-" nil nil body)))
-(defun kubel--get-column-entry (colnum)
-  (let ((kubel--get-entry (kubel--column-entry temp-file)))
-    (funcall kubel--get-entry colnum)
-    )
+    (defun kubel--get-column-entry (colnum)
+      (let ((kubel--get-entry (kubel--column-entry temp-file)))
+	(funcall kubel--get-entry colnum)
+	)
 
-  )
+      )
 
 
     (cl-map 'vector #'kubel--get-column-entry (number-sequence 1 (kubel--ncols temp-file)) )
@@ -152,6 +155,7 @@
   )
 
 (defun kubel--get-list-entries (body)
+  "Generate a list of entries for tabulated-list-mode."
   (let ((entrylist (vector)))
     (with-temp-buffer
       (insert body)
@@ -175,19 +179,23 @@
 
 
 (defun kubel--ncols (temp-file)
+  "Return number of columns in kubectl output."
   (string-to-number (shell-command-to-string (concat "awk 'END{print NF}' " temp-file)) )
   )
 
 (defun kubel--nrows (temp-file)
+  "Return number of rows in kubectl output."
   (string-to-number (shell-command-to-string (concat "awk 'END{print NR}' " temp-file)) )
   )
 
 
 (defun kubel--column-header (temp-file colnum)
+  "Return header of column colnum in kubeclt output."
   (replace-regexp-in-string "\n" "" (shell-command-to-string (concat "awk 'NR==1 {print $" (number-to-string colnum) "}' " temp-file)) )
   )
 
 (defun kubel--column-width (temp-file colnum)
+  "Return width of column colnum in kubectl output."
   (+ 4 (string-to-number (shell-command-to-string (concat "awk 'BEGIN{maxlen = 0}{if(length($" (number-to-string colnum)
 							  ") > maxlen){maxlen = length($" (number-to-string colnum )
 							  ")}}END{print maxlen}' " temp-file))
@@ -201,10 +209,10 @@
 (defun kubel--extract-pod-line ()
   "Return a vector from the pod line."
   (let ((name (match-string 1))
-         (ready (match-string 2))
-         (status (match-string 3))
-         (restarts (match-string 4))
-         (age (match-string 5)))
+	(ready (match-string 2))
+	(status (match-string 3))
+	(restarts (match-string 4))
+	(age (match-string 5)))
     (vector (kubel--propertize-pod-attribute name name)
             (kubel--propertize-pod-attribute name ready)
             (kubel--propertize-status status)
@@ -217,8 +225,8 @@
 NAME is the pod name.
 ATTRIBUTE is the attribute to propertize."
   (if (or (equal kubel-pod-filter "") (string-match-p kubel-pod-filter name))
-        attribute
-      (propertize attribute 'font-lock-face '(:foreground "darkgrey"))))
+      attribute
+    (propertize attribute 'font-lock-face '(:foreground "darkgrey"))))
 
 (defun kubel--propertize-status (status)
   "Return the status in proper font color.
@@ -244,7 +252,7 @@ STATUS is the pod status string."
 
 NAME is the buffer name."
   (unless (get-buffer name)
-      (get-buffer-create name))
+    (get-buffer-create name))
   (pop-to-buffer name))
 
 (defun kubel--exec (buffer-name async args)
@@ -438,7 +446,7 @@ ARGS is the arguments list from transient."
 (defun kubel-set-resource ()
   "Set the resource."
   (interactive)
-    (setq kubel-resource
+  (setq kubel-resource
         (completing-read
          "Select resource: "
          (split-string (shell-command-to-string "kubectl api-resources -o name --no-headers=true") "\n")))
@@ -543,8 +551,8 @@ See https://github.com/kubernetes/kubernetes/issues/27081"
   (let* ((deployment (kubel--select-resource "deployment"))
          (buffer-name (format "*kubel - bouncing - %s*" deployment)))
     (kubel--exec buffer-name nil (list "patch" "deployment" deployment "-p"
-                        (format "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"%s\"}}}}}"
-                                (round (time-to-seconds)))))))
+				       (format "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"%s\"}}}}}"
+					       (round (time-to-seconds)))))))
 
 (defun kubel-set-filter (filter)
   "Set the pod filter.
@@ -660,7 +668,7 @@ FILTER is the filter string."
     (define-key map (kbd "f") 'kubel-set-filter)
     (define-key map (kbd "r") 'kubel-rollout-popup)
     (define-key map (kbd "R") 'kubel-set-resource)
-   map)
+    map)
   "Keymap for `kubel-mode'.")
 
 ;;;###autoload
