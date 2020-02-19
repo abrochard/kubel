@@ -372,6 +372,15 @@ TYPENAME is the resource type/name."
     (kubel--exec buffer-name nil (list "describe" "pod" (kubel--get-pod-under-cursor)))
     (beginning-of-buffer)))
 
+(defun kubel-get-resource-details ()
+  "Get the details of the resource under the cursor."
+  (interactive)
+  (let* ((pod (kubel--get-pod-under-cursor))
+         (buffer-name (format "*kubel - %s - %s*" kubel-resource pod)))
+    (kubel--exec buffer-name nil (list "describe" kubel-resource (kubel--get-pod-under-cursor)))
+    (beginning-of-buffer)))
+
+
 (defun kubel--default-tail-arg (args)
   "Ugly function to make sure that there is at least the default tail.
 
