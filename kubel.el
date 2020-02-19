@@ -114,6 +114,30 @@
 (defvar kubel-log-tail-n "100"
   "Number of lines to tail.")
 
+(defvar kubel-kubernetes-resources-list '("Pods"
+					  "Services"
+					  "Namespaces"
+					  "Nodes"
+					  "Configmaps"
+					  "Secrets"
+					  "Bindings"
+					  "PersistentVolumeClaims"
+					  "PersistentVolumes"
+					  "ReplicationControllers"
+					  "ResourceQuotas"
+					  "ServiceAccounts"
+					  "Deployments"
+					  "DaemonSets"
+					  "ReplicaSets"
+					  "StatefulSets"
+					  "Jobs"
+					  "Images"
+					  "Ingresses"
+					  "ClusterRoles"
+					  "RoleBindings"
+					  "Roles"
+					  ))
+
 (defun kubel-kubernetes-version ()
   "Return a list with (major-version minor-version patch)."
   (let ((version-string (shell-command-to-string "kubectl version")))
@@ -486,10 +510,16 @@ ARGS is the arguments list from transient."
 (defun kubel-set-resource ()
   "Set the resource."
   (interactive)
-  (setq kubel-resource
-        (completing-read
-         "Select resource: "
-         (split-string (shell-command-to-string "kubectl api-resources -o name --no-headers=true") "\n")))
+  (let  ((resource-list (if (kubel-kubernetes-compatible-p '(1 13 3))
+			    (split-string (shell-command-to-string "kubectl api-resources -o name --no-headers=true") "\n")
+			 kubel-kubernetes-resources-list
+			  )))
+    (setq kubel-resource
+	  (completing-read
+	   "Select resource: "
+	   resource-list
+	   ))
+    )
   (kubel))
 
 
