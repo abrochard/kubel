@@ -118,9 +118,31 @@
   "Return a list with (major-version minor-version patch)."
   (let ((version-string (shell-command-to-string "kubectl version")))
     (string-match "GitVersion:\"v\\([0-9]*\\)\.\\([0-9]*\\)\.\\([0-9]*\\)\"" version-string)
-    (list (match-string 1 version-string) (match-string 2 version-string) (match-string 3 version-string))
+    (list
+     (string-to-number (match-string 1 version-string))
+     (string-to-number (match-string 2 version-string))
+     (string-to-number (match-string 3 version-string)))
   )
 )
+
+(defun kubel-kubernetes-compatible-p (version)
+  "Return TRUE if kubernetes version is greater than or equal to VERSION.
+VERSION should be a list of (major-version minor-version patch)."
+  (let*
+      ((kubernetes-version (kubel-kubernetes-version))
+       (kubernetes-major-version (nth 0 kubernetes-version))
+       (kubernetes-minor-version (nth 1 kubernetes-version))
+       (kubernetes-patch-version (nth 2 kubernetes-version))
+
+       )
+    (or
+     (< (nth 0 version) kubernetes-major-version)
+     (< (nth 1 version) kubernetes-minor-version)
+     (< (nth 2 version) kubernetes-patch-version)
+     )
+
+    )
+  )
 
 
 (defun kubel--populate-list ()
