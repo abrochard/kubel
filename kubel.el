@@ -114,6 +114,15 @@
 (defvar kubel-log-tail-n "100"
   "Number of lines to tail.")
 
+(defun kubel-kubernetes-version ()
+  "Return a list with (major-version minor-version patch)."
+  (let ((version-string (shell-command-to-string "kubectl version")))
+    (string-match "GitVersion:\"v\\([0-9]*\\)\.\\([0-9]*\\)\.\\([0-9]*\\)\"" version-string)
+    (list (match-string 1 version-string) (match-string 2 version-string) (match-string 3 version-string))
+  )
+)
+
+
 (defun kubel--populate-list ()
   "Return a list with a tabulated list format and tabulated-list-entries."
   (let  ((body (shell-command-to-string (concat (kubel--get-command-prefix) " get " kubel-resource)))
