@@ -71,7 +71,7 @@
 (define-transient-command kubel-evil-help-popup ()
   "Kubel Evil Menu"
   ["Actions"
-   ("ENTER" "Pod details" kubel-get-pod-details)
+   ("ENTER" "Pod details" kubel-get-resource-details)
    ("C" "Set Context" kubel-set-context)
    ("n" "Set namespace" kubel-set-namespace)
    ("g" "Refresh" kubel-mode)
@@ -87,7 +87,7 @@
 (evil-set-initial-state 'kubel-mode 'motion)
 
 (evil-define-key 'motion kubel-evil-mode-map
-  (kbd "RET") #'kubel-get-pod-details
+  (kbd "RET") #'kubel-get-resource-details
   (kbd "C") #'kubel-set-context
   (kbd "n") #'kubel-set-namespace
   (kbd "g") #'kubel-mode

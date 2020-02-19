@@ -36,7 +36,7 @@
 ;; To list the pods in your current context and namespace, call
 ;;
 ;; M-x kubel
-;;
+;;;
 ;; To set said namespace and context, respectively call
 ;;
 ;; M-x kubel-set-namespace
@@ -635,7 +635,7 @@ FILTER is the filter string."
 (define-transient-command kubel-help-popup ()
   "Kubel Menu"
   ["Actions"
-   ("ENTER" "Pod details" kubel-get-pod-details)
+   ("ENTER" "Pod details" kubel-get-resource-details)
    ("C" "Set context" kubel-set-context)
    ("n" "Set namespace" kubel-set-namespace)
    ("g" "Refresh" kubel-mode)
@@ -653,7 +653,7 @@ FILTER is the filter string."
 ;; mode map
 (defvar kubel-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "RET") 'kubel-get-pod-details)
+    (define-key map (kbd "RET") 'kubel-get-resource-details)
     (define-key map (kbd "C") 'kubel-set-context)
     (define-key map (kbd "n") 'kubel-set-namespace)
     (define-key map (kbd "g") 'kubel-mode)
