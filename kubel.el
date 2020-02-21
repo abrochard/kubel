@@ -262,18 +262,18 @@ VERSION should be a list of (major-version minor-version patch)."
   "Return kubel buffer name."
   (concat "*kubel (" kubel-namespace ") [" kubel-context "]*"))
 
-(defun kubel--extract-pod-line ()
-  "Return a vector from the pod line."
-  (let ((name (match-string 1))
-	(ready (match-string 2))
-	(status (match-string 3))
-	(restarts (match-string 4))
-	(age (match-string 5)))
-    (vector (kubel--propertize-pod-attribute name name)
-            (kubel--propertize-pod-attribute name ready)
-            (kubel--propertize-status status)
-            (kubel--propertize-pod-attribute name restarts)
-            (kubel--propertize-pod-attribute name age))))
+;; (defun kubel--extract-pod-line ()
+;;   "Return a vector from the pod line."
+;;   (let ((name (match-string 1))
+;; 	(ready (match-string 2))
+;; 	(status (match-string 3))
+;; 	(restarts (match-string 4))
+;; 	(age (match-string 5)))
+;;     (vector (kubel--propertize-pod-attribute name name)
+;;             (kubel--propertize-pod-attribute name ready)
+;;             (kubel--propertize-status status)
+;;             (kubel--propertize-pod-attribute name restarts)
+;;             (kubel--propertize-pod-attribute name age))))
 
 (defun kubel--propertize-pod-attribute (name attribute)
   "Return the pod attribute in proper font color based on active filter.
@@ -293,15 +293,15 @@ STATUS is the pod status string."
         (propertize status 'font-lock-face `(:foreground ,pair))
       status)))
 
-(defun kubel--list-entries ()
-  "Create the entries for the service list."
-  (let ((temp (list)))
-    (with-temp-buffer
-      (insert (shell-command-to-string (concat (kubel--get-command-prefix) " get " kubel-resource " --no-headers=true")))
-      (goto-char (point-min))
-      (while (re-search-forward "^\\([a-z0-9\-]+\\) +\\([0-9]+/[0-9]+\\) +\\(\\w+\\) +\\([0-9]+\\) +\\([0-9a-z]+\\)$" (point-max) t)
-        (setq temp (append temp (list (list (match-string 1) (kubel--extract-pod-line)))))))
-    temp))
+;; (defun kubel--list-entries ()
+;;   "Create the entries for the service list."
+;;   (let ((temp (list)))
+;;     (with-temp-buffer
+;;       (insert (shell-command-to-string (concat (kubel--get-command-prefix) " get " kubel-resource " --no-headers=true")))
+;;       (goto-char (point-min))
+;;       (while (re-search-forward "^\\([a-z0-9\-]+\\) +\\([0-9]+/[0-9]+\\) +\\(\\w+\\) +\\([0-9]+\\) +\\([0-9a-z]+\\)$" (point-max) t)
+;;         (setq temp (append temp (list (list (match-string 1) (kubel--extract-pod-line)))))))
+;;     temp))
 
 (defun kubel--pop-to-buffer (name)
   "Utility function to pop to buffer or create it.
@@ -524,53 +524,56 @@ P is the port as integer."
   (let* ((port (format "%s" p))
          (pod (kubel--get-resource-under-cursor))
          (buffer-name (format "*kubel - port-forward - %s:%s*" pod port)))
+    ;; TODO error message if resource is not pod
     (kubel--exec buffer-name t (list "port-forward" pod (format "%s:%s" port port)))))
 
-(defun kubel-describe-ingress (&optional arg)
-  "Show the ingress details.
+;; Obsoleted by kubel-describe-resource
+;; TODO test & remove
+;; (defun kubel-describe-ingress (&optional arg)
+;;   "Show the ingress details.
 
-ARG is the optional param to see yaml."
-  (interactive "P")
-  (if (or arg (transient-args 'kubel-describe-popup))
-      (kubel--describe-resource "ingress" t)
-    (kubel--describe-resource "ingress")))
+;; ARG is the optional param to see yaml."
+;;   (interactive "P")
+;;   (if (or arg (transient-args 'kubel-describe-popup))
+;;       (kubel--describe-resource "ingress" t)
+;;     (kubel--describe-resource "ingress")))
 
 
-(defun kubel-describe-service (&optional arg)
-  "Descibe a service.
+;; (defun kubel-describe-service (&optional arg)
+;;   "Descibe a service.
 
-ARG is the optional param to see yaml."
-  (interactive "P")
-  (if (or arg (transient-args 'kubel-describe-popup))
-      (kubel--describe-resource "service" t)
-    (kubel--describe-resource "service")))
+;; ARG is the optional param to see yaml."
+;;   (interactive "P")
+;;   (if (or arg (transient-args 'kubel-describe-popup))
+;;       (kubel--describe-resource "service" t)
+;;     (kubel--describe-resource "service")))
 
-(defun kubel-describe-configmaps (&optional arg)
-  "Describe a configmap.
+;; (defun kubel-describe-configmaps (&optional arg)
+;;   "Describe a configmap.
 
-ARG is the optional param to see yaml."
-  (interactive "P")
-  (if (or arg (transient-args 'kubel-describe-popup))
-      (kubel--describe-resource "configmap" t)
-    (kubel--describe-resource "configmap")))
+;; ARG is the optional param to see yaml."
+;;   (interactive "P")
+;;   (if (or arg (transient-args 'kubel-describe-popup))
+;;       (kubel--describe-resource "configmap" t)
+;;     (kubel--describe-resource "configmap")))
 
-(defun kubel-describe-deployment (&optional arg)
-  "Describe a deployment.
+;; (defun kubel-describe-deployment (&optional arg)
+;;   "Describe a deployment.
 
-ARG is the optional param to see yaml."
-  (interactive "P")
-  (if (or arg (transient-args 'kubel-describe-popup))
-      (kubel--describe-resource "deployment" t)
-    (kubel--describe-resource "deployment")))
+;; ARG is the optional param to see yaml."
+;;   (interactive "P")
+;;   (if (or arg (transient-args 'kubel-describe-popup))
+;;       (kubel--describe-resource "deployment" t)
+;;     (kubel--describe-resource "deployment")))
 
-(defun kubel-describe-job (&optional arg)
-  "Describe a job.
+;; (defun kubel-describe-job (&optional arg)
+;;   "Describe a job.
 
-ARG is the optional param to see yaml."
-  (interactive "P")
-  (if (or arg (transient-args 'kubel-describe-popup))
-      (kubel--describe-resource "job" t)
-    (kubel--describe-resource "job")))
+;; ARG is the optional param to see yaml."
+;;   (interactive "P")
+;;   (if (or arg (transient-args 'kubel-describe-popup))
+;;       (kubel--describe-resource "job" t)
+;;     (kubel--describe-resource "job")))
 
 ;; deprecated. will remove soon
 ;; (defun kubel-exec-pod ()
@@ -588,6 +591,7 @@ ARG is the optional param to see yaml."
   "Setup a TRAMP to exec into the pod under the cursor."
   (interactive)
   (setq tramp-methods (delete (assoc "kubectl" tramp-methods) tramp-methods)) ;; cleanup previous tramp method
+  ;; TODO error message if resource is not pod
   (add-to-list 'tramp-methods
                `("kubectl"
                  (tramp-login-program      "kubectl")
