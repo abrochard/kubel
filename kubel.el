@@ -88,7 +88,14 @@
 
 (defconst kubel--status-colors
   '(("Running" . "green")
+    ("Healthy" . "green")
+    ("Active" . "green")
+    ("Ready" . "green")
     ("Error" . "red")
+    ("MemoryPressure" . "red")
+    ("PIDPressure" . "red")
+    ("DiskPressure" . "red")
+    ("NetworkUnavailable" . "red")
     ("Completed" . "yellow")
     ("CrashLoopBackOff" . "red")
     ("Terminating" . "blue"))
