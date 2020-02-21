@@ -713,7 +713,7 @@ FILTER is the filter string."
 (define-transient-command kubel-help-popup ()
   "Kubel Menu"
   ["Actions"
-   ("ENTER" "Resource details" kubel-describe-popup)
+   ("RET" "Resource details" kubel-describe-popup)
    ("C" "Set context" kubel-set-context)
    ("n" "Set namespace" kubel-set-namespace)
    ("g" "Refresh" kubel-mode)
