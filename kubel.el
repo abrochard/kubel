@@ -223,6 +223,7 @@ VERSION should be a list of (major-version minor-version patch)."
 	(end-of-line)
 	(setq lastchar (point))
 	(setq theline (split-string (buffer-substring firstchar lastchar) ))
+	;; TODO Modify theline to apply colourisation
 	(setq entrylist (append entrylist (list (list (car theline) (vconcat [] theline)))))
 	(setq morelines (= 0 (forward-line 1)))
 	)
@@ -325,7 +326,7 @@ ARGS is a ist of arguments."
     (apply #'call-process "kubectl" nil buffer-name nil (append (kubel--get-context-namespace) args)))
   (pop-to-buffer buffer-name))
 
-(defun kubel--get-pod-under-cursor ()
+(defun kubel--get-resource-under-cursor ()
   "Utility function to get the name of the pod under the cursor."
   (aref (tabulated-list-get-entry) 0))
 
@@ -419,20 +420,12 @@ TYPENAME is the resource type/name."
     (kubel--exec (format "*kubectl - apply - %s*" filename) nil (list "apply" "-f" filename))
     (message "Applied %s" filename)))
 
-(defun kubel-get-pod-details ()
-  "Get the details of the pod under the cursor."
-  (interactive)
-  (let* ((pod (kubel--get-pod-under-cursor))
-         (buffer-name (format "*kubel - pod - %s*" pod)))
-    (kubel--exec buffer-name nil (list "describe" "pod" (kubel--get-pod-under-cursor)))
-    (beginning-of-buffer)))
-
 (defun kubel-get-resource-details ()
   "Get the details of the resource under the cursor."
   (interactive)
-  (let* ((pod (kubel--get-pod-under-cursor))
+  (let* ((pod (kubel--get-resource-under-cursor))
          (buffer-name (format "*kubel - %s - %s*" kubel-resource pod)))
-    (kubel--exec buffer-name nil (list "describe" kubel-resource (kubel--get-pod-under-cursor)))
+    (kubel--exec buffer-name nil (list "describe" kubel-resource (kubel--get-resource-under-cursor)))
     (beginning-of-buffer)))
 
 
@@ -451,7 +444,7 @@ ARGS is the arg list from transient."
 ARGS is the arguments list from transient."
   (interactive
    (list (transient-args 'kubel-log-popup)))
-  (let* ((pod (kubel--get-pod-under-cursor))
+  (let* ((pod (kubel--get-resource-under-cursor))
          (containers (kubel--get-containers pod))
          (container (if (equal (length containers) 1)
                         (car containers)
@@ -466,7 +459,7 @@ ARGS is the arguments list from transient."
 (defun kubel-copy-pod-name ()
   "Copy the name of the pod under the cursor."
   (interactive)
-  (kill-new (kubel--get-pod-under-cursor))
+  (kill-new (kubel--get-resource-under-cursor))
   (message "Pod name copied to kill-ring"))
 
 (defun kubel-copy-log-command ()
@@ -474,7 +467,7 @@ ARGS is the arguments list from transient."
   (interactive)
   (kill-new (concat (kubel--get-command-prefix)
                     " logs -f --tail=" kubel-log-tail-n " "
-                    (kubel--get-pod-under-cursor)))
+                    (kubel--get-resource-under-cursor)))
   (message "Log command copied to kill-ring"))
 
 (defun kubel-copy-command-prefix ()
@@ -529,7 +522,7 @@ ARGS is the arguments list from transient."
 P is the port as integer."
   (interactive "nPort: ")
   (let* ((port (format "%s" p))
-         (pod (kubel--get-pod-under-cursor))
+         (pod (kubel--get-resource-under-cursor))
          (buffer-name (format "*kubel - port-forward - %s:%s*" pod port)))
     (kubel--exec buffer-name t (list "port-forward" pod (format "%s:%s" port port)))))
 
@@ -601,14 +594,14 @@ ARG is the optional param to see yaml."
                  (tramp-login-args         (,(kubel--get-context-namespace) ("exec" "-it") ("-u" "%u") ("%h") ("sh")))
                  (tramp-remote-shell       "sh")
                  (tramp-remote-shell-args  ("-i" "-c")))) ;; add the current context/namespace to tramp methods
-  (find-file (format "/kubectl:%s:/" (kubel--get-pod-under-cursor))))
+  (find-file (format "/kubectl:%s:/" (kubel--get-resource-under-cursor))))
 
-(defun kubel-delete-pod ()
-  "Kubectl delete pod under cursor."
+(defun kubel-delete-resource ()
+  "Kubectl delete resource under cursor."
   (interactive)
-  (let* ((pod (kubel--get-pod-under-cursor))
-         (buffer-name (format "*kubel - delete pod -%s" pod))
-         (args (list "delete" "pod" pod)))
+  (let* ((pod (kubel--get-resource-under-cursor))
+         (buffer-name (format "*kubel - delete %s -%s" kube-resource pod))
+         (args (list "delete" kube-resource pod)))
     (when (transient-args 'kubel-delete-popup)
       (setq args (append args (list "--force" "--grace-period=0"))))
     (kubel--exec buffer-name t args)))
