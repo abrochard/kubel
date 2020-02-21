@@ -427,12 +427,20 @@ TYPENAME is the resource type/name."
     (kubel--exec (format "*kubectl - apply - %s*" filename) nil (list "apply" "-f" filename))
     (message "Applied %s" filename)))
 
-(defun kubel-get-resource-details ()
-  "Get the details of the resource under the cursor."
-  (interactive)
-  (let* ((pod (kubel--get-resource-under-cursor))
-         (buffer-name (format "*kubel - %s - %s*" kubel-resource pod)))
+(defun kubel-get-resource-details (&optional yaml)
+  "Get the details of the resource under the cursor.
+
+ YAML is the optional param to see yaml."
+  (interactive "P")
+  (let* ((resource (kubel--get-resource-under-cursor))
+         (buffer-name (format "*kubel - %s - %s*" kubel-resource resource)))
+        (if (or yaml (transient-args 'kubel-describe-popup))
+    (kubel--exec buffer-name nil (list "get" kubel-resource (kubel--get-resource-under-cursor) "-o" "yaml"))
     (kubel--exec buffer-name nil (list "describe" kubel-resource (kubel--get-resource-under-cursor)))
+      )
+    (when (or yaml (transient-args 'kubel-describe-popup))
+      (yaml-mode)
+      (kubel-yaml-editing-mode))
     (beginning-of-buffer)))
 
 
@@ -691,11 +699,7 @@ FILTER is the filter string."
   ["Arguments"
    ("-y" "Yaml" "-o yaml")]
   ["Actions"
-   ("d" "Deployment" kubel-describe-deployment)
-   ("s" "Service" kubel-describe-service)
-   ("j" "Job" kubel-describe-job)
-   ("i" "Ingress" kubel-describe-ingress)
-   ("c" "Configmap" kubel-describe-configmaps)])
+   ("RET" "Describe" kubel-get-resource-details)])
 
 (define-transient-command kubel-rollout-popup ()
   "Kubel Rollout Menu"
@@ -709,14 +713,14 @@ FILTER is the filter string."
 (define-transient-command kubel-help-popup ()
   "Kubel Menu"
   ["Actions"
-   ("ENTER" "Pod details" kubel-get-resource-details)
+   ("ENTER" "Resource details" kubel-describe-popup)
    ("C" "Set context" kubel-set-context)
    ("n" "Set namespace" kubel-set-namespace)
    ("g" "Refresh" kubel-mode)
    ("p" "Port forward" kubel-port-forward-pod)
    ("l" "Logs" kubel-log-popup)
    ("c" "Copy" kubel-copy-popup)
-   ("d" "Describe" kubel-describe-popup)
+   ;("d" "Describe" kubel-describe-popup)
    ("e" "Exec" kubel-exec-pod)
    ("k" "Delete" kubel-delete-popup)
    ("j" "Jab" kubel-jab-deployment)
@@ -727,7 +731,7 @@ FILTER is the filter string."
 ;; mode map
 (defvar kubel-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "RET") 'kubel-get-resource-details)
+    (define-key map (kbd "RET") 'kubel-describe-popup)
     (define-key map (kbd "C") 'kubel-set-context)
     (define-key map (kbd "n") 'kubel-set-namespace)
     (define-key map (kbd "g") 'kubel-mode)
@@ -735,7 +739,7 @@ FILTER is the filter string."
     (define-key map (kbd "l") 'kubel-log-popup)
     (define-key map (kbd "c") 'kubel-copy-popup)
     (define-key map (kbd "h") 'kubel-help-popup)
-    (define-key map (kbd "d") 'kubel-describe-popup)
+    ;(define-key map (kbd "d") 'kubel-describe-popup)
     (define-key map (kbd "e") 'kubel-exec-pod)
     (define-key map (kbd "k") 'kubel-delete-popup)
     (define-key map (kbd "j") 'kubel-jab-deployment)
