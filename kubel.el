@@ -222,7 +222,7 @@ VERSION should be a list of (major-version minor-version patch)."
 	(setq firstchar (point))
 	(end-of-line)
 	(setq lastchar (point))
-	(setq theline (split-string (buffer-substring firstchar lastchar) ))
+	(setq theline (mapcar 'kubel--propertize-status (split-string (buffer-substring firstchar lastchar) ) ))
 	;; TODO Modify theline to apply colourisation
 	(setq entrylist (append entrylist (list (list (car theline) (vconcat [] theline)))))
 	(setq morelines (= 0 (forward-line 1)))
