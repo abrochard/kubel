@@ -609,8 +609,8 @@ P is the port as integer."
   "Kubectl delete resource under cursor."
   (interactive)
   (let* ((pod (kubel--get-resource-under-cursor))
-         (buffer-name (format "*kubel - delete %s -%s" kube-resource pod))
-         (args (list "delete" kube-resource pod)))
+         (buffer-name (format "*kubel - delete %s -%s" kubel-resource pod))
+         (args (list "delete" kubel-resource pod)))
     (when (transient-args 'kubel-delete-popup)
       (setq args (append args (list "--force" "--grace-period=0"))))
     (kubel--exec buffer-name t args)))
@@ -682,7 +682,7 @@ FILTER is the filter string."
   ["Arguments"
    ("-f" "Force" "--force --grace-period=0")]
   ["Actions"
-   ("k" "Delete pod" kubel-delete-pod)])
+   ("k" "Delete resource" kubel-delete-resource)])
 
 (define-transient-command kubel-describe-popup ()
   "Kubel Describe Menu"
