@@ -178,21 +178,21 @@ VERSION should be a list of (major-version minor-version patch)."
 
 (defun kubel--populate-list ()
   "Return a list with a tabulated list format and tabulated-list-entries."
-  (let  ((body (shell-command-to-string (concat (kubel--get-command-prefix) " get " kubel-resource)))
+  (let*  ((body (shell-command-to-string (concat (kubel--get-command-prefix) " get " kubel-resource)))
+	  (entrylist (kubel--parse-body body))
 	 )
     (if (s-starts-with? "No resources found" body)
 	(message "No resources found")
       )
-    (list (kubel--get-list-format body) (nbutlast (kubel--get-list-entries body) ))
+    (list (kubel--get-list-format entrylist) (kubel--get-list-entries entrylist))
     )
   )
 
-(defun kubel--column-entry (temp-file)
-  "Define column properties for tabulated-list-format."
-  (lexical-let ((temp-file temp-file))
+(defun kubel--column-entry (entrylist)
+  (lexical-let ((entrylist entrylist))
     (function
      (lambda (colnum)
-       (list (kubel--column-header temp-file colnum) (kubel--column-width temp-file colnum) t)
+       (list (kubel--column-header entrylist colnum) (+ 4 (kubel--column-width entrylist colnum) ) t)
        )
 
      )
@@ -201,28 +201,24 @@ VERSION should be a list of (major-version minor-version patch)."
   )
 
 
-(defun kubel--get-list-format (body)
-  "Generate tabulated-list-format based on kubectl header row."
-  (let* ((temp-file (make-temp-file "kubel-" nil nil body)))
+(defun kubel--get-list-format (entrylist)
     (defun kubel--get-column-entry (colnum)
-      (let ((kubel--get-entry (kubel--column-entry temp-file)))
+      (let ((kubel--get-entry (kubel--column-entry entrylist)))
 	(funcall kubel--get-entry colnum)
 	)
-
       )
-
-
-    (cl-map 'vector #'kubel--get-column-entry (number-sequence 1 (kubel--ncols temp-file)) )
-    )
+    (cl-map 'vector #'kubel--get-column-entry (number-sequence 0 (- (kubel--ncols entrylist) 1)) )
   )
 
-(defun kubel--get-list-entries (body)
-  "Generate a list of entries for tabulated-list-mode."
-  (let ((entrylist (vector)))
+(defun kubel--get-list-entries (entrylist)
+    (mapcar (lambda (x) (list (car x) (vconcat [] x))) (cdr entrylist))
+  )
+
+(defun kubel--parse-body (body)
+  (let ((entrylist (list)))
     (with-temp-buffer
       (insert body)
       (goto-char (point-min))
-      (forward-line)
       (setq morelines 1)
       (while morelines
 	(beginning-of-line)
