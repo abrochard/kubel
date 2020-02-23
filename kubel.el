@@ -525,6 +525,17 @@ ARGS is the arguments list from transient."
     )
   (kubel))
 
+(defun kubel-set-output-format ()
+  "Set output format of kubectl"
+  (interactive)
+      (setq kubel-output
+	  (completing-read
+	   "Set output format: "
+	   '("yaml" "json" "wide" "custom-column=")
+	   ))
+  (kubel))
+
+
 
 (defun kubel-port-forward-pod (p)
   "Port forward a pod to your local machine.
@@ -720,6 +731,7 @@ FILTER is the filter string."
    ("k" "Delete" kubel-delete-popup)
    ("j" "Jab" kubel-jab-deployment)
    ("f" "Filter" kubel-set-filter)
+   ("F" "Set output format" kubel-set-output-format)
    ("r" "Rollout" kubel-rollout-popup)
    ("R" "Set resource" kubel-set-resource)])
 
@@ -739,6 +751,7 @@ FILTER is the filter string."
     (define-key map (kbd "k") 'kubel-delete-popup)
     (define-key map (kbd "j") 'kubel-jab-deployment)
     (define-key map (kbd "f") 'kubel-set-filter)
+    (define-key map (kbd "F") 'kubel-set-output-format)
     (define-key map (kbd "r") 'kubel-rollout-popup)
     (define-key map (kbd "R") 'kubel-set-resource)
     map)

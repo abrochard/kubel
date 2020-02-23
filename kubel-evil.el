@@ -80,6 +80,7 @@
    ("c" "Copy" kubel-copy-popup)
  ;  ("o" "Describe" kubel-describe-popup)
    ("e" "Exec" kubel-exec-pod)
+   ("F" "Output format" kubel-set-output-format)
    ("d" "Delete" kubel-delete-popup)
    ("a" "Jab" kubel-jab-deployment)
    ("R" "Set Resource" kubel-set-resource)])
@@ -97,6 +98,7 @@
   (kbd "h") #'kubel-evil-help-popup
   ;(kbd "o") #'kubel-describe-popup
   (kbd "e") #'kubel-exec-pod
+  (kbd "F") #'kubel-set-output-format
   (kbd "d") #'kubel-delete-popup
   (kbd "R") #'kubel-set-resource
   (kbd "a") #'kubel-jab-deployment)
