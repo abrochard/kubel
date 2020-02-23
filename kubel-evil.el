@@ -87,7 +87,7 @@
 (evil-set-initial-state 'kubel-mode 'motion)
 
 (evil-define-key 'motion kubel-evil-mode-map
-  (kbd "RET") #'kubel-describe-popup
+  (kbd "RET") #'kubel-get-resource-details
   (kbd "C") #'kubel-set-context
   (kbd "n") #'kubel-set-namespace
   (kbd "g") #'kubel-mode

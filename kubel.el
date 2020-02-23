@@ -101,6 +101,10 @@
     ("Terminating" . "blue"))
   "Associative list of status to color.")
 
+(defcustom kubel-output "yaml"
+  "Format for output: json|yaml|wide|custom-columns=..."
+  )
+
 (defvar kubel-namespace ""
   "Current namespace.")
 
@@ -356,17 +360,18 @@ NAME is the string name of the resource."
     (completing-read (concat (s-upper-camel-case name) ": ")
                      (split-string (shell-command-to-string cmd) " "))))
 
-(defun kubel--describe-resource (name &optional yaml)
+(defun kubel--describe-resource (name &optional describe)
   "Describe a specific resource.
 
 NAME is the string name of the resource to decribe.
-YAML is boolean to show resource as yaml"
+DESCRIBE is boolean to describe instead of get resource details"
   (let* ((resource (kubel--select-resource name))
          (buffer-name (format "*kubel - %s - %s*" name resource)))
-    (if yaml
-        (kubel--exec buffer-name nil (list "get" name "-o" "yaml" resource))
-      (kubel--exec buffer-name nil (list "describe" name resource)))
-    (when yaml
+    (if describe
+	(kubel--exec buffer-name nil (list "describe" name resource))
+        (kubel--exec buffer-name nil (list "get" name "-o" kubel-output resource))
+      )
+    (when (string-equal kubel-output "yaml")
       (yaml-mode)
       (kubel-yaml-editing-mode))
     (beginning-of-buffer)))
@@ -417,18 +422,18 @@ TYPENAME is the resource type/name."
     (kubel--exec (format "*kubectl - apply - %s*" filename) nil (list "apply" "-f" filename))
     (message "Applied %s" filename)))
 
-(defun kubel-get-resource-details (&optional yaml)
+(defun kubel-get-resource-details (&optional describe)
   "Get the details of the resource under the cursor.
 
- YAML is the optional param to see yaml."
+ DESCRIBE is the optional param to describe instead of get."
   (interactive "P")
   (let* ((resource (kubel--get-resource-under-cursor))
          (buffer-name (format "*kubel - %s - %s*" kubel-resource resource)))
-        (if (or yaml (transient-args 'kubel-describe-popup))
-    (kubel--exec buffer-name nil (list "get" kubel-resource (kubel--get-resource-under-cursor) "-o" "yaml"))
+        (if describe
     (kubel--exec buffer-name nil (list "describe" kubel-resource (kubel--get-resource-under-cursor)))
+    (kubel--exec buffer-name nil (list "get" kubel-resource (kubel--get-resource-under-cursor) "-o" kubel-output))
       )
-    (when (or yaml (transient-args 'kubel-describe-popup))
+    (when (or (string-equal kubel-output "yaml") (transient-args 'kubel-describe-popup))
       (yaml-mode)
       (kubel-yaml-editing-mode))
     (beginning-of-buffer)))
@@ -721,7 +726,7 @@ FILTER is the filter string."
 ;; mode map
 (defvar kubel-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "RET") 'kubel-describe-popup)
+    (define-key map (kbd "RET") 'kubel-get-resource-details)
     (define-key map (kbd "C") 'kubel-set-context)
     (define-key map (kbd "n") 'kubel-set-namespace)
     (define-key map (kbd "g") 'kubel-mode)
