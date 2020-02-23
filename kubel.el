@@ -230,39 +230,33 @@ VERSION should be a list of (major-version minor-version patch)."
 	(end-of-line)
 	(setq lastchar (point))
 	(setq theline (mapcar 'kubel--propertize-status (split-string (buffer-substring firstchar lastchar) ) ))
-	;; TODO Modify theline to apply colourisation
-	(setq entrylist (append entrylist (list (list (car theline) (vconcat [] theline)))))
+	(if theline
+	  (setq entrylist (append entrylist (list theline )))
+        )
 	(setq morelines (= 0 (forward-line 1)))
 	)
-
       )
     entrylist
     )   ; (vector (split-string ((temp-file))) )
   )
 
 
-(defun kubel--ncols (temp-file)
-  "Return number of columns in kubectl output."
-  (string-to-number (shell-command-to-string (concat "awk 'END{print NF}' " temp-file)) )
+(defun kubel--ncols (entrylist)
+  (length (car entrylist))
   )
 
-(defun kubel--nrows (temp-file)
-  "Return number of rows in kubectl output."
-  (string-to-number (shell-command-to-string (concat "awk 'END{print NR}' " temp-file)) )
+(defun kubel--nrows (entrylist)
+  (length entrylist)
   )
 
 
-(defun kubel--column-header (temp-file colnum)
-  "Return header of column colnum in kubeclt output."
-  (replace-regexp-in-string "\n" "" (shell-command-to-string (concat "awk 'NR==1 {print $" (number-to-string colnum) "}' " temp-file)) )
+(defun kubel--column-header (entrylist colnum)
+  (nth colnum (car entrylist))
   )
 
-(defun kubel--column-width (temp-file colnum)
-  "Return width of column colnum in kubectl output."
-  (+ 4 (string-to-number (shell-command-to-string (concat "awk 'BEGIN{maxlen = 0}{if(length($" (number-to-string colnum)
-							  ") > maxlen){maxlen = length($" (number-to-string colnum )
-							  ")}}END{print maxlen}' " temp-file))
-			 ) ))
+(defun kubel--column-width (entrylist colnum)
+  (seq-max (mapcar (lambda (x) (length (nth colnum x) )) entrylist) )
+  )
 
 
 (defun kubel--buffer-name ()
