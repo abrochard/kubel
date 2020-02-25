@@ -330,12 +330,12 @@ DESCRIBE is boolean to describe instead of get resource details"
       (kubel-yaml-editing-mode))
     (beginning-of-buffer)))
 
-(defun kubel--show-rollout-revision (type)
+(defun kubel--show-rollout-revision (type name)
   "Show a specific revision of a certain resource.
 
-TYPE is the resource type to prompt you to select a specific one."
-  (let* ((name (kubel--select-resource type))
-         (typename (format "%s/%s" type name))
+TYPE is the resource type.
+NAME is the resource name."
+  (let* ((typename (format "%s/%s" type name))
          (revision (car (split-string (kubel--select-rollout typename))))
          (buffer-name (format "*kubel - rollout - %s - %s*" typename revision)))
     (kubel--exec buffer-name nil
@@ -602,30 +602,10 @@ FILTER is the filter string."
   (setq kubel-pod-filter filter)
   (kubel-mode))
 
-(defun kubel-rollout-history-deployment ()
-  "See rollout history of a deployment."
+(defun kubel-rollout-history ()
+  "See rollout history for resource under cursor."
   (interactive)
-  (kubel--show-rollout-revision "deployment"))
-
-(defun kubel-rollout-history-service ()
-  "See rollout history of a service."
-  (interactive)
-  (kubel--show-rollout-revision "service"))
-
-(defun kubel-rollout-history-job ()
-  "See rollout history of a job."
-  (interactive)
-  (kubel--show-rollout-revision "job"))
-
-(defun kubel-rollout-history-ingress ()
-  "See a rollout history of an ingress."
-  (interactive)
-  (kubel--show-rollout-revision "ingress"))
-
-(defun kubel-rollout-history-configmap ()
-  "See a rollout history of a configmap."
-  (interactive)
-  (kubel--show-rollout-revision "configmap"))
+  (kubel--show-rollout-revision kubel-resource (kubel--get-resource-under-cursor)))
 
 ;; popups
 
@@ -659,15 +639,6 @@ FILTER is the filter string."
   ["Actions"
    ("RET" "Describe" kubel-get-resource-details)])
 
-(define-transient-command kubel-rollout-popup ()
-  "Kubel Rollout Menu"
-  ["Actions"
-   ("d" "Deployment" kubel-rollout-history-deployment)
-   ("s" "Service" kubel-rollout-history-service)
-   ("j" "Job" kubel-rollout-history-job)
-   ("i" "Ingress" kubel-rollout-history-ingress)
-   ("c" "Configmap" kubel-rollout-history-configmap)])
-
 (define-transient-command kubel-help-popup ()
   "Kubel Menu"
   ["Actions"
@@ -699,7 +670,7 @@ FILTER is the filter string."
     (define-key map (kbd "R") 'kubel-set-resource)
     (define-key map (kbd "k") 'kubel-delete-popup)
     (define-key map (kbd "f") 'kubel-set-filter)
-    (define-key map (kbd "r") 'kubel-rollout-popup)
+    (define-key map (kbd "r") 'kubel-rollout-history)
 
     ;; based on view
     (define-key map (kbd "RET") 'kubel-get-resource-details)
