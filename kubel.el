@@ -174,8 +174,9 @@ VERSION should be a list of (major-version minor-version patch)."
        (kubernetes-patch-version (nth 2 kubernetes-version)))
     (and
      (<= (nth 0 version) kubernetes-major-version)
-     (<= (nth 1 version) kubernetes-minor-version)
-     (<= (nth 2 version) kubernetes-patch-version))))
+     (or (<= (nth 1 version) kubernetes-minor-version) (< (nth 0 version) kubernetes-major-version))
+     (or (<= (nth 2 version) kubernetes-patch-version) (< (nth 1 version) kubernetes-minor-version))
+     )))
 
 
 (defun kubel--populate-list ()
