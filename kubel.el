@@ -459,16 +459,15 @@ ARGS is the arguments list from transient."
 (defun kubel-set-resource ()
   "Set the resource."
   (interactive)
-  (let  ((resource-list (if (kubel-kubernetes-compatible-p '(1 13 3))
-			    (split-string (shell-command-to-string "kubectl api-resources -o name --no-headers=true") "\n")
-			 kubel-kubernetes-resources-list
-			  )))
+  (let ((current-buffer-name (kubel--buffer-name))
+        (resource-list
+          (if (kubel-kubernetes-compatible-p '(1 13 3))
+			  (split-string (shell-command-to-string "kubectl api-resources -o name --no-headers=true") "\n")
+			kubel-kubernetes-resources-list)))
     (setq kubel-resource
-	  (completing-read
-	   "Select resource: "
-	   resource-list
-	   ))
-    )
+	      (completing-read "Select resource: " resource-list))
+    (when (get-buffer current-buffer-name) ;; kill the current buffer to avoid confusion
+      (kill-buffer current-buffer-name)))
   (kubel))
 
 (defun kubel-set-output-format ()
