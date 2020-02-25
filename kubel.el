@@ -105,7 +105,7 @@
   "Format for output: json|yaml|wide|custom-columns=..."
   )
 
-(defvar kubel-namespace ""
+(defvar kubel-namespace "default"
   "Current namespace.")
 
 (defvar kubel-resource "pods"
@@ -125,29 +125,31 @@
 (defvar kubel-log-tail-n "100"
   "Number of lines to tail.")
 
-(defvar kubel-kubernetes-resources-list '("Pods"
-					  "Services"
-					  "Namespaces"
-					  "Nodes"
-					  "Configmaps"
-					  "Secrets"
-					  "Bindings"
-					  "PersistentVolumeClaims"
-					  "PersistentVolumes"
-					  "ReplicationControllers"
-					  "ResourceQuotas"
-					  "ServiceAccounts"
-					  "Deployments"
-					  "DaemonSets"
-					  "ReplicaSets"
-					  "StatefulSets"
-					  "Jobs"
-					  "Images"
-					  "Ingresses"
-					  "ClusterRoles"
-					  "RoleBindings"
-					  "Roles"
-					  ))
+;; fallback list of resources if the version of kubectl doesn't support api-resources command
+(defvar kubel-kubernetes-resources-list
+  '("Pods"
+	"Services"
+	"Namespaces"
+	"Nodes"
+	"Configmaps"
+	"Secrets"
+	"Bindings"
+	"PersistentVolumeClaims"
+	"PersistentVolumes"
+	"ReplicationControllers"
+	"ResourceQuotas"
+	"ServiceAccounts"
+	"Deployments"
+	"DaemonSets"
+	"ReplicaSets"
+	"StatefulSets"
+	"Jobs"
+	"Images"
+	"Ingresses"
+	"ClusterRoles"
+	"RoleBindings"
+	"Roles"
+    ))
 
 (defun kubel-kubernetes-version ()
   "Return a list with (major-version minor-version patch)."
@@ -175,7 +177,7 @@ VERSION should be a list of (major-version minor-version patch)."
 
 
 (defun kubel--populate-list ()
-  "Return a list with a tabulated list format and tabulated-list-entries."
+  "Return a list with a tabulated list format and \"tabulated-list-entries\"."
   (let*  ((body (shell-command-to-string (concat (kubel--get-command-prefix) " get " kubel-resource)))
 	  (entrylist (kubel--parse-body body))
 	 )
@@ -252,10 +254,9 @@ VERSION should be a list of (major-version minor-version patch)."
   (seq-max (mapcar (lambda (x) (length (nth colnum x) )) entrylist) )
   )
 
-
 (defun kubel--buffer-name ()
   "Return kubel buffer name."
-  (concat "*kubel (" kubel-namespace ") [" kubel-context "]*"))
+  (format "*kubel (%s) [%s]: %s*" kubel-namespace kubel-context kubel-resource))
 
 ;; (defun kubel--extract-pod-line ()
 ;;   "Return a vector from the pod line."
@@ -330,7 +331,7 @@ ARGS is a ist of arguments."
   (append
    (unless (equal kubel-context "")
      (list "--context" kubel-context))
-   (unless (equal kubel-namespace "")
+   (unless (equal kubel-namespace "default")
      (list "-n" kubel-namespace))))
 
 (defun kubel--get-command-prefix ()
@@ -484,11 +485,10 @@ ARGS is the arguments list from transient."
   "Set the namespace."
   (interactive)
   (let ((namespace (completing-read "Namespace: " kubel-namespace-history
-                                    nil nil nil nil "(empty)")))
+                                    nil nil nil nil "default")))
     (when (get-buffer (kubel--buffer-name))
       (kill-buffer (kubel--buffer-name)))
-    (setq kubel-namespace
-          (if (equal "(empty)" namespace) "" namespace))
+    (setq kubel-namespace namespace)
     (unless (member namespace kubel-namespace-history)
       (push namespace kubel-namespace-history))
     (kubel)))
