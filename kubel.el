@@ -224,19 +224,23 @@ BODY is the raw output of kubectl get resource."
 
 
 (defun kubel--ncols (entrylist)
+  "Return the number of columns in ENTRYLIST."
   (length (car entrylist))
   )
 
 (defun kubel--nrows (entrylist)
+  "Return the nubmer of rows in ENTRYLIST."
   (length entrylist)
   )
 
 
 (defun kubel--column-header (entrylist colnum)
+  "Return the header for a specific COLNUM in ENTRYLIST."
   (nth colnum (car entrylist))
   )
 
 (defun kubel--column-width (entrylist colnum)
+  "Return the width of a specific COLNUM in ENTRYLIST."
   (seq-max (mapcar (lambda (x) (length (nth colnum x) )) entrylist) )
   )
 
@@ -474,7 +478,7 @@ ARGS is the arguments list from transient."
   (kubel))
 
 (defun kubel-set-output-format ()
-  "Set output format of kubectl"
+  "Set output format of kubectl."
   (interactive)
       (setq kubel-output
 	  (completing-read
