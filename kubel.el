@@ -684,22 +684,27 @@ FILTER is the filter string."
 ;; mode map
 (defvar kubel-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "RET") 'kubel-get-resource-details)
+    ;; global
     (define-key map (kbd "C") 'kubel-set-context)
     (define-key map (kbd "n") 'kubel-set-namespace)
     (define-key map (kbd "g") 'kubel-mode)
+    (define-key map (kbd "h") 'kubel-help-popup)
+    (define-key map (kbd "F") 'kubel-set-output-format)
+    (define-key map (kbd "R") 'kubel-set-resource)
+    (define-key map (kbd "k") 'kubel-delete-popup)
+    (define-key map (kbd "f") 'kubel-set-filter)
+    (define-key map (kbd "r") 'kubel-rollout-popup)
+
+    ;; based on view
+    (define-key map (kbd "RET") 'kubel-get-resource-details)
     (define-key map (kbd "p") 'kubel-port-forward-pod)
     (define-key map (kbd "l") 'kubel-log-popup)
     (define-key map (kbd "c") 'kubel-copy-popup)
-    (define-key map (kbd "h") 'kubel-help-popup)
-    ;(define-key map (kbd "d") 'kubel-describe-popup)
     (define-key map (kbd "e") 'kubel-exec-pod)
-    (define-key map (kbd "k") 'kubel-delete-popup)
     (define-key map (kbd "j") 'kubel-jab-deployment)
-    (define-key map (kbd "f") 'kubel-set-filter)
-    (define-key map (kbd "F") 'kubel-set-output-format)
-    (define-key map (kbd "r") 'kubel-rollout-popup)
-    (define-key map (kbd "R") 'kubel-set-resource)
+
+    ;; deprecated
+    ;(define-key map (kbd "d") 'kubel-describe-popup)
     map)
   "Keymap for `kubel-mode'.")
 
