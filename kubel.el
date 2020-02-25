@@ -97,6 +97,7 @@
     ("MemoryPressure" . "red")
     ("PIDPressure" . "red")
     ("DiskPressure" . "red")
+    ("RevisionMissing" . "red")
     ("NetworkUnavailable" . "red")
     ("Completed" . "yellow")
     ("CrashLoopBackOff" . "red")
