@@ -179,62 +179,43 @@ VERSION should be a list of (major-version minor-version patch)."
 (defun kubel--populate-list ()
   "Return a list with a tabulated list format and \"tabulated-list-entries\"."
   (let*  ((body (shell-command-to-string (concat (kubel--get-command-prefix) " get " kubel-resource)))
-	  (entrylist (kubel--parse-body body))
-	 )
-    (if (s-starts-with? "No resources found" body)
-	(message "No resources found")
-      )
-    (list (kubel--get-list-format entrylist) (kubel--get-list-entries entrylist))
-    )
-  )
+	      (entrylist (kubel--parse-body body)))
+    (when (s-starts-with? "No resources found" body)
+	  (message "No resources found"))  ;; TODO exception here
+    (list (kubel--get-list-format entrylist) (kubel--get-list-entries entrylist))))
 
 (defun kubel--column-entry (entrylist)
   (lexical-let ((entrylist entrylist))
     (function
      (lambda (colnum)
-       (list (kubel--column-header entrylist colnum) (+ 4 (kubel--column-width entrylist colnum) ) t)
-       )
-
-     )
-
-    )
-  )
+       (list (kubel--column-header entrylist colnum) (+ 4 (kubel--column-width entrylist colnum) ) t)))))
 
 
 (defun kubel--get-list-format (entrylist)
+  "Get the list format.
+
+ENTRYLIST is the output of the parsed body."
     (defun kubel--get-column-entry (colnum)
       (let ((kubel--get-entry (kubel--column-entry entrylist)))
-	(funcall kubel--get-entry colnum)
-	)
-      )
-    (cl-map 'vector #'kubel--get-column-entry (number-sequence 0 (- (kubel--ncols entrylist) 1)) )
-  )
+	(funcall kubel--get-entry colnum)))
+    (cl-map 'vector #'kubel--get-column-entry (number-sequence 0 (- (kubel--ncols entrylist) 1))))
 
 (defun kubel--get-list-entries (entrylist)
-    (mapcar (lambda (x) (list (car x) (vconcat [] x))) (cdr entrylist))
-  )
+  "Get the entries.
+
+ENTRYLIST is the output of the parsed body."
+  (mapcar (lambda (x)
+            (list (car x)
+                  (vconcat [] (mapcar #'kubel--propertize-status x))))
+          (cdr entrylist)))
 
 (defun kubel--parse-body (body)
-  (let ((entrylist (list)))
-    (with-temp-buffer
-      (insert body)
-      (goto-char (point-min))
-      (setq morelines 1)
-      (while morelines
-	(beginning-of-line)
-	(setq firstchar (point))
-	(end-of-line)
-	(setq lastchar (point))
-	(setq theline (mapcar 'kubel--propertize-status (split-string (buffer-substring firstchar lastchar) "[ ]{2,}") ))
-	(if theline
-	  (setq entrylist (append entrylist (list theline )))
-        )
-	(setq morelines (= 0 (forward-line 1)))
-	)
-      )
-    entrylist
-    )   ; (vector (split-string ((temp-file))) )
-  )
+  "Parse the body of kubectl get resource call into a list.
+
+BODY is the raw output of kubectl get resource."
+  (nbutlast (mapcar (lambda (x)
+                      (split-string (replace-regexp-in-string " +" " " x) " "))
+                    (split-string body "\n"))))
 
 
 (defun kubel--ncols (entrylist)
@@ -258,46 +239,15 @@ VERSION should be a list of (major-version minor-version patch)."
   "Return kubel buffer name."
   (format "*kubel (%s) [%s]: %s*" kubel-namespace kubel-context kubel-resource))
 
-;; (defun kubel--extract-pod-line ()
-;;   "Return a vector from the pod line."
-;;   (let ((name (match-string 1))
-;; 	(ready (match-string 2))
-;; 	(status (match-string 3))
-;; 	(restarts (match-string 4))
-;; 	(age (match-string 5)))
-;;     (vector (kubel--propertize-pod-attribute name name)
-;;             (kubel--propertize-pod-attribute name ready)
-;;             (kubel--propertize-status status)
-;;             (kubel--propertize-pod-attribute name restarts)
-;;             (kubel--propertize-pod-attribute name age))))
-
-(defun kubel--propertize-pod-attribute (name attribute)
-  "Return the pod attribute in proper font color based on active filter.
-
-NAME is the pod name.
-ATTRIBUTE is the attribute to propertize."
-  (if (or (equal kubel-pod-filter "") (string-match-p kubel-pod-filter name))
-      attribute
-    (propertize attribute 'font-lock-face '(:foreground "darkgrey"))))
-
 (defun kubel--propertize-status (status)
   "Return the status in proper font color.
 
 STATUS is the pod status string."
-  (let ((pair (cdr (assoc status kubel--status-colors))))
-    (if pair
-        (propertize status 'font-lock-face `(:foreground ,pair))
-      status)))
-
-;; (defun kubel--list-entries ()
-;;   "Create the entries for the service list."
-;;   (let ((temp (list)))
-;;     (with-temp-buffer
-;;       (insert (shell-command-to-string (concat (kubel--get-command-prefix) " get " kubel-resource " --no-headers=true")))
-;;       (goto-char (point-min))
-;;       (while (re-search-forward "^\\([a-z0-9\-]+\\) +\\([0-9]+/[0-9]+\\) +\\(\\w+\\) +\\([0-9]+\\) +\\([0-9a-z]+\\)$" (point-max) t)
-;;         (setq temp (append temp (list (list (match-string 1) (kubel--extract-pod-line)))))))
-;;     temp))
+  (let ((pair (cdr (assoc status kubel--status-colors)))
+        (match (or (equal kubel-pod-filter "") (string-match-p kubel-pod-filter status))))
+    (cond (pair (propertize status 'font-lock-face `(:foreground ,pair)))
+          ((not match) (propertize status 'font-lock-face '(:foreground "darkgrey")))
+          (t status))))
 
 (defun kubel--pop-to-buffer (name)
   "Utility function to pop to buffer or create it.
@@ -767,9 +717,9 @@ FILTER is the filter string."
   (setq mode-name "Kubel")
   (setq major-mode 'kubel-mode)
   (use-local-map kubel-mode-map)
-  (setq entries (kubel--populate-list))
-  (setq tabulated-list-format (car entries))
-  (setq tabulated-list-entries (cadr entries))   ; TODO handle "No resource found"
+  (let ((entries (kubel--populate-list)))
+    (setq tabulated-list-format (car entries))
+    (setq tabulated-list-entries (cadr entries)))   ; TODO handle "No resource found"
   (setq tabulated-list-sort-key kubel--list-sort-key)
   (setq tabulated-list-sort-key nil)
   (tabulated-list-init-header)
