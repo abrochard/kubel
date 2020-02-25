@@ -229,7 +229,7 @@ VERSION should be a list of (major-version minor-version patch)."
 	(setq firstchar (point))
 	(end-of-line)
 	(setq lastchar (point))
-	(setq theline (mapcar 'kubel--propertize-status (split-string (buffer-substring firstchar lastchar) ) ))
+	(setq theline (mapcar 'kubel--propertize-status (split-string (buffer-substring firstchar lastchar) "[ ]{2,}") ))
 	(if theline
 	  (setq entrylist (append entrylist (list theline )))
         )
