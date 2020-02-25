@@ -91,6 +91,8 @@
     ("Healthy" . "green")
     ("Active" . "green")
     ("Ready" . "green")
+    ("True" . "green")
+    ("Unknown" . "orange")
     ("Error" . "red")
     ("MemoryPressure" . "red")
     ("PIDPressure" . "red")
