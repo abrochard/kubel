@@ -189,6 +189,7 @@ VERSION should be a list of (major-version minor-version patch)."
     (list (kubel--get-list-format entrylist) (kubel--get-list-entries entrylist))))
 
 (defun kubel--column-entry (entrylist)
+  "Return a function of colnum to retrieve an entry in a given column for ENTRYLIST."
   (lexical-let ((entrylist entrylist))
     (function
      (lambda (colnum)
