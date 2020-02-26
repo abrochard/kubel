@@ -119,8 +119,8 @@
    "\n" "" (shell-command-to-string "kubectl config current-context"))
   "Current context.  Tries to smart default.")
 
-(defvar kubel-pod-filter ""
-  "Substring filter for pod name.")
+(defvar kubel-resource-filter ""
+  "Substring filter for resource name.")
 
 (defvar kubel-namespace-history '()
   "List of previously used namespaces.")
@@ -225,24 +225,19 @@ BODY is the raw output of kubectl get resource."
 
 (defun kubel--ncols (entrylist)
   "Return the number of columns in ENTRYLIST."
-  (length (car entrylist))
-  )
+  (length (car entrylist)))
 
 (defun kubel--nrows (entrylist)
   "Return the nubmer of rows in ENTRYLIST."
-  (length entrylist)
-  )
-
+  (length entrylist))
 
 (defun kubel--column-header (entrylist colnum)
   "Return the header for a specific COLNUM in ENTRYLIST."
-  (nth colnum (car entrylist))
-  )
+  (nth colnum (car entrylist)))
 
 (defun kubel--column-width (entrylist colnum)
   "Return the width of a specific COLNUM in ENTRYLIST."
-  (seq-max (mapcar (lambda (x) (length (nth colnum x) )) entrylist) )
-  )
+  (seq-max (mapcar (lambda (x) (length (nth colnum x) )) entrylist)))
 
 (defun kubel--buffer-name ()
   "Return kubel buffer name."
@@ -253,7 +248,7 @@ BODY is the raw output of kubectl get resource."
 
 STATUS is the pod status string."
   (let ((pair (cdr (assoc status kubel--status-colors)))
-        (match (or (equal kubel-pod-filter "") (string-match-p kubel-pod-filter status))))
+        (match (or (equal kubel-resource-filter "") (string-match-p kubel-resource-filter status))))
     (cond (pair (propertize status 'font-lock-face `(:foreground ,pair)))
           ((not match) (propertize status 'font-lock-face '(:foreground "darkgrey")))
           (t status))))
@@ -385,8 +380,7 @@ TYPENAME is the resource type/name."
          (buffer-name (format "*kubel - %s - %s*" kubel-resource resource)))
         (if describe
     (kubel--exec buffer-name nil (list "describe" kubel-resource (kubel--get-resource-under-cursor)))
-    (kubel--exec buffer-name nil (list "get" kubel-resource (kubel--get-resource-under-cursor) "-o" kubel-output))
-      )
+    (kubel--exec buffer-name nil (list "get" kubel-resource (kubel--get-resource-under-cursor) "-o" kubel-output)))
     (when (or (string-equal kubel-output "yaml") (transient-args 'kubel-describe-popup))
       (yaml-mode)
       (kubel-yaml-editing-mode))
@@ -486,8 +480,6 @@ ARGS is the arguments list from transient."
 	   '("yaml" "json" "wide" "custom-column=")
 	   ))
   (kubel))
-
-
 
 (defun kubel-port-forward-pod (p)
   "Port forward a pod to your local machine.
@@ -599,7 +591,7 @@ See https://github.com/kubernetes/kubernetes/issues/27081"
 
 FILTER is the filter string."
   (interactive "MFilter: ")
-  (setq kubel-pod-filter filter)
+  (setq kubel-resource-filter filter)
   (kubel-mode))
 
 (defun kubel-rollout-history ()
