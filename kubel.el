@@ -352,6 +352,14 @@ TYPENAME is the resource type/name."
         (rollouts (kubel--list-rollout typename)))
     (completing-read prompt rollouts)))
 
+(defun kubel--is-pod-view ()
+  "Return non-nil if this is the pod view."
+  (equal kubel-resource "Pods"))
+
+(defun kubel--is-deployment-view ()
+  "Return non-nil if this is the pod view."
+  (equal kubel-resource "Deployments"))
+
 ;; interactive
 (define-minor-mode kubel-yaml-editing-mode
   :init-value nil
@@ -580,7 +588,7 @@ P is the port as integer."
 
 See https://github.com/kubernetes/kubernetes/issues/27081"
   (interactive)
-  (let* ((deployment (kubel--select-resource "deployment"))
+  (let* ((deployment (kubel--get-resource-under-cursor))
          (buffer-name (format "*kubel - bouncing - %s*" deployment)))
     (kubel--exec buffer-name nil (list "patch" "deployment" deployment "-p"
 				       (format "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"%s\"}}}}}"
@@ -634,26 +642,28 @@ FILTER is the filter string."
 (define-transient-command kubel-help-popup ()
   "Kubel Menu"
   ["Actions"
+   ;; global
    ("RET" "Resource details" kubel-describe-popup)
    ("C" "Set context" kubel-set-context)
    ("n" "Set namespace" kubel-set-namespace)
    ("g" "Refresh" kubel-mode)
-   ("p" "Port forward" kubel-port-forward-pod)
-   ("l" "Logs" kubel-log-popup)
-   ("c" "Copy" kubel-copy-popup)
-   ;("d" "Describe" kubel-describe-popup)
-   ("e" "Exec" kubel-exec-pod)
-   ("k" "Delete" kubel-delete-popup)
-   ("j" "Jab" kubel-jab-deployment)
-   ("f" "Filter" kubel-set-filter)
    ("F" "Set output format" kubel-set-output-format)
+   ("R" "Set resource" kubel-set-resource)
+   ("k" "Delete" kubel-delete-popup)
+   ("f" "Filter" kubel-set-filter)
    ("r" "Rollout" kubel-rollout-popup)
-   ("R" "Set resource" kubel-set-resource)])
+   ;; based on current view
+   ("p" "Port forward" kubel-port-forward-pod :if kubel--is-pod-view)
+   ("l" "Logs" kubel-log-popup :if kubel--is-pod-view)
+   ("c" "Copy" kubel-copy-popup :if kubel--is-pod-view)
+   ("e" "Exec" kubel-exec-pod :if kubel--is-pod-view)
+   ("j" "Jab" kubel-jab-deployment :if kubel--is-deployment-view)])
 
 ;; mode map
 (defvar kubel-mode-map
   (let ((map (make-sparse-keymap)))
     ;; global
+    (define-key map (kbd "RET") 'kubel-get-resource-details)
     (define-key map (kbd "C") 'kubel-set-context)
     (define-key map (kbd "n") 'kubel-set-namespace)
     (define-key map (kbd "g") 'kubel-mode)
@@ -665,7 +675,6 @@ FILTER is the filter string."
     (define-key map (kbd "r") 'kubel-rollout-history)
 
     ;; based on view
-    (define-key map (kbd "RET") 'kubel-get-resource-details)
     (define-key map (kbd "p") 'kubel-port-forward-pod)
     (define-key map (kbd "l") 'kubel-log-popup)
     (define-key map (kbd "c") 'kubel-copy-popup)
