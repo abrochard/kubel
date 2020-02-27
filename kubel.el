@@ -9,6 +9,8 @@
 ;; published by the Free Software  Foundation; either version 2 of the
 ;; License, or (at your option) any later version.
 
+
+
 ;; This program is distributed in the hope that it will be useful, but
 ;; WITHOUT  ANY  WARRANTY;  without   even  the  implied  warranty  of
 ;; MERCHANTABILITY or FITNESS  FOR A PARTICULAR PURPOSE.   See the GNU
@@ -105,8 +107,7 @@
   "Associative list of status to color.")
 
 (defcustom kubel-output "yaml"
-  "Format for output: json|yaml|wide|custom-columns=..."
-  )
+  "Format for output: json|yaml|wide|custom-columns=...")
 
 (defvar kubel-namespace "default"
   "Current namespace.")
@@ -161,9 +162,7 @@
     (list
      (string-to-number (match-string 1 version-string))
      (string-to-number (match-string 2 version-string))
-     (string-to-number (match-string 3 version-string)))
-  )
-)
+     (string-to-number (match-string 3 version-string)))))
 
 (defun kubel-kubernetes-compatible-p (version)
   "Return TRUE if kubernetes version is greater than or equal to VERSION.
@@ -225,24 +224,20 @@ BODY is the raw output of kubectl get resource."
 
 (defun kubel--ncols (entrylist)
   "Return the number of columns in ENTRYLIST."
-  (length (car entrylist))
-  )
+  (length (car entrylist)))
 
 (defun kubel--nrows (entrylist)
   "Return the nubmer of rows in ENTRYLIST."
-  (length entrylist)
-  )
+  (length entrylist))
 
 
 (defun kubel--column-header (entrylist colnum)
   "Return the header for a specific COLNUM in ENTRYLIST."
-  (nth colnum (car entrylist))
-  )
+  (nth colnum (car entrylist)))
 
 (defun kubel--column-width (entrylist colnum)
   "Return the width of a specific COLNUM in ENTRYLIST."
-  (seq-max (mapcar (lambda (x) (length (nth colnum x) )) entrylist) )
-  )
+  (seq-max (mapcar (lambda (x) (length (nth colnum x) )) entrylist) ))
 
 (defun kubel--buffer-name ()
   "Return kubel buffer name."
