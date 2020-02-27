@@ -562,6 +562,12 @@ FILTER is the filter string."
   (interactive)
   (message "This command has been deprecated, use the R key to select resource instead.\nYou can also checkout the changelog with `M-x kubel-changelog`"))
 
+(defun kubel-quick-edit ()
+  "Quickly edit any resource."
+  (interactive)
+  (kubel--describe-resource
+   (completing-read "Select resource: " kubel-kubernetes-resources-list)))
+
 ;; popups
 
 (define-transient-command kubel-log-popup ()
@@ -607,6 +613,7 @@ FILTER is the filter string."
    ("k" "Delete" kubel-delete-popup)
    ("f" "Filter" kubel-set-filter)
    ("r" "Rollout" kubel-rollout-popup)
+   ("E" "Quick edit" kubel-quick-edit)
    ;; based on current view
    ("p" "Port forward" kubel-port-forward-pod)
    ("l" "Logs" kubel-log-popup)
@@ -628,6 +635,7 @@ FILTER is the filter string."
     (define-key map (kbd "k") 'kubel-delete-popup)
     (define-key map (kbd "f") 'kubel-set-filter)
     (define-key map (kbd "r") 'kubel-rollout-history)
+    (define-key map (kbd "E") 'kubel-quick-edit)
     ;; based on view
     (define-key map (kbd "p") 'kubel-port-forward-pod)
     (define-key map (kbd "l") 'kubel-log-popup)
