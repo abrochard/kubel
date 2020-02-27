@@ -552,6 +552,16 @@ FILTER is the filter string."
   (interactive)
   (kubel--show-rollout-revision kubel-resource (kubel--get-resource-under-cursor)))
 
+(defun kubel-changelog ()
+  "Opens up the changelog."
+  (interactive)
+  (browse-url "https://github.com/abrochard/kubel/blob/master/CHANGELOG.md"))
+
+(defun kubel-deprecated-warning ()
+  "Show a warning to the user to inform of new workflow."
+  (interactive)
+  (message "This command has been deprecated, use the R key to select resource instead.\nYou can also checkout the changelog with `M-x kubel-changelog`"))
+
 ;; popups
 
 (define-transient-command kubel-log-popup ()
@@ -626,7 +636,7 @@ FILTER is the filter string."
     (define-key map (kbd "j") 'kubel-jab-deployment)
 
     ;; deprecated
-    ;; (define-key map (kbd "d") 'kubel-describe-popup)
+    (define-key map (kbd "d") 'kubel-deprecated-warning)
     map)
   "Keymap for `kubel-mode'.")
 
