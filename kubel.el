@@ -317,9 +317,8 @@ DESCRIBE is boolean to describe instead of get resource details"
   (let* ((resource (kubel--select-resource name))
          (buffer-name (format "*kubel - %s - %s*" name resource)))
     (if describe
-	(kubel--exec buffer-name nil (list "describe" name resource))
-        (kubel--exec buffer-name nil (list "get" name "-o" kubel-output resource))
-      )
+	    (kubel--exec buffer-name nil (list "describe" name resource))
+      (kubel--exec buffer-name nil (list "get" name "-o" kubel-output resource)))
     (when (string-equal kubel-output "yaml")
       (yaml-mode)
       (kubel-yaml-editing-mode))
@@ -410,7 +409,9 @@ ARGS is the arg list from transient."
 ARGS is the arguments list from transient."
   (interactive
    (list (transient-args 'kubel-log-popup)))
-  (let* ((pod (kubel--get-resource-under-cursor))
+  (let* ((pod (if (kubel--is-pod-view)
+                  (kubel--get-resource-under-cursor)
+                (kubel--select-resource "Pods")))
          (containers (kubel--get-containers pod))
          (container (if (equal (length containers) 1)
                         (car containers)
@@ -422,18 +423,22 @@ ARGS is the arguments list from transient."
     (kubel--exec buffer-name async
                  (append '("logs") (kubel--default-tail-arg args) (list pod container)))))
 
-(defun kubel-copy-pod-name ()
+(defun kubel-copy-resource-name ()
   "Copy the name of the pod under the cursor."
   (interactive)
   (kill-new (kubel--get-resource-under-cursor))
-  (message "Pod name copied to kill-ring"))
+  (message "Resource name copied to kill-ring"))
 
 (defun kubel-copy-log-command ()
   "Copy the streaming log command of the pod under the cursor."
   (interactive)
-  (kill-new (concat (kubel--get-command-prefix)
-                    " logs -f --tail=" kubel-log-tail-n " "
-                    (kubel--get-resource-under-cursor)))
+  (kill-new
+   (format "%s logs -f --tail=%s %s"
+           (kubel--get-command-prefix)
+           kubel-log-tail-n
+           (if (kubel--is-pod-view)
+               (kubel--get-resource-under-cursor)
+             (kubel--select-resource "Pods"))))
   (message "Log command copied to kill-ring"))
 
 (defun kubel-copy-command-prefix ()
@@ -495,70 +500,11 @@ ARGS is the arguments list from transient."
 P is the port as integer."
   (interactive "nPort: ")
   (let* ((port (format "%s" p))
-         (pod (kubel--get-resource-under-cursor))
+         (pod (if (kubel--is-pod-view)
+                  (kubel--get-resource-under-cursor)
+                (kubel--select-resource "Pods")))
          (buffer-name (format "*kubel - port-forward - %s:%s*" pod port)))
-    ;; TODO error message if resource is not pod
     (kubel--exec buffer-name t (list "port-forward" pod (format "%s:%s" port port)))))
-
-;; Obsoleted by kubel-describe-resource
-;; TODO test & remove
-;; (defun kubel-describe-ingress (&optional arg)
-;;   "Show the ingress details.
-
-;; ARG is the optional param to see yaml."
-;;   (interactive "P")
-;;   (if (or arg (transient-args 'kubel-describe-popup))
-;;       (kubel--describe-resource "ingress" t)
-;;     (kubel--describe-resource "ingress")))
-
-
-;; (defun kubel-describe-service (&optional arg)
-;;   "Descibe a service.
-
-;; ARG is the optional param to see yaml."
-;;   (interactive "P")
-;;   (if (or arg (transient-args 'kubel-describe-popup))
-;;       (kubel--describe-resource "service" t)
-;;     (kubel--describe-resource "service")))
-
-;; (defun kubel-describe-configmaps (&optional arg)
-;;   "Describe a configmap.
-
-;; ARG is the optional param to see yaml."
-;;   (interactive "P")
-;;   (if (or arg (transient-args 'kubel-describe-popup))
-;;       (kubel--describe-resource "configmap" t)
-;;     (kubel--describe-resource "configmap")))
-
-;; (defun kubel-describe-deployment (&optional arg)
-;;   "Describe a deployment.
-
-;; ARG is the optional param to see yaml."
-;;   (interactive "P")
-;;   (if (or arg (transient-args 'kubel-describe-popup))
-;;       (kubel--describe-resource "deployment" t)
-;;     (kubel--describe-resource "deployment")))
-
-;; (defun kubel-describe-job (&optional arg)
-;;   "Describe a job.
-
-;; ARG is the optional param to see yaml."
-;;   (interactive "P")
-;;   (if (or arg (transient-args 'kubel-describe-popup))
-;;       (kubel--describe-resource "job" t)
-;;     (kubel--describe-resource "job")))
-
-;; deprecated. will remove soon
-;; (defun kubel-exec-pod ()
-;;   "Kubectl exec into the pod under the cursor."
-;;   (interactive)
-;;   (let* ((pod (kubel--get-pod-under-cursor))
-;;          (containers (kubel--get-containers pod))
-;;          (container (if (equal (length containers) 1)
-;;                         (car containers)
-;;                       (completing-read "Select container: " containers))))
-;;     (eshell)
-;;     (insert (format "%s exec -it %s -c %s /bin/sh" (kubel--get-command-prefix) pod container))))
 
 (defun kubel-exec-pod ()
   "Setup a TRAMP to exec into the pod under the cursor."
@@ -571,7 +517,9 @@ P is the port as integer."
                  (tramp-login-args         (,(kubel--get-context-namespace) ("exec" "-it") ("-u" "%u") ("%h") ("sh")))
                  (tramp-remote-shell       "sh")
                  (tramp-remote-shell-args  ("-i" "-c")))) ;; add the current context/namespace to tramp methods
-  (find-file (format "/kubectl:%s:/" (kubel--get-resource-under-cursor))))
+  (find-file (format "/kubectl:%s:/" (if (kubel--is-pod-view)
+                                         (kubel--get-resource-under-cursor)
+                                       (kubel--select-resource "Pods")))))
 
 (defun kubel-delete-resource ()
   "Kubectl delete resource under cursor."
@@ -588,7 +536,10 @@ P is the port as integer."
 
 See https://github.com/kubernetes/kubernetes/issues/27081"
   (interactive)
-  (let* ((deployment (kubel--get-resource-under-cursor))
+  (let* ((deployment
+          (if (kubel--is-deployment-view)
+              (kubel--get-resource-under-cursor)
+            (kubel--select-resource "Deployments")))
          (buffer-name (format "*kubel - bouncing - %s*" deployment)))
     (kubel--exec buffer-name nil (list "patch" "deployment" deployment "-p"
 				       (format "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"%s\"}}}}}"
@@ -621,7 +572,7 @@ FILTER is the filter string."
 (define-transient-command kubel-copy-popup ()
   "Kubel Copy Menu"
   ["Actions"
-   ("c" "Copy pod name" kubel-copy-pod-name)
+   ("c" "Copy pod name" kubel-copy-resource-name)
    ("l" "Copy pod log command" kubel-copy-log-command)
    ("p" "Copy command prefix" kubel-copy-command-prefix)])
 
@@ -653,11 +604,11 @@ FILTER is the filter string."
    ("f" "Filter" kubel-set-filter)
    ("r" "Rollout" kubel-rollout-popup)
    ;; based on current view
-   ("p" "Port forward" kubel-port-forward-pod :if kubel--is-pod-view)
-   ("l" "Logs" kubel-log-popup :if kubel--is-pod-view)
-   ("c" "Copy" kubel-copy-popup :if kubel--is-pod-view)
-   ("e" "Exec" kubel-exec-pod :if kubel--is-pod-view)
-   ("j" "Jab" kubel-jab-deployment :if kubel--is-deployment-view)])
+   ("p" "Port forward" kubel-port-forward-pod)
+   ("l" "Logs" kubel-log-popup)
+   ("c" "Copy" kubel-copy-popup)
+   ("e" "Exec" kubel-exec-pod)
+   ("j" "Jab" kubel-jab-deployment)])
 
 ;; mode map
 (defvar kubel-mode-map
@@ -673,7 +624,6 @@ FILTER is the filter string."
     (define-key map (kbd "k") 'kubel-delete-popup)
     (define-key map (kbd "f") 'kubel-set-filter)
     (define-key map (kbd "r") 'kubel-rollout-history)
-
     ;; based on view
     (define-key map (kbd "p") 'kubel-port-forward-pod)
     (define-key map (kbd "l") 'kubel-log-popup)
