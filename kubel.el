@@ -105,8 +105,7 @@
   "Associative list of status to color.")
 
 (defcustom kubel-output "yaml"
-  "Format for output: json|yaml|wide|custom-columns=..."
-  )
+  "Format for output: json|yaml|wide|custom-columns=...")
 
 (defvar kubel-namespace "default"
   "Current namespace.")
@@ -151,8 +150,7 @@
 	"Ingresses"
 	"ClusterRoles"
 	"RoleBindings"
-	"Roles"
-    ))
+	"Roles"))
 
 (defun kubel-kubernetes-version ()
   "Return a list with (major-version minor-version patch)."
@@ -161,9 +159,7 @@
     (list
      (string-to-number (match-string 1 version-string))
      (string-to-number (match-string 2 version-string))
-     (string-to-number (match-string 3 version-string)))
-  )
-)
+     (string-to-number (match-string 3 version-string)))))
 
 (defun kubel-kubernetes-compatible-p (version)
   "Return TRUE if kubernetes version is greater than or equal to VERSION.
@@ -176,8 +172,7 @@ VERSION should be a list of (major-version minor-version patch)."
     (and
      (<= (nth 0 version) kubernetes-major-version)
      (or (<= (nth 1 version) kubernetes-minor-version) (< (nth 0 version) kubernetes-major-version))
-     (or (<= (nth 2 version) kubernetes-patch-version) (< (nth 1 version) kubernetes-minor-version))
-     )))
+     (or (<= (nth 2 version) kubernetes-patch-version) (< (nth 1 version) kubernetes-minor-version)))))
 
 
 (defun kubel--populate-list ()
@@ -200,10 +195,10 @@ VERSION should be a list of (major-version minor-version patch)."
   "Get the list format.
 
 ENTRYLIST is the output of the parsed body."
-    (defun kubel--get-column-entry (colnum)
-      (let ((kubel--get-entry (kubel--column-entry entrylist)))
-	(funcall kubel--get-entry colnum)))
-    (cl-map 'vector #'kubel--get-column-entry (number-sequence 0 (- (kubel--ncols entrylist) 1))))
+  (defun kubel--get-column-entry (colnum)
+    (let ((kubel--get-entry (kubel--column-entry entrylist)))
+	  (funcall kubel--get-entry colnum)))
+  (cl-map 'vector #'kubel--get-column-entry (number-sequence 0 (- (kubel--ncols entrylist) 1))))
 
 (defun kubel--get-list-entries (entrylist)
   "Get the entries.
@@ -385,9 +380,9 @@ TYPENAME is the resource type/name."
   (interactive "P")
   (let* ((resource (kubel--get-resource-under-cursor))
          (buffer-name (format "*kubel - %s - %s*" kubel-resource resource)))
-        (if describe
-    (kubel--exec buffer-name nil (list "describe" kubel-resource (kubel--get-resource-under-cursor)))
-    (kubel--exec buffer-name nil (list "get" kubel-resource (kubel--get-resource-under-cursor) "-o" kubel-output)))
+    (if describe
+        (kubel--exec buffer-name nil (list "describe" kubel-resource (kubel--get-resource-under-cursor)))
+      (kubel--exec buffer-name nil (list "get" kubel-resource (kubel--get-resource-under-cursor) "-o" kubel-output)))
     (when (or (string-equal kubel-output "yaml") (transient-args 'kubel-describe-popup))
       (yaml-mode)
       (kubel-yaml-editing-mode))
@@ -475,9 +470,9 @@ ARGS is the arguments list from transient."
   (interactive)
   (let ((current-buffer-name (kubel--buffer-name))
         (resource-list
-          (if (kubel-kubernetes-compatible-p '(1 13 3))
-			  (split-string (shell-command-to-string "kubectl api-resources -o name --no-headers=true") "\n")
-			kubel-kubernetes-resources-list)))
+         (if (kubel-kubernetes-compatible-p '(1 13 3))
+			 (split-string (shell-command-to-string "kubectl api-resources -o name --no-headers=true") "\n")
+		   kubel-kubernetes-resources-list)))
     (setq kubel-resource
 	      (completing-read "Select resource: " resource-list))
     (when (get-buffer current-buffer-name) ;; kill the current buffer to avoid confusion
@@ -487,11 +482,10 @@ ARGS is the arguments list from transient."
 (defun kubel-set-output-format ()
   "Set output format of kubectl."
   (interactive)
-      (setq kubel-output
-	  (completing-read
-	   "Set output format: "
-	   '("yaml" "json" "wide" "custom-column=")
-	   ))
+  (setq kubel-output
+	    (completing-read
+	     "Set output format: "
+	     '("yaml" "json" "wide" "custom-column=")))
   (kubel))
 
 (defun kubel-port-forward-pod (p)
@@ -542,8 +536,8 @@ See https://github.com/kubernetes/kubernetes/issues/27081"
             (kubel--select-resource "Deployments")))
          (buffer-name (format "*kubel - bouncing - %s*" deployment)))
     (kubel--exec buffer-name nil (list "patch" "deployment" deployment "-p"
-				       (format "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"%s\"}}}}}"
-					       (round (time-to-seconds)))))))
+				                       (format "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"%s\"}}}}}"
+					                           (round (time-to-seconds)))))))
 
 (defun kubel-set-filter (filter)
   "Set the pod filter.
@@ -632,7 +626,7 @@ FILTER is the filter string."
     (define-key map (kbd "j") 'kubel-jab-deployment)
 
     ;; deprecated
-    ;(define-key map (kbd "d") 'kubel-describe-popup)
+    ;; (define-key map (kbd "d") 'kubel-describe-popup)
     map)
   "Keymap for `kubel-mode'.")
 
