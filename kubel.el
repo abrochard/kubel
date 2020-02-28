@@ -221,15 +221,32 @@ ENTRYLIST is the output of the parsed body."
   "Parse the body of kubectl get resource call into a list.
 
 BODY is the raw output of kubectl get resource."
-  (nbutlast (mapcar #'kubel--parse-line
-                    (split-string body "\n"))))
+  (let* ((bodylist (split-string body "\n") )
+	 (header (split-string (replace-regexp-in-string " +" " " (car bodylist))))
+	 (headercols (length header))
+	 )
+    (message (concat "hader: " (car header)))
+    (message (concat "headercols: " (number-to-string headercols )))
+    (defun parse-line (theline)
+      (let ((parse (kubel--parse-line headercols)))
+	(funcall parse theline)))
 
-(defun kubel--parse-line (line)
-  "Parse a LINE from the body.
+    (cons header (nbutlast (mapcar #'parse-line
+				   (cdr bodylist))))))
 
-Assume sequences of at least 25 spaces are missing values."
- (let ((case-fold-search nil))
-  (split-string (replace-regexp-in-string " +" " " (replace-regexp-in-string "\\([[:lower:][:digit:]]\\) \\{25,\\}" "\\1 - " line)) " ")))
+(defun kubel--parse-line (ncols)
+  (lexical-let ((ncols ncols))
+    (function
+     (lambda (line)
+       (message (concat "line: " line ))
+       (message (concat "ncols: " (number-to-string ncols) ))
+       (let
+	   ((parsed (split-string (replace-regexp-in-string " +" " " line)))
+	    )
+	 (if (= (length parsed) ncols)
+	     parsed
+	   (split-string (replace-regexp-in-string " +" " " (replace-regexp-in-string "\\([[:lower:][:digit:]]\\) \\{5,\\}" "\\1 - " line)) " "))
+	 )))))
 
 (defun kubel--ncols (entrylist)
   "Return the number of columns in ENTRYLIST."
