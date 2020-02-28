@@ -226,9 +226,9 @@ BODY is the raw output of kubectl get resource."
 (defun kubel--parse-line (line)
   "Parse a LINE from the body.
 
-Assume sequences of at least 5 spaces are missing values."
+Assume sequences of at least 15 spaces are missing values."
  (let ((case-fold-search nil))
-  (split-string (replace-regexp-in-string " +" " " (replace-regexp-in-string "\\([[:lower:][:digit:]]\\) \\{5,\\}" "\\1 - " line)) " ")))
+  (split-string (replace-regexp-in-string " +" " " (replace-regexp-in-string "\\([[:lower:][:digit:]]\\) \\{15,\\}" "\\1 - " line)) " ")))
 
 (defun kubel--ncols (entrylist)
   "Return the number of columns in ENTRYLIST."
