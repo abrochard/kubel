@@ -324,7 +324,7 @@ DESCRIBE is boolean to describe instead of get resource details"
     (when (string-equal kubel-output "yaml")
       (yaml-mode)
       (kubel-yaml-editing-mode))
-    (beginning-of-buffer)))
+    (goto-char (point-min))))
 
 (defun kubel--show-rollout-revision (type name)
   "Show a specific revision of a certain resource.
@@ -336,7 +336,7 @@ NAME is the resource name."
          (buffer-name (format "*kubel - rollout - %s - %s*" typename revision)))
     (kubel--exec buffer-name nil
                  (list "rollout" "history" typename (format "--revision=%s" revision)))
-    (beginning-of-buffer)))
+    (goto-char (point-min))))
 
 (defun kubel--list-rollout (typename)
   "Return a list of revisions with format '%number   %cause'.
@@ -393,7 +393,7 @@ TYPENAME is the resource type/name."
     (when (or (string-equal kubel-output "yaml") (transient-args 'kubel-describe-popup))
       (yaml-mode)
       (kubel-yaml-editing-mode))
-    (beginning-of-buffer)))
+    (goto-char (point-min))))
 
 
 (defun kubel--default-tail-arg (args)
