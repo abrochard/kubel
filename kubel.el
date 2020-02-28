@@ -26,7 +26,7 @@
 ;; Keywords: kubernetes k8s tools processes
 ;; URL: https://github.com/abrochard/kubel
 ;; License: GNU General Public License >= 3
-;; Package-Requires: ((transient "0.1.0") (emacs "25.3"))
+;; Package-Requires: ((transient "0.1.0") (emacs "25.3") (dash "2.17.0")
 
 ;;; Commentary:
 
@@ -75,6 +75,7 @@
 ;;; Code:
 
 (require 'transient)
+(require 'dash)
 
 (defgroup kubel nil "Cusomisation group for kubel."
   :group 'extensions)
@@ -221,32 +222,24 @@ ENTRYLIST is the output of the parsed body."
   "Parse the body of kubectl get resource call into a list.
 
 BODY is the raw output of kubectl get resource."
-  (let* ((bodylist (split-string body "\n") )
-	 (header (split-string (replace-regexp-in-string " +" " " (car bodylist))))
-	 (headercols (length header))
-	 )
-    (message (concat "hader: " (car header)))
-    (message (concat "headercols: " (number-to-string headercols )))
-    (defun parse-line (theline)
-      (let ((parse (kubel--parse-line headercols)))
-	(funcall parse theline)))
+  (let* ((lines (nbutlast (split-string body "\n")))
+         (header (car lines))
+         (cols (split-string header))
+         (start-pos (mapcar (lambda (x) (string-match x header)) cols))
+         (end-pos (delete 0 (append start-pos (list (length header)))))
+         (position (-zip-with 'cons start-pos end-pos))
+         (parse-line (lambda (line)
+                       (mapcar (lambda (pos)
+                                 (kubel--extract-value (substring-no-properties line (car pos) (- (cdr pos) 1))))
+                               position))))
+    (mapcar parse-line lines)))
 
-    (cons header (nbutlast (mapcar #'parse-line
-				   (cdr bodylist))))))
-
-(defun kubel--parse-line (ncols)
-  (lexical-let ((ncols ncols))
-    (function
-     (lambda (line)
-       (message (concat "line: " line ))
-       (message (concat "ncols: " (number-to-string ncols) ))
-       (let
-	   ((parsed (split-string (replace-regexp-in-string " +" " " line)))
-	    )
-	 (if (= (length parsed) ncols)
-	     parsed
-	   (split-string (replace-regexp-in-string " +" " " (replace-regexp-in-string "\\([[:lower:][:digit:]]\\) \\{5,\\}" "\\1 - " line)) " "))
-	 )))))
+(defun kubel--extract-value (str)
+  "Extract value from STR.
+If it's just white space, return -, else trim space."
+  (if (string-match "^ +$" str)
+      "-"
+    (replace-regexp-in-string " +" "" str)))
 
 (defun kubel--ncols (entrylist)
   "Return the number of columns in ENTRYLIST."
