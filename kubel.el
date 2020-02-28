@@ -103,6 +103,7 @@
     ("PIDPressure" . "red")
     ("DiskPressure" . "red")
     ("RevisionMissing" . "red")
+    ("RevisionFailed" . "red")
     ("NetworkUnavailable" . "red")
     ("Completed" . "yellow")
     ("CrashLoopBackOff" . "red")
