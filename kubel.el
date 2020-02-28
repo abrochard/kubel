@@ -76,6 +76,8 @@
 
 (require 'transient)
 
+(defgroup kubel nil "Cusomisation group for kubel.")
+
 (defvar kubel--list-format
   [("Name" 50 t)
    ("Ready" 10 t)
@@ -107,7 +109,9 @@
   "Associative list of status to color.")
 
 (defcustom kubel-output "yaml"
-  "Format for output: json|yaml|wide|custom-columns=...")
+  "Format for output: json|yaml|wide|custom-columns=..."
+  :type 'string
+  :group 'kubel)
 
 (defvar kubel-namespace "default"
   "Current namespace.")
