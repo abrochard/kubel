@@ -76,7 +76,8 @@
 
 (require 'transient)
 
-(defgroup kubel nil "Cusomisation group for kubel.")
+(defgroup kubel nil "Cusomisation group for kubel."
+  :group 'extensions)
 
 (defvar kubel--list-format
   [("Name" 50 t)
