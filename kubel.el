@@ -226,20 +226,23 @@ BODY is the raw output of kubectl get resource."
          (header (car lines))
          (cols (split-string header))
          (start-pos (mapcar (lambda (x) (string-match x header)) cols))
-         (end-pos (delete 0 (append start-pos (list (length header)))))
+         (end-pos (delete 0 (append start-pos '("end"))))
          (position (-zip-with 'cons start-pos end-pos))
          (parse-line (lambda (line)
                        (mapcar (lambda (pos)
-                                 (kubel--extract-value (substring-no-properties line (car pos) (- (cdr pos) 1))))
+                                 (kubel--extract-value line (car pos) (cdr pos)))
                                position))))
     (mapcar parse-line lines)))
 
-(defun kubel--extract-value (str)
-  "Extract value from STR.
-If it's just white space, return -, else trim space."
-  (if (string-match "^ +$" str)
-      "-"
-    (replace-regexp-in-string " +" "" str)))
+(defun kubel--extract-value (line min max)
+  "Extract value from LINE between MIN and MAX.
+If it's just white space, return -, else trim space.
+If MAX is the end of the line, dynamically adjust."
+  (let* ((maxx (if (equal max "end") (length line) max))
+         (str (substring-no-properties line min maxx)))
+    (if (string-match "^ +$" str)
+        "-"
+      (replace-regexp-in-string " +" "" str))))
 
 (defun kubel--ncols (entrylist)
   "Return the number of columns in ENTRYLIST."
