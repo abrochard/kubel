@@ -5,18 +5,18 @@
 Emacs extension for controlling Kubernetes with limited permissions.
 
 ## Features
-This is mostly pod management for now. More may come.
+We now support managing pretty much any resource!
 
 - switch context and namespace
-- show pods
-- get pod details
+- show any resource (pods/services/deployments/etc)
+- highlight a resource by name
+- copy resource name to clipboard
+- show and edit resource details
+- show rollout history for a resource
+- delete a resource
 - tail container logs (possibly with `-f` follow flag)
-- copy pod name to clipboard
 - copy container log command to clipboard
 - port forward a pod to your localhost
-- describe and live edit a resource (deployment,service,job,ingress,configmap)
-- show rollout history for a resource
-- highlight a pod by name
 - exec into a pod using tramp
 
 ## Installation
@@ -41,43 +41,46 @@ Note that namespace will autocomplete but not context,
 this is because I interact with kubernetes through a user who
 does not have permissions to list namespaces.
 
+To switch to showing a different resource, use the `R` command or
+```
+M-x kubel-set-resource
+```
+This will let you select a resource and re-display the kubel buffer.
+
 ## Shortcuts
 
-On the kubel screen, place your cursor on the pod
+On the kubel screen, place your cursor on a resource
 ```
-enter => get pod details
+enter => get resource details
 h => help popup
 C => set context
 n => set namespace
-g => refresh pods
-p => port forward pod
-e => exec into pod
-d => describe popup
+R => set resource
+F => set output format
+g => refresh
+f => set a substring filter for resource name
+E => quick edit any resource
+r => see the rollout history for resource
 l => log popup
 c => copy popup
-k => delete pod
+k => delete popup
+e => exec into pod
+p => port forward pod
 j => jab deployment to force rolling update
-f => set a substring filter for pod name
-r => see the rollout history for resource
 ```
 
-# Editing a resource
+## Editing a resource
 
 After describing a resource in YAML format, you can edit the buffer and hit `C-c C-c` to apply your changes.
 
-For example, if you want to edit a deployment, you can hit the key sequence `d -y d`, then select your deployment, edit the buffer, and hit `C-c C-c` to apply.
+For example, if you want to edit a deployment, you can switch the resource with `R` and select "Deployments", then press return with the cursor on the row you wish to edit, edit the buffer, and hit `C-c C-c` to apply.
+
+Alternatively, you can hit `E` to then select the resource type and the resource name of what you want to edit.
 
 ## Customize
 
 By default, kubel log tails from the last 100 lines, you can change the `kubel-log-tail-n` variable to set another line number.
 
+## Releases
 
-## TODO
-- [ ] HPA
-- [ ] Endpoints
-- [ ] Accounts
-- [ ] Secrets
-- [ ] logs for previous instance
-- [ ] logs for multiple pods
-- [ ] top po command + sort by usage
-- [ ] rollback
+See the [CHANGELOG.md](CHANGELOG.md) for the list of changes and maybe upcoming features.

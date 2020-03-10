@@ -31,7 +31,6 @@
 ;;; Commentary:
 
 ;; Emacs extension for controlling Kubernetes with limited permissions.
-;; Mostly focuses on pod management for now.
 
 ;;; Usage:
 
@@ -47,26 +46,33 @@
 ;; Note that namespace will autocomplete but not context,
 ;; this is because I interact with kubernetes through a user who
 ;; does not have permissions to list namespaces.
+;;
+;; To switch to showing a different resource, use the `R` command or
+;;
+;; M-x kubel-set-resource
+;;
+;; This will let you select a resource and re-display the kubel buffer.
 
 ;;; Shortcuts:
 
-;; On the kubel screen, place your cursor on the pod
+;; On the kubel screen, place your cursor on a resource
 ;;
-;; enter => get pod details
+;; enter => get resource details
 ;; h => help popup
 ;; C => set context
 ;; n => set namespace
-;; g => refresh pods
-;; p => port forward pod
-;; e => exec into pod
-;; d => describe popup
+;; R => set resource
+;; F => set output format
+;; g => refresh
+;; f => set a substring filter for resource name
+;; E => quick edit any resource
+;; r => see the rollout history for resource
 ;; l => log popup
 ;; c => copy popup
-;; k => delete pod
+;; k => delete popup
+;; e => exec into pod
+;; p => port forward pod
 ;; j => jab deployment to force rolling update
-;; f => set a substring filter for pod name
-;; r => see the rollout history for resource
-;;
 
 ;;; Customize:
 
@@ -155,6 +161,7 @@
 	"ReplicaSets"
 	"StatefulSets"
 	"Jobs"
+    "hpa"
 	"Images"
 	"Ingresses"
 	"ClusterRoles"
