@@ -242,7 +242,7 @@ If MAX is the end of the line, dynamically adjust."
          (str (substring-no-properties line min maxx)))
     (if (string-match "^ +$" str)
         "-"
-      (replace-regexp-in-string " +" "" str))))
+      (string-trim str))))
 
 (defun kubel--ncols (entrylist)
   "Return the number of columns in ENTRYLIST."
