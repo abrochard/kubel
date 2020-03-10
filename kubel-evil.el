@@ -71,22 +71,24 @@
 (define-transient-command kubel-evil-help-popup ()
   "Kubel Evil Menu"
   ["Actions"
-   ("ENTER" "Pod details" kubel-get-pod-details)
+   ("RET" "Pod details" kubel-describe-popup)
    ("C" "Set Context" kubel-set-context)
    ("n" "Set namespace" kubel-set-namespace)
    ("g" "Refresh" kubel-mode)
    ("p" "Port forward" kubel-port-forward-pod)
    ("l" "Logs" kubel-log-popup)
    ("c" "Copy" kubel-copy-popup)
-   ("o" "Describe" kubel-describe-popup)
+ ;  ("o" "Describe" kubel-describe-popup)
    ("e" "Exec" kubel-exec-pod)
+   ("F" "Output format" kubel-set-output-format)
    ("d" "Delete" kubel-delete-popup)
-   ("a" "Jab" kubel-jab-deployment)])
+   ("a" "Jab" kubel-jab-deployment)
+   ("R" "Set Resource" kubel-set-resource)])
 
 (evil-set-initial-state 'kubel-mode 'motion)
 
 (evil-define-key 'motion kubel-evil-mode-map
-  (kbd "RET") #'kubel-get-pod-details
+  (kbd "RET") #'kubel-get-resource-details
   (kbd "C") #'kubel-set-context
   (kbd "n") #'kubel-set-namespace
   (kbd "g") #'kubel-mode
@@ -94,9 +96,11 @@
   (kbd "l") #'kubel-log-popup
   (kbd "c") #'kubel-copy-popup
   (kbd "h") #'kubel-evil-help-popup
-  (kbd "o") #'kubel-describe-popup
+  ;(kbd "o") #'kubel-describe-popup
   (kbd "e") #'kubel-exec-pod
+  (kbd "F") #'kubel-set-output-format
   (kbd "d") #'kubel-delete-popup
+  (kbd "R") #'kubel-set-resource
   (kbd "a") #'kubel-jab-deployment)
 
 (provide 'kubel-evil)
