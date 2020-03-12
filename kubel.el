@@ -595,7 +595,7 @@ See https://github.com/kubernetes/kubernetes/issues/27081"
 FILTER is the filter string."
   (interactive "MFilter: ")
   (setq kubel-resource-filter filter)
-  (kubel-mode))
+  (kubel))
 
 (defun kubel--jump-to-highlight (init search reset)
   "Base function to jump to highlight.
@@ -686,7 +686,7 @@ RESET is to be called if the search is nil after the first attempt."
    ("RET" "Resource details" kubel-describe-popup)
    ("C" "Set context" kubel-set-context)
    ("n" "Set namespace" kubel-set-namespace)
-   ("g" "Refresh" kubel-mode)
+   ("g" "Refresh" kubel)
    ("F" "Set output format" kubel-set-output-format)
    ("R" "Set resource" kubel-set-resource)
    ("k" "Delete" kubel-delete-popup)
