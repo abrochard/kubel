@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file.
 - top po command + sort by usage
 - safe way to help with rollbacks?
 
-## [2.0.0] - 2020-03-XX
+## [2.0.0] - 2020-03-12
 ### Added
 - show any resource with some color coding
 - resource selector with kubectl version awareness
