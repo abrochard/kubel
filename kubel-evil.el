@@ -34,11 +34,13 @@
 
 ;; On the kubel screen, place your cursor on the pod
 ;;
-;; enter => get pod details
+;; enter => get resource details
 ;; h => help popup
 ;; C => set context
 ;; n => set namespace
+;; R => set resource
 ;; g => refresh pods
+;; E => quick edit
 ;; p => port forward pod
 ;; e => exec into pod
 ;; o => describe popup
@@ -78,7 +80,7 @@
    ("p" "Port forward" kubel-port-forward-pod)
    ("l" "Logs" kubel-log-popup)
    ("c" "Copy" kubel-copy-popup)
- ;  ("o" "Describe" kubel-describe-popup)
+   ("E" "Quick edit" kubel-quick-edit)
    ("e" "Exec" kubel-exec-pod)
    ("F" "Output format" kubel-set-output-format)
    ("d" "Delete" kubel-delete-popup)
@@ -96,7 +98,7 @@
   (kbd "l") #'kubel-log-popup
   (kbd "c") #'kubel-copy-popup
   (kbd "h") #'kubel-evil-help-popup
-  ;(kbd "o") #'kubel-describe-popup
+  (kbd "E") #'kubel-quick-edit
   (kbd "e") #'kubel-exec-pod
   (kbd "F") #'kubel-set-output-format
   (kbd "d") #'kubel-delete-popup
