@@ -6,6 +6,8 @@ Emacs extension for controlling Kubernetes with limited permissions.
 
 ![screenshot](screenshot.png)
 
+You can [watch how kubel started](https://www.youtube.com/watch?v=w3krYEeqnyk) or [read about it](https://gist.github.com/abrochard/dd610fc4673593b7cbce7a0176d897de).
+
 ## Features
 We now support managing pretty much any resource!
 
