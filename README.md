@@ -4,6 +4,8 @@
 
 Emacs extension for controlling Kubernetes with limited permissions.
 
+![screenshot](screenshot.png)
+
 ## Features
 We now support managing pretty much any resource!
 
