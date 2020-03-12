@@ -65,6 +65,8 @@
 ;; F => set output format
 ;; g => refresh
 ;; f => set a substring filter for resource name
+;; M-n => jump to the next highlighted resource
+;; M-p => jump to previous highlighted resource
 ;; E => quick edit any resource
 ;; r => see the rollout history for resource
 ;; l => log popup
@@ -580,6 +582,35 @@ FILTER is the filter string."
   (setq kubel-resource-filter filter)
   (kubel-mode))
 
+(defun kubel--jump-to-highlight (init search reset)
+  "Base function to jump to highlight.
+
+INIT is to be called before searching.
+SEARCH is to apply the search and can be repeated safely.
+RESET is to be called if the search is nil after the first attempt."
+  (unless (equal kubel-resource-filter "")
+    (funcall init)
+    (unless (funcall search)
+      (funcall reset)
+      (funcall search))
+    (beginning-of-line)))
+
+(defun kubel-jump-to-next-highlight ()
+  "Jump to the next hightlighted resrouce."
+  (interactive)
+  (kubel--jump-to-highlight
+   #'end-of-line
+   (lambda () (re-search-forward kubel-resource-filter (point-max) t))
+   #'beginning-of-buffer))
+
+(defun kubel-jump-to-previous-highlight ()
+  "Jump to the previou highlighted resrouce."
+  (interactive)
+  (kubel--jump-to-highlight
+   #'beginning-of-line
+   (lambda () (re-search-backward kubel-resource-filter (point-min) t))
+   #'end-of-buffer))
+
 (defun kubel-rollout-history ()
   "See rollout history for resource under cursor."
   (interactive)
@@ -645,6 +676,8 @@ FILTER is the filter string."
    ("R" "Set resource" kubel-set-resource)
    ("k" "Delete" kubel-delete-popup)
    ("f" "Filter" kubel-set-filter)
+   ("M-n" "Next highlight" kubel-jump-to-next-highlight)
+   ("M-p" "Previous highlight" kubel-jump-to-previous-highlight)
    ("r" "Rollout" kubel-rollout-popup)
    ("E" "Quick edit" kubel-quick-edit)
    ;; based on current view
@@ -669,6 +702,8 @@ FILTER is the filter string."
     (define-key map (kbd "f") 'kubel-set-filter)
     (define-key map (kbd "r") 'kubel-rollout-history)
     (define-key map (kbd "E") 'kubel-quick-edit)
+    (define-key map (kbd "M-n") 'kubel-jump-to-next-highlight)
+    (define-key map (kbd "M-p") 'kubel-jump-to-previous-highlight)
     ;; based on view
     (define-key map (kbd "p") 'kubel-port-forward-pod)
     (define-key map (kbd "l") 'kubel-log-popup)

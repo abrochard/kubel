@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file.
 - top po command + sort by usage
 - safe way to help with rollbacks?
 
-## [2.0.0] - 2020-03-10
+## [2.0.0] - 2020-03-XX
 ### Added
 - show any resource with some color coding
 - resource selector with kubectl version awareness
@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file.
 - quick edit any resource from any context
 - can set output format
 - can delete any resource
+- jump to next and previous highlighted resource shortcuts
 
 ### Changed
 - limited resource editing capability to work with the resource selecting capability
