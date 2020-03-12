@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file.
 - can set output format
 - can delete any resource
 - jump to next and previous highlighted resource shortcuts
+- save line position before refreshing so cursor doesn't jump back to top
 
 ### Changed
 - limited resource editing capability to work with the resource selecting capability

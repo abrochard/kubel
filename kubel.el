@@ -138,6 +138,9 @@
 (defvar kubel-resource-filter ""
   "Substring filter for resource name.")
 
+(defvar kubel--line-number nil
+  "Store the current line number to jump back after a refresh.")
+
 (defvar kubel-namespace-history '()
   "List of previously used namespaces.")
 
@@ -388,6 +391,18 @@ TYPENAME is the resource type/name."
 (defun kubel--is-deployment-view ()
   "Return non-nil if this is the pod view."
   (equal kubel-resource "Deployments"))
+
+(defun kubel--save-line ()
+  "Save the current line number if the view is unchanged."
+  (if (equal (buffer-name (current-buffer))
+               (kubel--buffer-name))
+      (setq kubel--line-number (+ 1 (count-lines 1 (point))))
+    (setq kubel--line-number nil)))
+
+(defun kubel--jump-back-to-line ()
+  "Jump back to the last cached line number."
+  (when kubel--line-number
+    (goto-line kubel--line-number)))
 
 ;; interactive
 (define-minor-mode kubel-yaml-editing-mode
@@ -694,7 +709,7 @@ RESET is to be called if the search is nil after the first attempt."
     (define-key map (kbd "RET") 'kubel-get-resource-details)
     (define-key map (kbd "C") 'kubel-set-context)
     (define-key map (kbd "n") 'kubel-set-namespace)
-    (define-key map (kbd "g") 'kubel-mode)
+    (define-key map (kbd "g") 'kubel)
     (define-key map (kbd "h") 'kubel-help-popup)
     (define-key map (kbd "F") 'kubel-set-output-format)
     (define-key map (kbd "R") 'kubel-set-resource)
@@ -716,10 +731,13 @@ RESET is to be called if the search is nil after the first attempt."
     map)
   "Keymap for `kubel-mode'.")
 
+(defvar kubel-last-position nil)
+
 ;;;###autoload
 (defun kubel ()
   "Invoke the kubel buffer."
   (interactive)
+  (kubel--save-line)
   (kubel--pop-to-buffer (kubel--buffer-name))
   (kubel-mode)
   (message (concat "Namespace: " kubel-namespace)))
@@ -741,6 +759,8 @@ RESET is to be called if the search is nil after the first attempt."
   (tabulated-list-print)
   (hl-line-mode 1)
   (run-mode-hooks 'kubel-mode-hook))
+
+(add-hook 'kubel-mode-hook #'kubel--jump-back-to-line)
 
 (provide 'kubel)
 ;;; kubel.el ends here
