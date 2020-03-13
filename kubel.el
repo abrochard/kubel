@@ -200,7 +200,7 @@ VERSION should be a list of (major-version minor-version patch)."
   "Return a list with a tabulated list format and \"tabulated-list-entries\"."
   (let*  ((body (shell-command-to-string (concat (kubel--get-command-prefix) " get " kubel-resource)))
 	      (entrylist (kubel--parse-body body)))
-    (when (s-starts-with? "No resources found" body)
+    (when (string-prefix-p "No resources found" body)
 	  (message "No resources found"))  ;; TODO exception here
     (list (kubel--get-list-format entrylist) (kubel--get-list-entries entrylist))))
 
