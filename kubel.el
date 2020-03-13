@@ -406,6 +406,8 @@ TYPENAME is the resource type/name."
 
 ;; interactive
 (define-minor-mode kubel-yaml-editing-mode
+  "Kubel Yaml editing mode.
+Use C-c C-c to kubectl apply the current yaml buffer."
   :init-value nil
   :keymap (let ((map (make-sparse-keymap)))
             (define-key map (kbd "C-c C-c") 'kubel-apply)
