@@ -693,7 +693,7 @@ RESET is to be called if the search is nil after the first attempt."
    ("f" "Filter" kubel-set-filter)
    ("M-n" "Next highlight" kubel-jump-to-next-highlight)
    ("M-p" "Previous highlight" kubel-jump-to-previous-highlight)
-   ("r" "Rollout" kubel-rollout-popup)
+   ("r" "Rollout" kubel-rollout-history)
    ("E" "Quick edit" kubel-quick-edit)
    ;; based on current view
    ("p" "Port forward" kubel-port-forward-pod)
