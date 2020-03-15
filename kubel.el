@@ -131,7 +131,7 @@
 (defvar kubel-namespace "default"
   "Current namespace.")
 
-(defvar kubel-resource "pods"
+(defvar kubel-resource "Pods"
   "Current resource.")
 
 (defvar kubel-context
