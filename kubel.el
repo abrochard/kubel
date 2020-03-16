@@ -298,12 +298,13 @@ NAME is the buffer name."
     (get-buffer-create name))
   (pop-to-buffer name))
 
-(defun kubel--exec (buffer-name async args)
+(defun kubel--exec (buffer-name async args &optional readonly)
   "Utility function to run commands in the proper context and namespace.
 
 \"BUFFER-NAME\" is the buffer-name. Default to *kubel-command*.
 ASYNC is a bool. If true will run async.
-ARGS is a ist of arguments."
+ARGS is a ist of arguments.
+READONLY If true buffer will be in readonly mode(view-mode)."
   (when (equal buffer-name "")
     (setq buffer-name "*kubel-command*"))
   (when (get-buffer buffer-name)
@@ -311,7 +312,10 @@ ARGS is a ist of arguments."
   (if async
       (apply #'start-process buffer-name buffer-name "kubectl" (append (kubel--get-context-namespace) args))
     (apply #'call-process "kubectl" nil buffer-name nil (append (kubel--get-context-namespace) args)))
-  (pop-to-buffer buffer-name))
+  (pop-to-buffer buffer-name)
+  (if readonly
+      (with-current-buffer buffer-name
+        (view-mode))))
 
 (defun kubel--get-resource-under-cursor ()
   "Utility function to get the name of the pod under the cursor."
@@ -472,7 +476,8 @@ ARGS is the arguments list from transient."
     (when (member "-f" args)
       (setq async t))
     (kubel--exec buffer-name async
-                 (append '("logs") (kubel--default-tail-arg args) (list pod container)))))
+                 (append '("logs") (kubel--default-tail-arg args) (list pod container)) t)))
+
 
 (defun kubel-copy-resource-name ()
   "Copy the name of the pod under the cursor."
