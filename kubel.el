@@ -26,12 +26,11 @@
 ;; Keywords: kubernetes k8s tools processes
 ;; URL: https://github.com/abrochard/kubel
 ;; License: GNU General Public License >= 3
-;; Package-Requires: ((transient "0.1.0") (emacs "25.3") (dash "2.17.0")
+;; Package-Requires: ((transient "0.1.0") (emacs "25.3") (dash "2.17.0") (s "1.2.0"))
 
 ;;; Commentary:
 
 ;; Emacs extension for controlling Kubernetes with limited permissions.
-;; Mostly focuses on pod management for now.
 
 ;;; Usage:
 
@@ -47,26 +46,35 @@
 ;; Note that namespace will autocomplete but not context,
 ;; this is because I interact with kubernetes through a user who
 ;; does not have permissions to list namespaces.
+;;
+;; To switch to showing a different resource, use the `R` command or
+;;
+;; M-x kubel-set-resource
+;;
+;; This will let you select a resource and re-display the kubel buffer.
 
 ;;; Shortcuts:
 
-;; On the kubel screen, place your cursor on the pod
+;; On the kubel screen, place your cursor on a resource
 ;;
-;; enter => get pod details
+;; enter => get resource details
 ;; h => help popup
 ;; C => set context
 ;; n => set namespace
-;; g => refresh pods
-;; p => port forward pod
-;; e => exec into pod
-;; d => describe popup
+;; R => set resource
+;; F => set output format
+;; g => refresh
+;; f => set a substring filter for resource name
+;; M-n => jump to the next highlighted resource
+;; M-p => jump to previous highlighted resource
+;; E => quick edit any resource
+;; r => see the rollout history for resource
 ;; l => log popup
 ;; c => copy popup
-;; k => delete pod
+;; k => delete popup
+;; e => exec into pod
+;; p => port forward pod
 ;; j => jab deployment to force rolling update
-;; f => set a substring filter for pod name
-;; r => see the rollout history for resource
-;;
 
 ;;; Customize:
 
@@ -76,6 +84,10 @@
 
 (require 'transient)
 (require 'dash)
+(require 's)
+
+(with-no-warnings
+  (require 'cl))
 
 (defgroup kubel nil "Cusomisation group for kubel."
   :group 'extensions)
@@ -119,7 +131,7 @@
 (defvar kubel-namespace "default"
   "Current namespace.")
 
-(defvar kubel-resource "pods"
+(defvar kubel-resource "Pods"
   "Current resource.")
 
 (defvar kubel-context
@@ -129,6 +141,9 @@
 
 (defvar kubel-resource-filter ""
   "Substring filter for resource name.")
+
+(defvar kubel--line-number nil
+  "Store the current line number to jump back after a refresh.")
 
 (defvar kubel-namespace-history '()
   "List of previously used namespaces.")
@@ -155,6 +170,7 @@
 	"ReplicaSets"
 	"StatefulSets"
 	"Jobs"
+        "hpa"
 	"Images"
 	"Ingresses"
 	"ClusterRoles"
@@ -188,7 +204,7 @@ VERSION should be a list of (major-version minor-version patch)."
   "Return a list with a tabulated list format and \"tabulated-list-entries\"."
   (let*  ((body (shell-command-to-string (concat (kubel--get-command-prefix) " get " kubel-resource)))
 	      (entrylist (kubel--parse-body body)))
-    (when (s-starts-with? "No resources found" body)
+    (when (string-prefix-p "No resources found" body)
 	  (message "No resources found"))  ;; TODO exception here
     (list (kubel--get-list-format entrylist) (kubel--get-list-entries entrylist))))
 
@@ -282,12 +298,13 @@ NAME is the buffer name."
     (get-buffer-create name))
   (pop-to-buffer name))
 
-(defun kubel--exec (buffer-name async args)
+(defun kubel--exec (buffer-name async args &optional readonly)
   "Utility function to run commands in the proper context and namespace.
 
 \"BUFFER-NAME\" is the buffer-name. Default to *kubel-command*.
 ASYNC is a bool. If true will run async.
-ARGS is a ist of arguments."
+ARGS is a ist of arguments.
+READONLY If true buffer will be in readonly mode(view-mode)."
   (when (equal buffer-name "")
     (setq buffer-name "*kubel-command*"))
   (when (get-buffer buffer-name)
@@ -295,7 +312,10 @@ ARGS is a ist of arguments."
   (if async
       (apply #'start-process buffer-name buffer-name "kubectl" (append (kubel--get-context-namespace) args))
     (apply #'call-process "kubectl" nil buffer-name nil (append (kubel--get-context-namespace) args)))
-  (pop-to-buffer buffer-name))
+  (pop-to-buffer buffer-name)
+  (if readonly
+      (with-current-buffer buffer-name
+        (view-mode))))
 
 (defun kubel--get-resource-under-cursor ()
   "Utility function to get the name of the pod under the cursor."
@@ -380,8 +400,22 @@ TYPENAME is the resource type/name."
   "Return non-nil if this is the pod view."
   (equal kubel-resource "Deployments"))
 
+(defun kubel--save-line ()
+  "Save the current line number if the view is unchanged."
+  (if (equal (buffer-name (current-buffer))
+               (kubel--buffer-name))
+      (setq kubel--line-number (+ 1 (count-lines 1 (point))))
+    (setq kubel--line-number nil)))
+
+(defun kubel--jump-back-to-line ()
+  "Jump back to the last cached line number."
+  (when kubel--line-number
+    (goto-line kubel--line-number)))
+
 ;; interactive
 (define-minor-mode kubel-yaml-editing-mode
+  "Kubel Yaml editing mode.
+Use C-c C-c to kubectl apply the current yaml buffer."
   :init-value nil
   :keymap (let ((map (make-sparse-keymap)))
             (define-key map (kbd "C-c C-c") 'kubel-apply)
@@ -442,7 +476,8 @@ ARGS is the arguments list from transient."
     (when (member "-f" args)
       (setq async t))
     (kubel--exec buffer-name async
-                 (append '("logs") (kubel--default-tail-arg args) (list pod container)))))
+                 (append '("logs") (kubel--default-tail-arg args) (list pod container)) t)))
+
 
 (defun kubel-copy-resource-name ()
   "Copy the name of the pod under the cursor."
@@ -571,8 +606,38 @@ See https://github.com/kubernetes/kubernetes/issues/27081"
 FILTER is the filter string."
   (interactive "MFilter: ")
   (setq kubel-resource-filter filter)
-  (kubel-mode))
+  (kubel))
 
+(defun kubel--jump-to-highlight (init search reset)
+  "Base function to jump to highlight.
+
+INIT is to be called before searching.
+SEARCH is to apply the search and can be repeated safely.
+RESET is to be called if the search is nil after the first attempt."
+  (unless (equal kubel-resource-filter "")
+    (funcall init)
+    (unless (funcall search)
+      (funcall reset)
+      (funcall search))
+    (beginning-of-line)))
+
+(defun kubel-jump-to-next-highlight ()
+  "Jump to the next hightlighted resrouce."
+  (interactive)
+  (kubel--jump-to-highlight
+   #'end-of-line
+   (lambda () (re-search-forward kubel-resource-filter (point-max) t))
+   #'beginning-of-buffer))
+
+(defun kubel-jump-to-previous-highlight ()
+  "Jump to the previou highlighted resrouce."
+  (interactive)
+  (kubel--jump-to-highlight
+   #'beginning-of-line
+   (lambda () (re-search-backward kubel-resource-filter (point-min) t))
+   #'end-of-buffer))
+
+>>>>>>> upstream/master
 (defun kubel-rollout-history ()
   "See rollout history for resource under cursor."
   (interactive)
@@ -633,12 +698,14 @@ FILTER is the filter string."
    ("RET" "Resource details" kubel-describe-popup)
    ("C" "Set context" kubel-set-context)
    ("n" "Set namespace" kubel-set-namespace)
-   ("g" "Refresh" kubel-mode)
+   ("g" "Refresh" kubel)
    ("F" "Set output format" kubel-set-output-format)
    ("R" "Set resource" kubel-set-resource)
    ("k" "Delete" kubel-delete-popup)
    ("f" "Filter" kubel-set-filter)
-   ("r" "Rollout" kubel-rollout-popup)
+   ("M-n" "Next highlight" kubel-jump-to-next-highlight)
+   ("M-p" "Previous highlight" kubel-jump-to-previous-highlight)
+   ("r" "Rollout" kubel-rollout-history)
    ("E" "Quick edit" kubel-quick-edit)
    ;; based on current view
    ("p" "Port forward" kubel-port-forward-pod)
@@ -654,7 +721,7 @@ FILTER is the filter string."
     (define-key map (kbd "RET") 'kubel-get-resource-details)
     (define-key map (kbd "C") 'kubel-set-context)
     (define-key map (kbd "n") 'kubel-set-namespace)
-    (define-key map (kbd "g") 'kubel-mode)
+    (define-key map (kbd "g") 'kubel)
     (define-key map (kbd "h") 'kubel-help-popup)
     (define-key map (kbd "F") 'kubel-set-output-format)
     (define-key map (kbd "R") 'kubel-set-resource)
@@ -662,6 +729,8 @@ FILTER is the filter string."
     (define-key map (kbd "f") 'kubel-set-filter)
     (define-key map (kbd "r") 'kubel-rollout-history)
     (define-key map (kbd "E") 'kubel-quick-edit)
+    (define-key map (kbd "M-n") 'kubel-jump-to-next-highlight)
+    (define-key map (kbd "M-p") 'kubel-jump-to-previous-highlight)
     ;; based on view
     (define-key map (kbd "p") 'kubel-port-forward-pod)
     (define-key map (kbd "l") 'kubel-log-popup)
@@ -674,10 +743,13 @@ FILTER is the filter string."
     map)
   "Keymap for `kubel-mode'.")
 
+(defvar kubel-last-position nil)
+
 ;;;###autoload
 (defun kubel ()
   "Invoke the kubel buffer."
   (interactive)
+  (kubel--save-line)
   (kubel--pop-to-buffer (kubel--buffer-name))
   (kubel-mode)
   (message (concat "Namespace: " kubel-namespace)))
@@ -699,6 +771,8 @@ FILTER is the filter string."
   (tabulated-list-print)
   (hl-line-mode 1)
   (run-mode-hooks 'kubel-mode-hook))
+
+(add-hook 'kubel-mode-hook #'kubel--jump-back-to-line)
 
 (provide 'kubel)
 ;;; kubel.el ends here
