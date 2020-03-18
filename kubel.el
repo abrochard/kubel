@@ -637,7 +637,6 @@ RESET is to be called if the search is nil after the first attempt."
    (lambda () (re-search-backward kubel-resource-filter (point-min) t))
    #'end-of-buffer))
 
->>>>>>> upstream/master
 (defun kubel-rollout-history ()
   "See rollout history for resource under cursor."
   (interactive)
