@@ -37,7 +37,15 @@
 ;; To list the pods in your current context and namespace, call
 ;;
 ;; M-x kubel
-;;;
+;;
+;; To set the path to the kubectl config file, call:
+;; M-x kubel-set-kubectl-config-file
+;;
+;; or
+;;
+;; (kubel-set-kubectl-config-file <path to desired config file>)
+;; ex: (kubel-set-kubectl-config-file "~/.kube/another-config")
+;;
 ;; To set said namespace and context, respectively call
 ;;
 ;; M-x kubel-set-namespace
@@ -503,6 +511,14 @@ ARGS is the arguments list from transient."
   (kill-new (kubel--get-command-prefix))
   (message "Command prefix copied to kill-ring"))
 
+(defun kubel-set-kubectl-config-file (configfile)
+  "Set the path to the kubectl config file."
+  (interactive "f")
+  (let ((configfile (or configfile "~/.kube/config")))
+    (if (file-exists-p (expand-file-name configfile))
+	(setenv "KUBECONFIG" (expand-file-name configfile))
+      (error "kubectl config file '%s' does not exist!" configfile))))
+
 (defun kubel-set-namespace ()
   "Set the namespace."
   (interactive)
@@ -695,6 +711,7 @@ RESET is to be called if the search is nil after the first attempt."
   ["Actions"
    ;; global
    ("RET" "Resource details" kubel-describe-popup)
+   ("K" "Set kubectl config file" kubel-set-kubectl-config-file)
    ("C" "Set context" kubel-set-context)
    ("n" "Set namespace" kubel-set-namespace)
    ("g" "Refresh" kubel)
@@ -718,6 +735,7 @@ RESET is to be called if the search is nil after the first attempt."
   (let ((map (make-sparse-keymap)))
     ;; global
     (define-key map (kbd "RET") 'kubel-get-resource-details)
+    (define-key map (kbd "K") 'kubel-set-kubectl-config-file)
     (define-key map (kbd "C") 'kubel-set-context)
     (define-key map (kbd "n") 'kubel-set-namespace)
     (define-key map (kbd "g") 'kubel)
