@@ -97,7 +97,7 @@
 (with-no-warnings
   (require 'cl))
 
-(defgroup kubel nil "Cusomisation group for kubel."
+(defgroup kubel nil "Customisation group for kubel."
   :group 'extensions)
 
 (defvar kubel--list-format
