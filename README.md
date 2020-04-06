@@ -59,6 +59,7 @@ enter => get resource details
 h => help popup
 C => set context
 n => set namespace
+K => set kubectl config file
 R => set resource
 F => set output format
 g => refresh
@@ -86,6 +87,8 @@ Alternatively, you can hit `E` to then select the resource type and the resource
 ## Customize
 
 By default, kubel log tails from the last 100 lines, you can change the `kubel-log-tail-n` variable to set another line number.
+
+If you need to switch or set your kubectl config file by setting your `KUBECONFIG` environment variable, you can use the wrapper function `kubel-set-kubectl-config-file` or the `K` shortcut.
 
 ## Releases
 

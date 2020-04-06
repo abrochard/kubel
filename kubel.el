@@ -512,12 +512,12 @@ ARGS is the arguments list from transient."
   (message "Command prefix copied to kill-ring"))
 
 (defun kubel-set-kubectl-config-file (configfile)
-  "Set the path to the kubectl config file."
+  "Set the path to the kubectl CONFIGFILE."
   (interactive "f")
   (let ((configfile (or configfile "~/.kube/config")))
     (if (file-exists-p (expand-file-name configfile))
 	(setenv "KUBECONFIG" (expand-file-name configfile))
-      (error "kubectl config file '%s' does not exist!" configfile))))
+      (error "Kubectl config file '%s' does not exist!" configfile))))
 
 (defun kubel-set-namespace ()
   "Set the namespace."
