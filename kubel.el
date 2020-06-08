@@ -37,7 +37,15 @@
 ;; To list the pods in your current context and namespace, call
 ;;
 ;; M-x kubel
-;;;
+;;
+;; To set the path to the kubectl config file, call:
+;; M-x kubel-set-kubectl-config-file
+;;
+;; or
+;;
+;; (kubel-set-kubectl-config-file <path to desired config file>)
+;; ex: (kubel-set-kubectl-config-file "~/.kube/another-config")
+;;
 ;; To set said namespace and context, respectively call
 ;;
 ;; M-x kubel-set-namespace
@@ -89,7 +97,7 @@
 (with-no-warnings
   (require 'cl))
 
-(defgroup kubel nil "Cusomisation group for kubel."
+(defgroup kubel nil "Customisation group for kubel."
   :group 'extensions)
 
 (defvar kubel--list-format
@@ -177,9 +185,20 @@
 	"RoleBindings"
 	"Roles"))
 
+(defvar kubel--kubernetes-version-cached nil)
+
+(defvar kubel--kubernetes-resources-list-cached nil)
+
+(defun kubel--invalidate-context-caches ()
+  (setq kubel--kubernetes-resources-list-cached nil)
+  (setq kubel--kubernetes-version-cached nil))
+
 (defun kubel-kubernetes-version ()
   "Return a list with (major-version minor-version patch)."
-  (let ((version-string (shell-command-to-string "kubectl version")))
+  (let ((version-string (if (null kubel--kubernetes-version-cached)
+                            (setq kubel--kubernetes-version-cached
+                                  (shell-command-to-string "kubectl version"))
+                          kubel--kubernetes-version-cached)))
     (string-match "GitVersion:\"v\\([0-9]*\\)\.\\([0-9]*\\)\.\\([0-9]*\\)\"" version-string)
     (list
      (string-to-number (match-string 1 version-string))
@@ -198,7 +217,6 @@ VERSION should be a list of (major-version minor-version patch)."
      (<= (nth 0 version) kubernetes-major-version)
      (or (<= (nth 1 version) kubernetes-minor-version) (< (nth 0 version) kubernetes-major-version))
      (or (<= (nth 2 version) kubernetes-patch-version) (< (nth 1 version) kubernetes-minor-version)))))
-
 
 (defun kubel--populate-list ()
   "Return a list with a tabulated list format and \"tabulated-list-entries\"."
@@ -503,6 +521,14 @@ ARGS is the arguments list from transient."
   (kill-new (kubel--get-command-prefix))
   (message "Command prefix copied to kill-ring"))
 
+(defun kubel-set-kubectl-config-file (configfile)
+  "Set the path to the kubectl CONFIGFILE."
+  (interactive "f")
+  (let ((configfile (or configfile "~/.kube/config")))
+    (if (file-exists-p (expand-file-name configfile))
+	(setenv "KUBECONFIG" (expand-file-name configfile))
+      (error "Kubectl config file '%s' does not exist!" configfile))))
+
 (defun kubel-set-namespace ()
   "Set the namespace."
   (interactive)
@@ -524,16 +550,24 @@ ARGS is the arguments list from transient."
         (completing-read
          "Select context: "
          (split-string (shell-command-to-string "kubectl config view -o jsonpath='{.contexts[*].name}'") " ")))
+  (kubel--invalidate-context-caches)
   (kubel))
 
-(defun kubel-set-resource ()
-  "Set the resource."
-  (interactive)
+(defun kubel--fetch-api-resource-list ()
+  (split-string (shell-command-to-string "kubectl api-resources -o name --no-headers=true") "\n"))
+
+(defun kubel-set-resource (&optional refresh)
+  "Set the resource. If called with a prefix argument, refreshes
+the context caches, including the cached resource list."
+  (interactive "P")
+  (when refresh (kubel--invalidate-context-caches))
   (let ((current-buffer-name (kubel--buffer-name))
-        (resource-list
-         (if (kubel-kubernetes-compatible-p '(1 13 3))
-			 (split-string (shell-command-to-string "kubectl api-resources -o name --no-headers=true") "\n")
-		   kubel-kubernetes-resources-list)))
+        (resource-list (if (kubel-kubernetes-compatible-p '(1 13 3))
+	                   (if (null kubel--kubernetes-resources-list-cached)
+                               (setq kubel--kubernetes-resources-list-cached
+                                     (kubel--fetch-api-resource-list))
+                             kubel--kubernetes-resources-list-cached)
+	                 kubel-kubernetes-resources-list)))
     (setq kubel-resource
 	      (completing-read "Select resource: " resource-list))
     (when (get-buffer current-buffer-name) ;; kill the current buffer to avoid confusion
@@ -695,6 +729,7 @@ RESET is to be called if the search is nil after the first attempt."
   ["Actions"
    ;; global
    ("RET" "Resource details" kubel-describe-popup)
+   ("K" "Set kubectl config file" kubel-set-kubectl-config-file)
    ("C" "Set context" kubel-set-context)
    ("n" "Set namespace" kubel-set-namespace)
    ("g" "Refresh" kubel)
@@ -718,6 +753,7 @@ RESET is to be called if the search is nil after the first attempt."
   (let ((map (make-sparse-keymap)))
     ;; global
     (define-key map (kbd "RET") 'kubel-get-resource-details)
+    (define-key map (kbd "K") 'kubel-set-kubectl-config-file)
     (define-key map (kbd "C") 'kubel-set-context)
     (define-key map (kbd "n") 'kubel-set-namespace)
     (define-key map (kbd "g") 'kubel)
