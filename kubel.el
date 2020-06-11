@@ -412,7 +412,7 @@ TYPENAME is the resource type/name."
 
 (defun kubel--is-pod-view ()
   "Return non-nil if this is the pod view."
-  (equal kubel-resource "Pods"))
+  (equal (capitalize kubel-resource) "Pods"))
 
 (defun kubel--is-deployment-view ()
   "Return non-nil if this is the pod view."
