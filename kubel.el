@@ -580,7 +580,7 @@ the context caches, including the cached resource list."
   (setq kubel-output
 	    (completing-read
 	     "Set output format: "
-	     '("yaml" "json" "wide" "custom-column=")))
+	     '("yaml" "json" "wide" "custom-columns=")))
   (kubel))
 
 (defun kubel-port-forward-pod (p)
