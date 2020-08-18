@@ -190,6 +190,7 @@
 (defvar kubel--kubernetes-resources-list-cached nil)
 
 (defun kubel--invalidate-context-caches ()
+  "Invalidate the context caches."
   (setq kubel--kubernetes-resources-list-cached nil)
   (setq kubel--kubernetes-version-cached nil))
 
@@ -527,12 +528,30 @@ ARGS is the arguments list from transient."
   (let ((configfile (or configfile "~/.kube/config")))
     (if (file-exists-p (expand-file-name configfile))
 	(setenv "KUBECONFIG" (expand-file-name configfile))
-      (error "Kubectl config file '%s' does not exist!" configfile))))
+    (error "Kubectl config file '%s' does not exist!" configfile))))
+
+(defvar kubel-use-namespace nil)
+(setq kubel-use-namespace t)
+(defvar kubel--namespace-cache '())
+(setq kubel--namespace-cache '())
+
+(defun kubel--list-namespace ()
+  "List namespaces for current context and manage cache."
+  (let ((cached (assoc-default kubel-context kubel--namespace-cache))
+        (temp '()))
+    (if cached
+        cached
+      (progn (setq temp (split-string (shell-command-to-string
+                                       (format "kubectl --context %s get namespace -o jsonpath='{.items[*].metadata.name}'" kubel-context)) " "))
+             (push (cons kubel-context temp) kubel--namespace-cache)
+             temp))))
 
 (defun kubel-set-namespace ()
   "Set the namespace."
   (interactive)
-  (let ((namespace (completing-read "Namespace: " kubel-namespace-history
+  (let* ((namespace-list (if kubel-use-namespace (kubel--list-namespace)
+                           kubel-namespace-history))
+         (namespace (completing-read "Namespace: " namespace-list
                                     nil nil nil nil "default")))
     (when (get-buffer (kubel--buffer-name))
       (kill-buffer (kubel--buffer-name)))
@@ -554,11 +573,15 @@ ARGS is the arguments list from transient."
   (kubel))
 
 (defun kubel--fetch-api-resource-list ()
+  "Fetch resource list."
   (split-string (shell-command-to-string "kubectl api-resources -o name --no-headers=true") "\n"))
 
 (defun kubel-set-resource (&optional refresh)
-  "Set the resource. If called with a prefix argument, refreshes
-the context caches, including the cached resource list."
+  "Set the resource.
+If called with a prefix argument, refreshes the context caches,
+including the cached resource list.
+
+REFRESH to force the refresh."
   (interactive "P")
   (when refresh (kubel--invalidate-context-caches))
   (let ((current-buffer-name (kubel--buffer-name))

@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- CI tests
+- allow for namespace listing optionally
 - show diff and confirmation before applying a change
 - easily get logs for a previous pod instance
 - log for multiple pods or whole service/deployment
