@@ -1,6 +1,6 @@
 version: 2.1
 
-&steps:
+steps: &steps
   working_directory: /kubel
   steps:
     - run: apt update && apt install -y git ssh make
