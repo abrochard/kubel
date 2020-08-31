@@ -11,28 +11,19 @@ jobs:
       - run:
           name: Install packages
           command: |
-            emacs -Q --batch --eval "(require 'package)" --eval "(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)" \
-              --funcall package-initialize --funcall package-refresh-contents \
-              --eval "(package-install 'package-lint)" \
-              --eval "(package-install 'transient)" \
-              --eval "(package-install 'dash)" \
-              --eval "(package-install 'yaml-mode)" \
-              --eval "(package-install 's)"
+            emacs -Q --batch -l .circleci/make.el --funcall make-install-packages
 
       - run:
           name: ERT tests
           command: |
-            emacs -Q --batch --eval "(require 'package)" --funcall package-initialize \
-              -l ert -l kubel.el -l test/kubel-test.el -f ert-run-tests-batch-and-exit
+            emacs -Q --batch -l .circleci/make.el --funcall make-ert
 
       - run:
           name: Compile
           command: |
-            emacs -Q --batch --eval "(require 'package)" --funcall package-initialize \
-               --eval "(setq byte-compile-error-on-warn nil)" --funcall batch-byte-compile kubel.el
+            emacs -Q --batch -l .circleci/make.el --funcall make-compile kubel.el
 
       - run:
           name: Lint
           command: |
-            emacs -Q --batch --eval "(require 'package)" --eval "(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)" --funcall package-initialize \
-              --eval "(require 'package-lint)" --eval "(setq package-lint-batch-fail-on-warnings t)" --funcall package-lint-batch-and-exit kubel.el
+            emacs -Q --batch -l .circlci/make.el --funcall make-lint kubel.el
