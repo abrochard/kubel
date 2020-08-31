@@ -26,4 +26,4 @@ jobs:
       - run:
           name: Lint
           command: |
-            emacs -Q --batch -l .circlci/make.el --funcall make-lint kubel.el
+            emacs -Q --batch -l .circleci/make.el --funcall make-lint kubel.el
