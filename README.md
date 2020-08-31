@@ -1,4 +1,5 @@
 [![MELPA](https://melpa.org/packages/kubel-badge.svg)](https://melpa.org/#/kubel)
+[![abrochard](https://circleci.com/gh/abrochard/kubel.svg?style=svg)](https://app.circleci.com/pipelines/github/abrochard/kubel)
 
 # kubel
 
