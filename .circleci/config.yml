@@ -1,0 +1,10 @@
+version: 2.1
+
+jobs:
+  ert-test:
+    docker:
+      - image: silex/emacs:27.1
+    working_directory: /kubel
+    steps:
+      - checkout
+      - run: emacs -Q --batch -l ert -l kubel.el -l test/kubel-test.el -f ert-run-tests-batch-and-exit
