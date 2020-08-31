@@ -34,5 +34,5 @@ jobs:
       - run:
           name: Lint
           command: |
-            emacs -Q --batch --eval "(require 'package)" --funcall package-initialize \
+            emacs -Q --batch --eval "(require 'package)" --funcall package-initialize  --funcall package-refresh-contents \
               --eval "(require 'package-lint)" --funcall package-lint-batch-and-exit kubel.el
