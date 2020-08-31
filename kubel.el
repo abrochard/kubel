@@ -1,4 +1,4 @@
-;;; kubel.el --- extension for controlling Kubernetes with limited permissions -*- lexical-binding: t; -*-
+;;; kubel.el --- Control Kubernetes with limited permissions -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2018, Adrien Brochard
 

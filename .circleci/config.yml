@@ -29,10 +29,10 @@ jobs:
           name: Compile
           command: |
             emacs -Q --batch --eval "(require 'package)" --funcall package-initialize \
-              --funcall batch-byte-compile kubel.el
+               --eval "(setq byte-compile-error-on-warn t)" --funcall batch-byte-compile kubel.el
 
       - run:
           name: Lint
           command: |
             emacs -Q --batch --eval "(require 'package)" --eval "(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)" --funcall package-initialize \
-              --eval "(require 'package-lint)" --funcall package-lint-batch-and-exit kubel.el
+              --eval "(require 'package-lint)" --eval "(setq package-lint-batch-fail-on-warnings t)" --funcall package-lint-batch-and-exit kubel.el
