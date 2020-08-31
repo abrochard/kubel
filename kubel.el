@@ -1,4 +1,4 @@
-;;; kubel.el --- extension for controlling Kubernetes with limited permissions -*- lexical-binding: t; -*-
+;;; kubel.el --- Control Kubernetes with limited permissions -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2018, Adrien Brochard
 
@@ -26,7 +26,7 @@
 ;; Keywords: kubernetes k8s tools processes
 ;; URL: https://github.com/abrochard/kubel
 ;; License: GNU General Public License >= 3
-;; Package-Requires: ((transient "0.1.0") (emacs "25.3") (dash "2.17.0") (s "1.2.0"))
+;; Package-Requires: ((transient "0.1.0") (emacs "25.3") (dash "2.12.0") (s "1.2.0") (yaml-mode "0.0.14"))
 
 ;;; Commentary:
 
@@ -95,6 +95,7 @@
 (require 's)
 (require 'yaml-mode)
 (require 'tramp)
+(require 'subr-x)
 
 (defgroup kubel nil "Customisation group for kubel."
   :group 'extensions)
