@@ -11,8 +11,12 @@ jobs:
       - run:
           name: Install packages
           command: |
-            emacs -Q --batch --eval "(required 'package)" --eval "(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)" \
-              --funcall package-initialize --funcall package-refresh-contents
+            emacs -Q --batch --eval "(require 'package)" --eval "(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)" \
+              --funcall package-initialize --funcall package-refresh-contents \
+              --eval "(package-install 'transient)" \
+              --eval "(package-install 'dash)" \
+              --eval "(package-install 'yaml-mode)" \
+              --eval "(package-install 's)"
 
       - run:
           name: ERT tests
