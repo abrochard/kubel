@@ -29,7 +29,7 @@ jobs:
           name: Compile
           command: |
             emacs -Q --batch --eval "(require 'package)" --funcall package-initialize \
-              --eval "(batch-byte-compile-file \"kubel.el\")"
+              --funcall batch-byte-compile kubel.el
 
       - run:
           name: Lint
