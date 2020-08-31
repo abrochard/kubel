@@ -8,4 +8,5 @@ jobs:
     steps:
       - run: apt update && apt install -y git ssh make
       - checkout
+      - run: pwd && ls
       - run: emacs -Q --batch -l ert -l kubel/kubel.el -l kubel/test/kubel-test.el -f ert-run-tests-batch-and-exit
