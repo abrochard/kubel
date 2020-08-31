@@ -93,9 +93,8 @@
 (require 'transient)
 (require 'dash)
 (require 's)
-
-(with-no-warnings
-  (require 'cl))
+(require 'yaml-mode)
+(require 'tramp)
 
 (defgroup kubel nil "Customisation group for kubel."
   :group 'extensions)
@@ -190,6 +189,7 @@
 (defvar kubel--kubernetes-resources-list-cached nil)
 
 (defun kubel--invalidate-context-caches ()
+  "Invalidate the context caches."
   (setq kubel--kubernetes-resources-list-cached nil)
   (setq kubel--kubernetes-version-cached nil))
 
@@ -228,10 +228,9 @@ VERSION should be a list of (major-version minor-version patch)."
 
 (defun kubel--column-entry (entrylist)
   "Return a function of colnum to retrieve an entry in a given column for ENTRYLIST."
-  (lexical-let ((entrylist entrylist))
-    (function
+  (function
      (lambda (colnum)
-       (list (kubel--column-header entrylist colnum) (+ 4 (kubel--column-width entrylist colnum) ) t)))))
+       (list (kubel--column-header entrylist colnum) (+ 4 (kubel--column-width entrylist colnum) ) t))))
 
 
 (defun kubel--get-list-format (entrylist)
@@ -554,10 +553,12 @@ ARGS is the arguments list from transient."
   (kubel))
 
 (defun kubel--fetch-api-resource-list ()
+  "Fetch the API resource list."
   (split-string (shell-command-to-string "kubectl api-resources -o name --no-headers=true") "\n"))
 
 (defun kubel-set-resource (&optional refresh)
-  "Set the resource. If called with a prefix argument, refreshes
+  "Set the resource.
+If called with a prefix argument REFRESH, refreshes
 the context caches, including the cached resource list."
   (interactive "P")
   (when refresh (kubel--invalidate-context-caches))
