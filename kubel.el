@@ -95,6 +95,7 @@
 (require 's)
 (require 'yaml-mode)
 (require 'tramp)
+(require 'subr-x)
 
 (defgroup kubel nil "Customisation group for kubel."
   :group 'extensions)
