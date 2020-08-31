@@ -8,4 +8,12 @@ jobs:
     steps:
       - run: apt update && apt install -y git ssh make
       - checkout
-      - run: emacs -Q --batch -l ert -l kubel.el -l test/kubel-test.el -f ert-run-tests-batch-and-exit
+      - run:
+          name: Install packages
+          command: |
+            emacs -Q --batch --eval "(required 'package)" --eval "(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)" \
+              --funcall package-initialize --funcall package-refresh-contents
+
+      - run:
+          name: ERT tests
+          command: emacs -Q --batch -l ert -l kubel.el -l test/kubel-test.el -f ert-run-tests-batch-and-exit
