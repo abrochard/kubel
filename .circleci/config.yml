@@ -18,7 +18,6 @@ jobs:
               --eval "(package-install 'yaml-mode)" \
               --eval "(package-install 's)"
 
-      - run: ls ~/.emacs.d/elpa/
       - run:
           name: ERT tests
-          command: emacs -Q --batch -l ert -l kubel.el -l test/kubel-test.el -f ert-run-tests-batch-and-exit
+          command: emacs -Q --batch --eval "(require 'package)" --funcall package-initialize -l ert -l kubel.el -l test/kubel-test.el -f ert-run-tests-batch-and-exit
