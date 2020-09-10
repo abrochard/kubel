@@ -1,4 +1,4 @@
-;;; kubel.el --- extension for controlling Kubernetes with limited permissions -*- lexical-binding: t; -*-
+;;; kubel.el --- Control Kubernetes with limited permissions -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2018, Adrien Brochard
 
@@ -26,7 +26,7 @@
 ;; Keywords: kubernetes k8s tools processes
 ;; URL: https://github.com/abrochard/kubel
 ;; License: GNU General Public License >= 3
-;; Package-Requires: ((transient "0.1.0") (emacs "25.3") (dash "2.17.0") (s "1.2.0"))
+;; Package-Requires: ((transient "0.1.0") (emacs "25.3") (dash "2.12.0") (s "1.2.0") (yaml-mode "0.0.14"))
 
 ;;; Commentary:
 
@@ -93,9 +93,9 @@
 (require 'transient)
 (require 'dash)
 (require 's)
-
-(with-no-warnings
-  (require 'cl))
+(require 'yaml-mode)
+(require 'tramp)
+(require 'subr-x)
 
 (defgroup kubel nil "Customisation group for kubel."
   :group 'extensions)
@@ -229,10 +229,9 @@ VERSION should be a list of (major-version minor-version patch)."
 
 (defun kubel--column-entry (entrylist)
   "Return a function of colnum to retrieve an entry in a given column for ENTRYLIST."
-  (lexical-let ((entrylist entrylist))
-    (function
+  (function
      (lambda (colnum)
-       (list (kubel--column-header entrylist colnum) (+ 4 (kubel--column-width entrylist colnum) ) t)))))
+       (list (kubel--column-header entrylist colnum) (+ 4 (kubel--column-width entrylist colnum) ) t))))
 
 
 (defun kubel--get-list-format (entrylist)
@@ -573,15 +572,13 @@ ARGS is the arguments list from transient."
   (kubel))
 
 (defun kubel--fetch-api-resource-list ()
-  "Fetch resource list."
+  "Fetch the API resource list."
   (split-string (shell-command-to-string "kubectl api-resources -o name --no-headers=true") "\n"))
 
 (defun kubel-set-resource (&optional refresh)
   "Set the resource.
-If called with a prefix argument, refreshes the context caches,
-including the cached resource list.
-
-REFRESH to force the refresh."
+If called with a prefix argument REFRESH, refreshes
+the context caches, including the cached resource list."
   (interactive "P")
   (when refresh (kubel--invalidate-context-caches))
   (let ((current-buffer-name (kubel--buffer-name))
@@ -603,7 +600,7 @@ REFRESH to force the refresh."
   (setq kubel-output
 	    (completing-read
 	     "Set output format: "
-	     '("yaml" "json" "wide" "custom-column=")))
+	     '("yaml" "json" "wide" "custom-columns=")))
   (kubel))
 
 (defun kubel-port-forward-pod (p)

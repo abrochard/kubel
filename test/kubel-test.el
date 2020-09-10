@@ -5,9 +5,11 @@
 ;;; Code:
 
 (require 'ert)
+(require 'cl-macs)
 
 (ert-deftest kubel--test-kubernetes-compatible-p ()
-  (flet ((kubel-kubernetes-version () '(1 10 9)))
+  (cl-letf (((symbol-function 'kubel-kubernetes-version)
+             (lambda () '(1 10 9))))
     (should (kubel-kubernetes-compatible-p '(1 9 0)))
     (should (kubel-kubernetes-compatible-p '(0 11 0)))
     (should (not (kubel-kubernetes-compatible-p '(1 11 0))))
