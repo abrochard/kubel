@@ -445,15 +445,15 @@ Use C-c C-c to kubectl apply the current yaml buffer."
   (setq dir-prefix (or
 		    (when (tramp-tramp-file-p default-directory)
 		      (with-parsed-tramp-file-name default-directory nil
-			(format "%s%s:%s@%s:" (or hop "") method user host)))
+			(format "/%s%s:%s@%s:" (or hop "") method user host)))
 		    ""))
 
   (let* ((filename-without-tramp-prefix (format "/tmp/kubel/%s-%s.yaml"
 						(replace-regexp-in-string "\*\\| " "" (buffer-name))
 						(floor (float-time))))
-	 (filename (format "/%s%s" dir-prefix filename-without-tramp-prefix)))
-    (unless  (file-exists-p (format "/%s/tmp/kubel" dir-prefix))
-      (make-directory (format "/%s/tmp/kubel" dir-prefix) t))
+	 (filename (format "%s%s" dir-prefix filename-without-tramp-prefix)))
+    (unless  (file-exists-p (format "%s/tmp/kubel" dir-prefix))
+      (make-directory (format "%s/tmp/kubel" dir-prefix) t))
     (write-region (point-min) (point-max) filename)
     (kubel--exec (format "*kubectl - apply - %s*" filename) nil (list "apply" "-f" filename-without-tramp-prefix))
     (message "Applied %s" filename)))
@@ -617,7 +617,7 @@ P is the port as integer."
                `("kubectl"
                  (tramp-login-program      "kubectl")
                  (tramp-login-args         (,(kubel--get-context-namespace) ("exec" "-it") ("-u" "%u") ("%h") ("sh")))
-                 (tramp-remote-shell       "/bin/sh")
+                 (tramp-remote-shell       "sh")
                  (tramp-remote-shell-args  ("-i" "-c")))) ;; add the current context/namespace to tramp methods
   (setq dir-prefix (or
 		    (when (tramp-tramp-file-p default-directory)
