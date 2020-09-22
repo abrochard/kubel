@@ -314,7 +314,7 @@ STATUS is the pod status string."
 NAME is the buffer name."
   (unless (get-buffer name)
     (get-buffer-create name))
-  (pop-to-buffer name))
+  (pop-to-buffer-same-window name))
 
 (defun kubel--exec (buffer-name async args &optional readonly)
   "Utility function to run commands in the proper context and namespace.
