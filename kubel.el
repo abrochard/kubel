@@ -452,11 +452,12 @@ Use C-c C-c to kubectl apply the current yaml buffer."
 						(replace-regexp-in-string "\*\\| " "" (buffer-name))
 						(floor (float-time))))
 	 (filename (format "%s%s" dir-prefix filename-without-tramp-prefix)))
-    (unless  (file-exists-p (format "%s/tmp/kubel" dir-prefix))
-      (make-directory (format "%s/tmp/kubel" dir-prefix) t))
-    (write-region (point-min) (point-max) filename)
-    (kubel--exec (format "*kubectl - apply - %s*" filename) nil (list "apply" "-f" filename-without-tramp-prefix))
-    (message "Applied %s" filename)))
+    (when (y-or-n-p "Apply the changes?")
+      (unless  (file-exists-p (format "%s/tmp/kubel" dir-prefix))
+	(make-directory (format "%s/tmp/kubel" dir-prefix) t))
+      (write-region (point-min) (point-max) filename)
+      (kubel--exec (format "*kubectl - apply - %s*" filename) nil (list "apply" "-f" filename-without-tramp-prefix))
+      (message "Applied %s" filename))))
 
 (defun kubel-get-resource-details (&optional describe)
   "Get the details of the resource under the cursor.
