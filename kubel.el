@@ -200,7 +200,7 @@
                             (setq kubel--kubernetes-version-cached
                                   (shell-command-to-string "kubectl version"))
                           kubel--kubernetes-version-cached)))
-    (string-match "GitVersion:\"v\\([0-9]*\\)\.\\([0-9]*\\)\.\\([0-9]*\\)\"" version-string)
+    (string-match "GitVersion:\"v\\([0-9]*\\)\.\\([0-9]*\\)\.\\([0-9]*\\)[^0-9].*\"" version-string)
     (list
      (string-to-number (match-string 1 version-string))
      (string-to-number (match-string 2 version-string))
