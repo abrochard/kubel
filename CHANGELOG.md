@@ -2,6 +2,9 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- add `kubel-process-buffer` to display all executed kubectl commands
+- ability to mark a resource to delete
+- `q` to exit resource details (`quit-window` or `kill-buffer`)
 - show diff and confirmation before applying a change
 - easily get logs for a previous pod instance
 - log for multiple pods or whole service/deployment
