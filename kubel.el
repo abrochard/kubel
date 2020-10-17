@@ -189,10 +189,20 @@
 
 (defvar kubel--kubernetes-resources-list-cached nil)
 
+(defvar kubel-use-get-namespace
+  (equal "yes\n"
+         (shell-command-to-string
+          (format "kubectl --context %s auth can-i list namespaces" kubel-context)))
+  "Whether to use `kubectl get namespace' to list namespaces available.
+By default, try to figure out if that's possible with current permissions.")
+
+(defvar kubel--namespace-list-cached nil)
+
 (defun kubel--invalidate-context-caches ()
   "Invalidate the context caches."
   (setq kubel--kubernetes-resources-list-cached nil)
-  (setq kubel--kubernetes-version-cached nil))
+  (setq kubel--kubernetes-version-cached nil)
+  (setq kubel--namespace-list-cached nil))
 
 (defun kubel-kubernetes-version ()
   "Return a list with (major-version minor-version patch)."
@@ -200,7 +210,7 @@
                             (setq kubel--kubernetes-version-cached
                                   (shell-command-to-string "kubectl version"))
                           kubel--kubernetes-version-cached)))
-    (string-match "GitVersion:\"v\\([0-9]*\\)\.\\([0-9]*\\)\.\\([0-9]*\\)\"" version-string)
+    (string-match "GitVersion:\"v\\([0-9]*\\)\.\\([0-9]*\\)\.\\([0-9]*\\)[^0-9].*\"" version-string)
     (list
      (string-to-number (match-string 1 version-string))
      (string-to-number (match-string 2 version-string))
@@ -314,7 +324,7 @@ STATUS is the pod status string."
 NAME is the buffer name."
   (unless (get-buffer name)
     (get-buffer-create name))
-  (pop-to-buffer name))
+  (pop-to-buffer-same-window name))
 
 (defun kubel--exec (buffer-name async args &optional readonly)
   "Utility function to run commands in the proper context and namespace.
@@ -328,8 +338,8 @@ READONLY If true buffer will be in readonly mode(view-mode)."
   (when (get-buffer buffer-name)
     (kill-buffer buffer-name))
   (if async
-      (apply #'start-process buffer-name buffer-name "kubectl" (append (kubel--get-context-namespace) args))
-    (apply #'call-process "kubectl" nil buffer-name nil (append (kubel--get-context-namespace) args)))
+      (apply #'start-file-process buffer-name buffer-name "kubectl" (append (kubel--get-context-namespace) args))
+    (apply #'process-file "kubectl" nil buffer-name nil (append (kubel--get-context-namespace) args)))
   (pop-to-buffer buffer-name)
   (if readonly
       (with-current-buffer buffer-name
@@ -442,14 +452,22 @@ Use C-c C-c to kubectl apply the current yaml buffer."
 (defun kubel-apply ()
   "Save the current buffer to a temp file and try to kubectl apply it."
   (interactive)
-  (let ((filename (format "/tmp/kubel/%s-%s.yaml"
-                          (replace-regexp-in-string "\*\\| " "" (buffer-name))
-                          (floor (float-time)))))
-    (unless  (file-exists-p "/tmp/kubel")
-      (make-directory "/tmp/kubel"))
-    (write-region (point-min) (point-max) filename)
-    (kubel--exec (format "*kubectl - apply - %s*" filename) nil (list "apply" "-f" filename))
-    (message "Applied %s" filename)))
+  (setq dir-prefix (or
+		    (when (tramp-tramp-file-p default-directory)
+		      (with-parsed-tramp-file-name default-directory nil
+			(format "/%s%s:%s@%s:" (or hop "") method user host)))
+		    ""))
+
+  (let* ((filename-without-tramp-prefix (format "/tmp/kubel/%s-%s.yaml"
+						(replace-regexp-in-string "\*\\| " "" (buffer-name))
+						(floor (float-time))))
+	 (filename (format "%s%s" dir-prefix filename-without-tramp-prefix)))
+    (when (y-or-n-p "Apply the changes?")
+      (unless  (file-exists-p (format "%s/tmp/kubel" dir-prefix))
+	(make-directory (format "%s/tmp/kubel" dir-prefix) t))
+      (write-region (point-min) (point-max) filename)
+      (kubel--exec (format "*kubectl - apply - %s*" filename) nil (list "apply" "-f" filename-without-tramp-prefix))
+      (message "Applied %s" filename))))
 
 (defun kubel-get-resource-details (&optional describe)
   "Get the details of the resource under the cursor.
@@ -529,47 +547,44 @@ ARGS is the arguments list from transient."
 	(setenv "KUBECONFIG" (expand-file-name configfile))
     (error "Kubectl config file '%s' does not exist!" configfile))))
 
-(defvar kubel-use-namespace nil)
-(setq kubel-use-namespace t)
-(defvar kubel--namespace-cache '())
-(setq kubel--namespace-cache '())
-
 (defun kubel--list-namespace ()
-  "List namespaces for current context and manage cache."
-  (let ((cached (assoc-default kubel-context kubel--namespace-cache))
-        (temp '()))
-    (if cached
-        cached
-      (progn (setq temp (split-string (shell-command-to-string
-                                       (format "kubectl --context %s get namespace -o jsonpath='{.items[*].metadata.name}'" kubel-context)) " "))
-             (push (cons kubel-context temp) kubel--namespace-cache)
-             temp))))
+  "List namespaces for current context, try to recover from cache first."
+  (unless kubel--namespace-list-cached
+    (setq kubel--namespace-list-cached
+          (split-string (shell-command-to-string
+                         (format "kubectl --context %s get namespace -o jsonpath='{.items[*].metadata.name}'" kubel-context)) " ")))
+  kubel--namespace-list-cached)
 
 (defun kubel-set-namespace ()
   "Set the namespace."
   (interactive)
-  (let* ((namespace-list (if kubel-use-namespace (kubel--list-namespace)
+  (let* ((namespace-list (if kubel-use-get-namespace
+                             (kubel--list-namespace)
                            kubel-namespace-history))
          (namespace (completing-read "Namespace: " namespace-list
-                                    nil nil nil nil "default")))
-    (when (get-buffer (kubel--buffer-name))
-      (kill-buffer (kubel--buffer-name)))
+                                     nil nil nil nil "default"))
+	     (kubel--buffer (get-buffer (kubel--buffer-name)))
+	     (last-default-directory (when kubel--buffer
+				                   (with-current-buffer kubel--buffer default-directory))))
+    (when kubel--buffer (kill-buffer kubel--buffer))
     (setq kubel-namespace namespace)
     (unless (member namespace kubel-namespace-history)
       (push namespace kubel-namespace-history))
-    (kubel)))
+    (kubel last-default-directory)))
 
 (defun kubel-set-context ()
   "Set the context."
   (interactive)
-  (when (get-buffer (kubel--buffer-name)) ;; kill buffer for previous context if possible
-    (kill-buffer (kubel--buffer-name)))
-  (setq kubel-context
-        (completing-read
-         "Select context: "
-         (split-string (shell-command-to-string "kubectl config view -o jsonpath='{.contexts[*].name}'") " ")))
-  (kubel--invalidate-context-caches)
-  (kubel))
+  (let* ((kubel--buffer (get-buffer (kubel--buffer-name)))
+	 (last-default-directory (when kubel--buffer (with-current-buffer kubel--buffer default-directory))))
+    (when kubel--buffer (kill-buffer kubel--buffer));; kill buffer for previous context if possible
+    (setq kubel-context
+          (completing-read
+           "Select context: "
+           (split-string (shell-command-to-string "kubectl config view -o jsonpath='{.contexts[*].name}'") " ")))
+    (kubel--invalidate-context-caches)
+    (setq kubel-namespace "default")
+    (kubel last-default-directory)))
 
 (defun kubel--fetch-api-resource-list ()
   "Fetch the API resource list."
@@ -581,18 +596,19 @@ If called with a prefix argument REFRESH, refreshes
 the context caches, including the cached resource list."
   (interactive "P")
   (when refresh (kubel--invalidate-context-caches))
-  (let ((current-buffer-name (kubel--buffer-name))
-        (resource-list (if (kubel-kubernetes-compatible-p '(1 13 3))
-	                   (if (null kubel--kubernetes-resources-list-cached)
-                               (setq kubel--kubernetes-resources-list-cached
-                                     (kubel--fetch-api-resource-list))
-                             kubel--kubernetes-resources-list-cached)
-	                 kubel-kubernetes-resources-list)))
+  (let* ((current-buffer-name (kubel--buffer-name))
+         (resource-list (if (kubel-kubernetes-compatible-p '(1 13 3))
+	                    (if (null kubel--kubernetes-resources-list-cached)
+				(setq kubel--kubernetes-resources-list-cached
+                                      (kubel--fetch-api-resource-list))
+                              kubel--kubernetes-resources-list-cached)
+	                  kubel-kubernetes-resources-list))
+	 (kubel--buffer (get-buffer current-buffer-name))
+	 (last-default-directory (when kubel--buffer (with-current-buffer kubel--buffer default-directory))))
     (setq kubel-resource
-	      (completing-read "Select resource: " resource-list))
-    (when (get-buffer current-buffer-name) ;; kill the current buffer to avoid confusion
-      (kill-buffer current-buffer-name)))
-  (kubel))
+	  (completing-read "Select resource: " resource-list))
+    (when kubel--buffer (kill-buffer kubel--buffer)) ;; kill buffer for previous context if possible
+    (kubel last-default-directory)))
 
 (defun kubel-set-output-format ()
   "Set output format of kubectl."
@@ -626,9 +642,14 @@ P is the port as integer."
                  (tramp-login-args         (,(kubel--get-context-namespace) ("exec" "-it") ("-u" "%u") ("%h") ("sh")))
                  (tramp-remote-shell       "sh")
                  (tramp-remote-shell-args  ("-i" "-c")))) ;; add the current context/namespace to tramp methods
-  (find-file (format "/kubectl:%s:/" (if (kubel--is-pod-view)
-                                         (kubel--get-resource-under-cursor)
-                                       (kubel--select-resource "Pods")))))
+  (setq dir-prefix (or
+		    (when (tramp-tramp-file-p default-directory)
+		      (with-parsed-tramp-file-name default-directory nil
+			(format "%s%s:%s@%s|" (or hop "") method user host)))
+		    ""))
+  (find-file (format "/%skubectl:%s:/" dir-prefix (if (kubel--is-pod-view)
+						      (kubel--get-resource-under-cursor)
+						    (kubel--select-resource "Pods")))))
 
 (defun kubel-delete-resource ()
   "Kubectl delete resource under cursor."
@@ -801,11 +822,12 @@ RESET is to be called if the search is nil after the first attempt."
 (defvar kubel-last-position nil)
 
 ;;;###autoload
-(defun kubel ()
+(defun kubel (&optional directory)
   "Invoke the kubel buffer."
   (interactive)
   (kubel--save-line)
   (kubel--pop-to-buffer (kubel--buffer-name))
+  (when directory (setq default-directory directory))
   (kubel-mode)
   (message (concat "Namespace: " kubel-namespace)))
 

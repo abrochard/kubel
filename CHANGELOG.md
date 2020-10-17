@@ -2,13 +2,19 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- CI tests
-- allow for namespace listing optionally
+- allow for namespace listing based on permissions
+- add `kubel-process-buffer` to display all executed kubectl commands
+- ability to mark a resource to delete
+- `q` to exit resource details (`quit-window` or `kill-buffer`)
 - show diff and confirmation before applying a change
 - easily get logs for a previous pod instance
 - log for multiple pods or whole service/deployment
 - top po command + sort by usage
 - safe way to help with rollbacks?
+
+## [3.0.0]
+### Added
+- CI tests
 
 ## [2.0.0] - 2020-03-12
 ### Added
