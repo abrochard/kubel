@@ -361,13 +361,14 @@ POD-NAME is the name of the pod."
 
 (defun kubel--get-pod-labels ()
   "List labels of pods in a current namespace."
-  (split-string
-   (replace-regexp-in-string
-    (regexp-quote ":") "="
+  (delete-dups
+   (split-string
     (replace-regexp-in-string
-     "map\\[\\(.+?\\)\\]" "\\1"
-     (shell-command-to-string
-      (format "%s get pod -o jsonpath='{.items[*].metadata.labels}'" (kubel--get-command-prefix)))))))
+     (regexp-quote ":") "="
+     (replace-regexp-in-string
+      "map\\[\\(.+?\\)\\]" "\\1"
+      (shell-command-to-string
+       (format "%s get pod -o jsonpath='{.items[*].metadata.labels}'" (kubel--get-command-prefix))))))))
 
 (defun kubel--select-resource (name)
   "Prompt user to select an instance out of a list of resources.
