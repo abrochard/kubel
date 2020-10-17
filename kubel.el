@@ -189,12 +189,7 @@
 
 (defvar kubel--kubernetes-resources-list-cached nil)
 
-(defvar kubel-use-get-namespace
-  (equal "yes\n"
-         (shell-command-to-string
-          (format "kubectl --context %s auth can-i list namespaces" kubel-context)))
-  "Whether to use `kubectl get namespace' to list namespaces available.
-By default, try to figure out if that's possible with current permissions.")
+(defvar kubel--can-get-namespace-cached nil)
 
 (defvar kubel--namespace-list-cached nil)
 
@@ -202,6 +197,7 @@ By default, try to figure out if that's possible with current permissions.")
   "Invalidate the context caches."
   (setq kubel--kubernetes-resources-list-cached nil)
   (setq kubel--kubernetes-version-cached nil)
+  (setq kubel--can-get-namespace-cached nil)
   (setq kubel--namespace-list-cached nil))
 
 (defun kubel-kubernetes-version ()
@@ -547,29 +543,45 @@ ARGS is the arguments list from transient."
 	(setenv "KUBECONFIG" (expand-file-name configfile))
     (error "Kubectl config file '%s' does not exist!" configfile))))
 
-(defun kubel--list-namespace ()
-  "List namespaces for current context, try to recover from cache first."
+(defun kubel--can-get-namespace ()
+  "Determine if permissions allow for `kubectl get namespace` in current context."
+  (unless kubel--can-get-namespace-cached
+    (setq kubel--can-get-namespace-cached
+          (equal "yes\n"
+                 (shell-command-to-string
+                  (format "kubectl --context %s auth can-i list namespaces" kubel-context)))))
+  kubel--can-get-namespace-cached)
+
+(defun kubel--get-namespace ()
+  "Get namespaces for current context, try to recover from cache first."
   (unless kubel--namespace-list-cached
     (setq kubel--namespace-list-cached
           (split-string (shell-command-to-string
                          (format "kubectl --context %s get namespace -o jsonpath='{.items[*].metadata.name}'" kubel-context)) " ")))
   kubel--namespace-list-cached)
 
+(defun kubel--list-namespace ()
+  "List namespace, either from history, or dynamically if possible."
+  (if (kubel--can-get-namespace)
+      (kubel--get-namespace)
+    kubel-namespace-history))
+
+(defun kubel--add-namespace-to-history (namespace)
+  "Add NAMESPACE to history if it isn't there already."
+  (unless (member namespace kubel-namespace-history)
+    (push namespace kubel-namespace-history)))
+
 (defun kubel-set-namespace ()
   "Set the namespace."
   (interactive)
-  (let* ((namespace-list (if kubel-use-get-namespace
-                             (kubel--list-namespace)
-                           kubel-namespace-history))
-         (namespace (completing-read "Namespace: " namespace-list
+  (let* ((namespace (completing-read "Namespace: " (kubel--list-namespace)
                                      nil nil nil nil "default"))
 	     (kubel--buffer (get-buffer (kubel--buffer-name)))
 	     (last-default-directory (when kubel--buffer
 				                   (with-current-buffer kubel--buffer default-directory))))
     (when kubel--buffer (kill-buffer kubel--buffer))
     (setq kubel-namespace namespace)
-    (unless (member namespace kubel-namespace-history)
-      (push namespace kubel-namespace-history))
+    (kubel--add-namespace-to-history namespace)
     (kubel last-default-directory)))
 
 (defun kubel-set-context ()
