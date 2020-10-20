@@ -11,6 +11,11 @@ All notable changes to this project will be documented in this file.
 - top po command + sort by usage
 - safe way to help with rollbacks?
 
+## [3.0.0]
+### Added
+- CI tests
+- dynamically list namespaces if permissions allow for it
+
 ## [2.0.0] - 2020-03-12
 ### Added
 - show any resource with some color coding
