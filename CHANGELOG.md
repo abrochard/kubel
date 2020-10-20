@@ -18,6 +18,7 @@ All notable changes to this project will be documented in this file.
 - function to set the kubeconfig
 - caching of kubectl version & resource lists
 - support to operate remote cluster via TRAMP
+- support to tail logs by pod label
 
 ### Changed
 - log buffer is readonly by default
