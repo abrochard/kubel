@@ -365,6 +365,17 @@ POD-NAME is the name of the pod."
    (shell-command-to-string
     (format "%s get pod %s -o jsonpath='{.spec.containers[*].name}'" (kubel--get-command-prefix) pod-name)) " "))
 
+(defun kubel--get-pod-labels ()
+  "List labels of pods in a current namespace."
+  (delete-dups
+   (split-string
+    (replace-regexp-in-string
+     (regexp-quote ":") "="
+     (replace-regexp-in-string
+      "map\\[\\(.+?\\)\\]" "\\1"
+      (shell-command-to-string
+       (format "%s get pod -o jsonpath='{.items[*].metadata.labels}'" (kubel--get-command-prefix))))))))
+
 (defun kubel--select-resource (name)
   "Prompt user to select an instance out of a list of resources.
 
@@ -510,6 +521,19 @@ ARGS is the arguments list from transient."
     (kubel--exec buffer-name async
                  (append '("logs") (kubel--default-tail-arg args) (list pod container)) t)))
 
+(defun kubel-get-logs-by-labels (&optional args)
+  "Get the last N logs of the pods by labels
+ARGS is the arguments list from transient."
+  (interactive
+   (list (transient-args 'kubel-log-popup)))
+  (let* ((labels (kubel--get-pod-labels))
+         (label (completing-read "Select container: " labels))
+         (buffer-name (format "*kubel - logs - %s*" label))
+         (async nil))
+    (when (member "-f" args)
+      (setq async t))
+    (kubel--exec buffer-name async
+                 (append '("logs") (kubel--default-tail-arg args) '("-l") (list label)) t)))
 
 (defun kubel-copy-resource-name ()
   "Copy the name of the pod under the cursor."
@@ -754,7 +778,8 @@ RESET is to be called if the search is nil after the first attempt."
    ("-p" "Previous" "-p")
    ("-n" "Tail" "--tail=")]
   ["Actions"
-   ("l" "Tail pod logs" kubel-get-pod-logs)])
+   ("l" "Tail pod logs" kubel-get-pod-logs)
+   ("L" "Tail by labels" kubel-get-logs-by-labels)])
 
 (define-transient-command kubel-copy-popup ()
   "Kubel Copy Menu"
