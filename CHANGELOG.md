@@ -15,6 +15,14 @@ All notable changes to this project will be documented in this file.
 ### Added
 - CI tests
 - dynamically list namespaces if permissions allow for it
+- function to set the kubeconfig
+- caching of kubectl version & resource lists
+- support to operate remote cluster via TRAMP
+
+### Changed
+- log buffer is readonly by default
+- ask y-or-n before applying resource
+- re-use same window when switching namespace
 
 ## [2.0.0] - 2020-03-12
 ### Added
