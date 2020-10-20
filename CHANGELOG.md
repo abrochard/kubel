@@ -2,7 +2,6 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- allow for namespace listing based on permissions
 - add `kubel-process-buffer` to display all executed kubectl commands
 - ability to mark a resource to delete
 - `q` to exit resource details (`quit-window` or `kill-buffer`)
@@ -15,6 +14,7 @@ All notable changes to this project will be documented in this file.
 ## [3.0.0]
 ### Added
 - CI tests
+- dynamically list namespaces if permissions allow for it
 
 ## [2.0.0] - 2020-03-12
 ### Added
