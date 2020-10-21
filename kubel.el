@@ -131,6 +131,9 @@
     ("Terminating" . "blue"))
   "Associative list of status to color.")
 
+(defconst kubel--process-buffer "kubel-process"
+  "Kubel process buffer name.")
+
 (defcustom kubel-output "yaml"
   "Format for output: json|yaml|wide|custom-columns=..."
   :type 'string
@@ -322,6 +325,15 @@ NAME is the buffer name."
     (get-buffer-create name))
   (pop-to-buffer-same-window name))
 
+(defun kubel--log-command (args)
+  "Log the kubectl command to the process buffer.
+
+ARGS is the list of arguments for kubectl."
+  (with-current-buffer (get-buffer-create kubel--process-buffer)
+    (goto-char (point-max))
+    (insert (format "kubectl %s\n"
+                    (mapconcat #'identity (append (kubel--get-context-namespace) args) " ")))))
+
 (defun kubel--exec (buffer-name async args &optional readonly)
   "Utility function to run commands in the proper context and namespace.
 
@@ -333,6 +345,7 @@ READONLY If true buffer will be in readonly mode(view-mode)."
     (setq buffer-name "*kubel-command*"))
   (when (get-buffer buffer-name)
     (kill-buffer buffer-name))
+  (kubel--log-command args)
   (if async
       (apply #'start-file-process buffer-name buffer-name "kubectl" (append (kubel--get-context-namespace) args))
     (apply #'process-file "kubectl" nil buffer-name nil (append (kubel--get-context-namespace) args)))
