@@ -782,6 +782,11 @@ RESET is to be called if the search is nil after the first attempt."
   (kubel--describe-resource
    (completing-read "Select resource: " kubel-kubernetes-resources-list)))
 
+(defun kubel-show-process-buffer ()
+  "Show the kubel-process-buffer."
+  (interactive)
+  (pop-to-buffer kubel--process-buffer))
+
 ;; popups
 
 (define-transient-command kubel-log-popup ()
@@ -832,6 +837,7 @@ RESET is to be called if the search is nil after the first attempt."
    ("M-p" "Previous highlight" kubel-jump-to-previous-highlight)
    ("r" "Rollout" kubel-rollout-history)
    ("E" "Quick edit" kubel-quick-edit)
+   ("$" "Show Process buffer" kubel-show-process-buffer)
    ;; based on current view
    ("p" "Port forward" kubel-port-forward-pod)
    ("l" "Logs" kubel-log-popup)
@@ -857,6 +863,7 @@ RESET is to be called if the search is nil after the first attempt."
     (define-key map (kbd "E") 'kubel-quick-edit)
     (define-key map (kbd "M-n") 'kubel-jump-to-next-highlight)
     (define-key map (kbd "M-p") 'kubel-jump-to-previous-highlight)
+    (define-key map (kbd "$") 'kubel-show-process-buffer)
     ;; based on view
     (define-key map (kbd "p") 'kubel-port-forward-pod)
     (define-key map (kbd "l") 'kubel-log-popup)
