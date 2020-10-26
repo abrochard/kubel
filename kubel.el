@@ -131,7 +131,7 @@
     ("Terminating" . "blue"))
   "Associative list of status to color.")
 
-(defconst kubel--process-buffer "kubel-process"
+(defconst kubel--process-buffer "*kubel-process*"
   "Kubel process buffer name.")
 
 (defcustom kubel-output "yaml"
