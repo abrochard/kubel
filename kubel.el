@@ -673,14 +673,14 @@ the context caches, including the cached resource list."
 (defun kubel-port-forward-pod (p)
   "Port forward a pod to your local machine.
 
-P is the port as integer."
-  (interactive "nPort: ")
-  (let* ((port (format "%s" p))
+P can be a single number or a localhost:container port pair."
+  (interactive "sPort: ")
+  (let* ((port (if (string-match-p ":" p) p (format "%s:%s" p p)))
          (pod (if (kubel--is-pod-view)
                   (kubel--get-resource-under-cursor)
                 (kubel--select-resource "Pods")))
          (buffer-name (format "*kubel - port-forward - %s:%s*" pod port)))
-    (kubel--exec buffer-name t (list "port-forward" pod (format "%s:%s" port port)))))
+    (kubel--exec buffer-name t (list "port-forward" pod port))))
 
 (defun kubel-exec-pod ()
   "Setup a TRAMP to exec into the pod under the cursor."
