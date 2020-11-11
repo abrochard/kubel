@@ -19,6 +19,7 @@ All notable changes to this project will be documented in this file.
 - caching of kubectl version & resource lists
 - support to operate remote cluster via TRAMP
 - support to tail logs by pod label
+- port forwarding prompt supports local:container port format
 
 ### Changed
 - log buffer is readonly by default
