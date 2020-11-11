@@ -673,7 +673,7 @@ the context caches, including the cached resource list."
 (defun kubel-port-forward-pod (p)
   "Port forward a pod to your local machine.
 
-P is the port as integer."
+P can be a single number or a localhost:container port pair."
   (interactive "sPort: ")
   (let* ((port (if (string-match-p ":" p) p (format "%s:%s" p p)))
          (pod (if (kubel--is-pod-view)
