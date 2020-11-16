@@ -87,9 +87,12 @@ Alternatively, you can hit `E` to then select the resource type and the resource
 
 ## Customize
 
-By default, kubel log tails from the last 100 lines, you can change the `kubel-log-tail-n` variable to set another line number.
-
-If you need to switch or set your kubectl config file by setting your `KUBECONFIG` environment variable, you can use the wrapper function `kubel-set-kubectl-config-file` or the `K` shortcut.
+- By default, kubel log tails from the last 100 lines, you can change the `kubel-log-tail-n` variable to set another line number.
+- If you need to switch or set your kubectl config file by setting your `KUBECONFIG` environment variable, you can use the wrapper function `kubel-set-kubectl-config-file` or the `K` shortcut.
+- Namespace listing for auto-completion is controlled by `kubel-use-namespace-list`:
+  - auto - default, use `kubectl auth can-i list namespace` to determine if we can list namespaces
+  - on - always assume we can list namespaces
+  - off - always assume we cannot list namespaces
 
 ## Releases
 

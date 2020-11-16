@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file.
 - top po command + sort by usage
 - safe way to help with rollbacks?
 
-## [3.0.0]
+## [2.1.0] - 2020-11-16
 ### Added
 - CI tests
 - dynamically list namespaces if permissions allow for it
@@ -19,6 +19,7 @@ All notable changes to this project will be documented in this file.
 - caching of kubectl version & resource lists
 - support to operate remote cluster via TRAMP
 - support to tail logs by pod label
+- port forwarding prompt supports local:container port format
 
 ### Changed
 - log buffer is readonly by default

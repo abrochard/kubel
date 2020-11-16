@@ -139,6 +139,21 @@
   :type 'string
   :group 'kubel)
 
+(defcustom kubel-log-tail-n 100
+  "Default number of lines to tail."
+  :type 'integer
+  :group 'kubel)
+
+(defcustom kubel-use-namespace-list 'auto
+  "Control behavior for namespace completion.
+
+auto - default, use `kubectl auth can-i list namespace` to determine if we can list namespaces
+on - always assume we can list namespaces
+off - always assume we cannot list namespaces"
+  :type 'symbol
+  :group 'kubel
+  :options '('auto 'on 'off))
+
 (defvar kubel-namespace "default"
   "Current namespace.")
 
@@ -158,9 +173,6 @@
 
 (defvar kubel-namespace-history '()
   "List of previously used namespaces.")
-
-(defvar kubel-log-tail-n "100"
-  "Number of lines to tail.")
 
 ;; fallback list of resources if the version of kubectl doesn't support api-resources command
 (defvar kubel-kubernetes-resources-list
@@ -482,7 +494,7 @@ Use C-c C-c to kubectl apply the current yaml buffer."
 						                        (replace-regexp-in-string "\*\\| " "" (buffer-name))
 						                        (floor (float-time))))
 	     (filename (format "%s%s" dir-prefix filename-without-tramp-prefix)))
-    (when (y-or-n-p "Apply the changes?")
+    (when (y-or-n-p "Apply the changes? ")
       (unless  (file-exists-p (format "%s/tmp/kubel" dir-prefix))
 	    (make-directory (format "%s/tmp/kubel" dir-prefix) t))
       (write-region (point-min) (point-max) filename)
@@ -512,7 +524,7 @@ ARGS is the arg list from transient."
   (if (car (remove nil (mapcar (lambda (x)
                                  (string-prefix-p "--tail=" x)) args)))
       args
-    (append args (list (concat "--tail=" kubel-log-tail-n)))))
+    (append args (list (concat "--tail=" (format "%s" kubel-log-tail-n))))))
 
 (defun kubel-get-pod-logs (&optional args)
   "Get the last N logs of the pod under the cursor.
@@ -582,12 +594,15 @@ ARGS is the arguments list from transient."
 
 (defun kubel--can-get-namespace ()
   "Determine if permissions allow for `kubectl get namespace` in current context."
-  (unless kubel--can-get-namespace-cached
-    (setq kubel--can-get-namespace-cached
-          (equal "yes\n"
-                 (shell-command-to-string
-                  (format "kubectl --context %s auth can-i list namespaces" kubel-context)))))
-  kubel--can-get-namespace-cached)
+  (cond ((eq kubel-use-namespace-list 'on) t)
+        ((eq kubel-use-namespace-list 'auto)
+         (progn
+           (unless kubel--can-get-namespace-cached
+             (setq kubel--can-get-namespace-cached
+                   (equal "yes\n"
+                          (shell-command-to-string
+                           (format "kubectl --context %s auth can-i list namespaces" kubel-context))))))
+         kubel--can-get-namespace-cached)))
 
 (defun kubel--get-namespace ()
   "Get namespaces for current context, try to recover from cache first."
@@ -671,14 +686,14 @@ the context caches, including the cached resource list."
 (defun kubel-port-forward-pod (p)
   "Port forward a pod to your local machine.
 
-P is the port as integer."
-  (interactive "nPort: ")
-  (let* ((port (format "%s" p))
+P can be a single number or a localhost:container port pair."
+  (interactive "sPort: ")
+  (let* ((port (if (string-match-p ":" p) p (format "%s:%s" p p)))
          (pod (if (kubel--is-pod-view)
                   (kubel--get-resource-under-cursor)
                 (kubel--select-resource "Pods")))
          (buffer-name (format "*kubel - port-forward - %s:%s*" pod port)))
-    (kubel--exec buffer-name t (list "port-forward" pod (format "%s:%s" port port)))))
+    (kubel--exec buffer-name t (list "port-forward" pod port))))
 
 (defun kubel-exec-pod ()
   "Setup a TRAMP to exec into the pod under the cursor."
@@ -880,7 +895,9 @@ RESET is to be called if the search is nil after the first attempt."
 
 ;;;###autoload
 (defun kubel (&optional directory)
-  "Invoke the kubel buffer."
+  "Invoke the kubel buffer.
+
+DIRECTORY is optional for TRAMP support."
   (interactive)
   (kubel--save-line)
   (kubel--pop-to-buffer (kubel--buffer-name))
