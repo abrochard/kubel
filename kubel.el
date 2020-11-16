@@ -337,34 +337,58 @@ NAME is the buffer name."
     (get-buffer-create name))
   (pop-to-buffer-same-window name))
 
-(defun kubel--log-command (args)
+(defun kubel--append-to-process-buffer (str)
+  "Append string STR to the process buffer."
+  (with-current-buffer (get-buffer-create kubel--process-buffer)
+    (read-only-mode -1)
+    (goto-char (point-max))
+    (insert (format "%s\n" str))))
+
+(defun kubel--log-command (cmd)
   "Log the kubectl command to the process buffer.
 
-ARGS is the list of arguments for kubectl."
-  (with-current-buffer (get-buffer-create kubel--process-buffer)
-    (goto-char (point-max))
-    (insert (format "kubectl %s\n"
-                    (mapconcat #'identity (append (kubel--get-context-namespace) args) " ")))))
+CMD is the kubectl command as a list."
+  (kubel--append-to-process-buffer (mapconcat #'identity cmd " ")))
 
-(defun kubel--exec (buffer-name async args &optional readonly)
+(defun kubel--process-error-buffer (process-name)
+  "Return the error buffer name for the PROCESS-NAME."
+  (format "*%s:err*" process-name))
+
+(defun kubel--sentinel (process _)
+  "Sentinel function for PROCESS."
+  (unless (eq 0 (process-exit-status process))
+    (let* ((process-name (process-name process))
+           (err (with-current-buffer (kubel--process-error-buffer process-name)
+                     (buffer-string))))
+      (kubel--append-to-process-buffer err)
+      (error (format "Kubel process %s error: %s" process-name err)))))
+
+(defun kubel--exec (process-name args &optional readonly)
   "Utility function to run commands in the proper context and namespace.
 
-\"BUFFER-NAME\" is the buffer-name. Default to *kubel-command*.
-ASYNC is a bool. If true will run async.
+PROCESS-NAME is an identifier for the process. Default to \"kubel-command\".
 ARGS is a ist of arguments.
 READONLY If true buffer will be in readonly mode(view-mode)."
-  (when (equal buffer-name "")
-    (setq buffer-name "*kubel-command*"))
-  (when (get-buffer buffer-name)
-    (kill-buffer buffer-name))
-  (kubel--log-command args)
-  (if async
-      (apply #'start-file-process buffer-name buffer-name "kubectl" (append (kubel--get-context-namespace) args))
-    (apply #'process-file "kubectl" nil buffer-name nil (append (kubel--get-context-namespace) args)))
-  (pop-to-buffer buffer-name)
-  (if readonly
-      (with-current-buffer buffer-name
-        (view-mode))))
+  (when (equal process-name "")
+    (setq process-name "kubel-command"))
+  (let ((buffer-name (format "*%s*" process-name))
+        (error-buffer (kubel--process-error-buffer process-name))
+        (cmd (append (list "kubectl") (kubel--get-context-namespace) args)))
+    (when (get-buffer buffer-name)
+      (kill-buffer buffer-name))
+    (when (get-buffer error-buffer)
+      (kill-buffer error-buffer))
+    (kubel--log-command cmd)
+    (make-process :name process-name
+                  :buffer buffer-name
+                  :sentinel #'kubel--sentinel
+                  :file-handler t
+                  :stderr error-buffer
+                  :command cmd)
+    (pop-to-buffer buffer-name)
+    (if readonly
+        (with-current-buffer buffer-name
+          (view-mode)))))
 
 (defun kubel--get-resource-under-cursor ()
   "Utility function to get the name of the pod under the cursor."
@@ -416,10 +440,10 @@ NAME is the string name of the resource."
 NAME is the string name of the resource to decribe.
 DESCRIBE is boolean to describe instead of get resource details"
   (let* ((resource (kubel--select-resource name))
-         (buffer-name (format "*kubel - %s - %s*" name resource)))
+         (process-name (format "kubel - %s - %s" name resource)))
     (if describe
-	    (kubel--exec buffer-name nil (list "describe" name resource))
-      (kubel--exec buffer-name nil (list "get" name "-o" kubel-output resource)))
+	    (kubel--exec process-name (list "describe" name resource))
+      (kubel--exec process-name (list "get" name "-o" kubel-output resource)))
     (when (string-equal kubel-output "yaml")
       (yaml-mode)
       (kubel-yaml-editing-mode))
@@ -432,8 +456,8 @@ TYPE is the resource type.
 NAME is the resource name."
   (let* ((typename (format "%s/%s" type name))
          (revision (car (split-string (kubel--select-rollout typename))))
-         (buffer-name (format "*kubel - rollout - %s - %s*" typename revision)))
-    (kubel--exec buffer-name nil
+         (process-name (format "kubel - rollout - %s - %s" typename revision)))
+    (kubel--exec process-name
                  (list "rollout" "history" typename (format "--revision=%s" revision)))
     (goto-char (point-min))))
 
@@ -498,7 +522,7 @@ Use C-c C-c to kubectl apply the current yaml buffer."
       (unless  (file-exists-p (format "%s/tmp/kubel" dir-prefix))
 	    (make-directory (format "%s/tmp/kubel" dir-prefix) t))
       (write-region (point-min) (point-max) filename)
-      (kubel--exec (format "*kubectl - apply - %s*" filename) nil (list "apply" "-f" filename-without-tramp-prefix))
+      (kubel--exec (format "kubectl - apply - %s" filename) (list "apply" "-f" filename-without-tramp-prefix))
       (message "Applied %s" filename))))
 
 (defun kubel-get-resource-details (&optional describe)
@@ -507,10 +531,10 @@ Use C-c C-c to kubectl apply the current yaml buffer."
  DESCRIBE is the optional param to describe instead of get."
   (interactive "P")
   (let* ((resource (kubel--get-resource-under-cursor))
-         (buffer-name (format "*kubel - %s - %s*" kubel-resource resource)))
+         (process-name (format "kubel - %s - %s" kubel-resource resource)))
     (if describe
-        (kubel--exec buffer-name nil (list "describe" kubel-resource (kubel--get-resource-under-cursor)))
-      (kubel--exec buffer-name nil (list "get" kubel-resource (kubel--get-resource-under-cursor) "-o" kubel-output)))
+        (kubel--exec process-name (list "describe" kubel-resource (kubel--get-resource-under-cursor)))
+      (kubel--exec process-name (list "get" kubel-resource (kubel--get-resource-under-cursor) "-o" kubel-output)))
     (when (or (string-equal kubel-output "yaml") (transient-args 'kubel-describe-popup))
       (yaml-mode)
       (kubel-yaml-editing-mode))
@@ -539,25 +563,20 @@ ARGS is the arguments list from transient."
          (container (if (equal (length containers) 1)
                         (car containers)
                       (completing-read "Select container: " containers)))
-         (buffer-name (format "*kubel - logs - %s - %s*" pod container))
-         (async nil))
-    (when (member "-f" args)
-      (setq async t))
-    (kubel--exec buffer-name async
+         (process-name (format "kubel - logs - %s - %s" pod container)))
+    (kubel--exec process-name
                  (append '("logs") (kubel--default-tail-arg args) (list pod container)) t)))
 
 (defun kubel-get-logs-by-labels (&optional args)
-  "Get the last N logs of the pods by labels
+  "Get the last N logs of the pods by labels.
+
 ARGS is the arguments list from transient."
   (interactive
    (list (transient-args 'kubel-log-popup)))
   (let* ((labels (kubel--get-pod-labels))
          (label (completing-read "Select container: " labels))
-         (buffer-name (format "*kubel - logs - %s*" label))
-         (async nil))
-    (when (member "-f" args)
-      (setq async t))
-    (kubel--exec buffer-name async
+         (process-name (format "kubel - logs - %s" label)))
+    (kubel--exec process-name
                  (append '("logs") (kubel--default-tail-arg args) '("-l") (list label)) t)))
 
 (defun kubel-copy-resource-name ()
@@ -692,8 +711,8 @@ P can be a single number or a localhost:container port pair."
          (pod (if (kubel--is-pod-view)
                   (kubel--get-resource-under-cursor)
                 (kubel--select-resource "Pods")))
-         (buffer-name (format "*kubel - port-forward - %s:%s*" pod port)))
-    (kubel--exec buffer-name t (list "port-forward" pod port))))
+         (process-name (format "kubel - port-forward - %s:%s" pod port)))
+    (kubel--exec process-name (list "port-forward" pod port))))
 
 (defun kubel-exec-pod ()
   "Setup a TRAMP to exec into the pod under the cursor."
@@ -719,11 +738,11 @@ P can be a single number or a localhost:container port pair."
   "Kubectl delete resource under cursor."
   (interactive)
   (let* ((pod (kubel--get-resource-under-cursor))
-         (buffer-name (format "*kubel - delete %s -%s" kubel-resource pod))
+         (process-name (format "kubel - delete %s - %s" kubel-resource pod))
          (args (list "delete" kubel-resource pod)))
     (when (transient-args 'kubel-delete-popup)
       (setq args (append args (list "--force" "--grace-period=0"))))
-    (kubel--exec buffer-name t args)))
+    (kubel--exec process-name args)))
 
 (defun kubel-jab-deployment ()
   "Make a trivial patch to force a new deployment.
@@ -734,8 +753,8 @@ See https://github.com/kubernetes/kubernetes/issues/27081"
           (if (kubel--is-deployment-view)
               (kubel--get-resource-under-cursor)
             (kubel--select-resource "Deployments")))
-         (buffer-name (format "*kubel - bouncing - %s*" deployment)))
-    (kubel--exec buffer-name nil (list "patch" "deployment" deployment "-p"
+         (process-name (format "kubel - bouncing - %s" deployment)))
+    (kubel--exec process-name (list "patch" "deployment" deployment "-p"
 				                       (format "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"%s\"}}}}}"
 					                           (round (time-to-seconds)))))))
 
@@ -800,7 +819,8 @@ RESET is to be called if the search is nil after the first attempt."
 (defun kubel-show-process-buffer ()
   "Show the kubel-process-buffer."
   (interactive)
-  (pop-to-buffer kubel--process-buffer))
+  (pop-to-buffer kubel--process-buffer)
+  (special-mode))
 
 ;; popups
 
