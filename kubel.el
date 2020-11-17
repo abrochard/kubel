@@ -344,11 +344,13 @@ NAME is the buffer name."
     (goto-char (point-max))
     (insert (format "%s\n" str))))
 
-(defun kubel--log-command (cmd)
+(defun kubel--log-command (process-name cmd)
   "Log the kubectl command to the process buffer.
 
+PROCESS-NAME is the name of the process.
 CMD is the kubectl command as a list."
-  (kubel--append-to-process-buffer (mapconcat #'identity cmd " ")))
+  (kubel--append-to-process-buffer
+   (format "[%s]\ncommand=%s" process-name  (mapconcat #'identity cmd " "))))
 
 (defun kubel--process-error-buffer (process-name)
   "Return the error buffer name for the PROCESS-NAME."
@@ -356,12 +358,14 @@ CMD is the kubectl command as a list."
 
 (defun kubel--sentinel (process _)
   "Sentinel function for PROCESS."
-  (unless (eq 0 (process-exit-status process))
-    (let* ((process-name (process-name process))
-           (err (with-current-buffer (kubel--process-error-buffer process-name)
-                     (buffer-string))))
-      (kubel--append-to-process-buffer err)
-      (error (format "Kubel process %s error: %s" process-name err)))))
+  (let ((process-name (process-name process))
+        (exit-status (process-exit-status process)))
+    (kubel--append-to-process-buffer (format "[%s]\nexit-code=%s" process-name exit-status))
+    (unless (eq 0 exit-status)
+       (let ((err (with-current-buffer (kubel--process-error-buffer process-name)
+                 (buffer-string))))
+      (kubel--append-to-process-buffer (format "error=%s" err))
+      (error (format "Kubel process %s error: %s" process-name err))))))
 
 (defun kubel--exec (process-name args &optional readonly)
   "Utility function to run commands in the proper context and namespace.
@@ -378,7 +382,7 @@ READONLY If true buffer will be in readonly mode(view-mode)."
       (kill-buffer buffer-name))
     (when (get-buffer error-buffer)
       (kill-buffer error-buffer))
-    (kubel--log-command cmd)
+    (kubel--log-command process-name cmd)
     (make-process :name process-name
                   :buffer buffer-name
                   :sentinel #'kubel--sentinel
