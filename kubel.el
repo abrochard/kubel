@@ -162,7 +162,7 @@ off - always assume we cannot list namespaces"
 
 (defvar kubel-context
   (replace-regexp-in-string
-   "\n" "" (shell-command-to-string "kubectl config current-context"))
+   "\n" "" (kubel--exec-to-string "kubectl config current-context"))
   "Current context.  Tries to smart default.")
 
 (defvar kubel-resource-filter ""
@@ -219,7 +219,7 @@ off - always assume we cannot list namespaces"
   "Return a list with (major-version minor-version patch)."
   (let ((version-string (if (null kubel--kubernetes-version-cached)
                             (setq kubel--kubernetes-version-cached
-                                  (shell-command-to-string "kubectl version"))
+                                  (kubel--exec-to-string "kubectl version"))
                           kubel--kubernetes-version-cached)))
     (string-match "GitVersion:\"v\\([0-9]*\\)\.\\([0-9]*\\)\.\\([0-9]*\\)[^0-9].*\"" version-string)
     (list
@@ -242,7 +242,7 @@ VERSION should be a list of (major-version minor-version patch)."
 
 (defun kubel--populate-list ()
   "Return a list with a tabulated list format and \"tabulated-list-entries\"."
-  (let*  ((body (shell-command-to-string (concat (kubel--get-command-prefix) " get " kubel-resource)))
+  (let*  ((body (kubel--exec-to-string (concat (kubel--get-command-prefix) " get " kubel-resource)))
 	      (entrylist (kubel--parse-body body)))
     (when (string-prefix-p "No resources found" body)
 	  (message "No resources found"))  ;; TODO exception here
@@ -350,7 +350,8 @@ NAME is the buffer name."
 PROCESS-NAME is the name of the process.
 CMD is the kubectl command as a list."
   (kubel--append-to-process-buffer
-   (format "[%s]\ncommand=%s" process-name  (mapconcat #'identity cmd " "))))
+   (format "[%s]\ncommand=%s" process-name
+           (if (equal 'string (type-of cmd)) cmd (mapconcat #'identity cmd " ")))))
 
 (defun kubel--process-error-buffer (process-name)
   "Return the error buffer name for the PROCESS-NAME."
@@ -394,6 +395,13 @@ READONLY If true buffer will be in readonly mode(view-mode)."
         (with-current-buffer buffer-name
           (view-mode)))))
 
+(defun kubel--exec-to-string (cmd)
+  "Replace \"shell-command-to-string\" to log to process buffer.
+
+CMD is the command string to run."
+  (kubel--log-command "kubectl command" cmd)
+  (shell-command-to-string cmd))
+
 (defun kubel--get-resource-under-cursor ()
   "Utility function to get the name of the pod under the cursor."
   (aref (tabulated-list-get-entry) 0))
@@ -415,7 +423,7 @@ READONLY If true buffer will be in readonly mode(view-mode)."
 
 POD-NAME is the name of the pod."
   (split-string
-   (shell-command-to-string
+   (kubel--exec-to-string
     (format "%s get pod %s -o jsonpath='{.spec.containers[*].name}'" (kubel--get-command-prefix) pod-name)) " "))
 
 (defun kubel--get-pod-labels ()
@@ -426,7 +434,7 @@ POD-NAME is the name of the pod."
      (regexp-quote ":") "="
      (replace-regexp-in-string
       "map\\[\\(.+?\\)\\]" "\\1"
-      (shell-command-to-string
+      (kubel--exec-to-string
        (format "%s get pod -o jsonpath='{.items[*].metadata.labels}'" (kubel--get-command-prefix))))))))
 
 (defun kubel--select-resource (name)
@@ -436,7 +444,7 @@ NAME is the string name of the resource."
   (let ((cmd (format "%s get %s -o=jsonpath='{.items[*].metadata.name}'"
                      (kubel--get-command-prefix) name)))
     (completing-read (concat (s-upper-camel-case name) ": ")
-                     (split-string (shell-command-to-string cmd) " "))))
+                     (split-string (kubel--exec-to-string cmd) " "))))
 
 (defun kubel--describe-resource (name &optional describe)
   "Describe a specific resource.
@@ -470,7 +478,7 @@ NAME is the resource name."
 
 TYPENAME is the resource type/name."
   (let ((cmd (format "%s rollout history %s" (kubel--get-command-prefix) typename)))
-    (nthcdr 2 (split-string (shell-command-to-string cmd) "\n"))))
+    (nthcdr 2 (split-string (kubel--exec-to-string cmd) "\n"))))
 
 (defun kubel--select-rollout (typename)
   "Select a rollout version.
@@ -623,7 +631,7 @@ ARGS is the arguments list from transient."
            (unless kubel--can-get-namespace-cached
              (setq kubel--can-get-namespace-cached
                    (equal "yes\n"
-                          (shell-command-to-string
+                          (kubel--exec-to-string
                            (format "kubectl --context %s auth can-i list namespaces" kubel-context))))))
          kubel--can-get-namespace-cached)))
 
@@ -631,7 +639,7 @@ ARGS is the arguments list from transient."
   "Get namespaces for current context, try to recover from cache first."
   (unless kubel--namespace-list-cached
     (setq kubel--namespace-list-cached
-          (split-string (shell-command-to-string
+          (split-string (kubel--exec-to-string
                          (format "kubectl --context %s get namespace -o jsonpath='{.items[*].metadata.name}'" kubel-context)) " ")))
   kubel--namespace-list-cached)
 
@@ -668,14 +676,14 @@ ARGS is the arguments list from transient."
     (setq kubel-context
           (completing-read
            "Select context: "
-           (split-string (shell-command-to-string "kubectl config view -o jsonpath='{.contexts[*].name}'") " ")))
+           (split-string (kubel--exec-to-string "kubectl config view -o jsonpath='{.contexts[*].name}'") " ")))
     (kubel--invalidate-context-caches)
     (setq kubel-namespace "default")
     (kubel last-default-directory)))
 
 (defun kubel--fetch-api-resource-list ()
   "Fetch the API resource list."
-  (split-string (shell-command-to-string "kubectl api-resources -o name --no-headers=true") "\n"))
+  (split-string (kubel--exec-to-string "kubectl api-resources -o name --no-headers=true") "\n"))
 
 (defun kubel-set-resource (&optional refresh)
   "Set the resource.
