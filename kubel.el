@@ -154,6 +154,29 @@ off - always assume we cannot list namespaces"
   :group 'kubel
   :options '('auto 'on 'off))
 
+(defun kubel--append-to-process-buffer (str)
+  "Append string STR to the process buffer."
+  (with-current-buffer (get-buffer-create kubel--process-buffer)
+    (read-only-mode -1)
+    (goto-char (point-max))
+    (insert (format "%s\n" str))))
+
+(defun kubel--log-command (process-name cmd)
+  "Log the kubectl command to the process buffer.
+
+PROCESS-NAME is the name of the process.
+CMD is the kubectl command as a list."
+  (kubel--append-to-process-buffer
+   (format "[%s]\ncommand=%s" process-name
+           (if (equal 'string (type-of cmd)) cmd (mapconcat #'identity cmd " ")))))
+
+(defun kubel--exec-to-string (cmd)
+  "Replace \"shell-command-to-string\" to log to process buffer.
+
+CMD is the command string to run."
+  (kubel--log-command "kubectl command" cmd)
+  (shell-command-to-string cmd))
+
 (defvar kubel-namespace "default"
   "Current namespace.")
 
@@ -337,22 +360,6 @@ NAME is the buffer name."
     (get-buffer-create name))
   (pop-to-buffer-same-window name))
 
-(defun kubel--append-to-process-buffer (str)
-  "Append string STR to the process buffer."
-  (with-current-buffer (get-buffer-create kubel--process-buffer)
-    (read-only-mode -1)
-    (goto-char (point-max))
-    (insert (format "%s\n" str))))
-
-(defun kubel--log-command (process-name cmd)
-  "Log the kubectl command to the process buffer.
-
-PROCESS-NAME is the name of the process.
-CMD is the kubectl command as a list."
-  (kubel--append-to-process-buffer
-   (format "[%s]\ncommand=%s" process-name
-           (if (equal 'string (type-of cmd)) cmd (mapconcat #'identity cmd " ")))))
-
 (defun kubel--process-error-buffer (process-name)
   "Return the error buffer name for the PROCESS-NAME."
   (format "*%s:err*" process-name))
@@ -394,13 +401,6 @@ READONLY If true buffer will be in readonly mode(view-mode)."
     (if readonly
         (with-current-buffer buffer-name
           (view-mode)))))
-
-(defun kubel--exec-to-string (cmd)
-  "Replace \"shell-command-to-string\" to log to process buffer.
-
-CMD is the command string to run."
-  (kubel--log-command "kubectl command" cmd)
-  (shell-command-to-string cmd))
 
 (defun kubel--get-resource-under-cursor ()
   "Utility function to get the name of the pod under the cursor."
