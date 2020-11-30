@@ -682,9 +682,8 @@ P can be a single number or a localhost:container port pair."
          (buffer-name (format "*kubel - port-forward - %s:%s*" pod port)))
     (kubel--exec buffer-name t (list "port-forward" pod port))))
 
-(defun kubel-exec-pod ()
-  "Setup a TRAMP to exec into the pod under the cursor."
-  (interactive)
+(defun kubel-setup-tramp ()
+  "Setup a kubectl TRAMP."
   (setq tramp-methods (delete (assoc "kubectl" tramp-methods) tramp-methods)) ;; cleanup previous tramp method
   ;; TODO error message if resource is not pod
   (add-to-list 'tramp-methods
@@ -692,7 +691,12 @@ P can be a single number or a localhost:container port pair."
                  (tramp-login-program      "kubectl")
                  (tramp-login-args         (,(kubel--get-context-namespace) ("exec" "-it") ("-u" "%u") ("%h") ("sh")))
                  (tramp-remote-shell       "sh")
-                 (tramp-remote-shell-args  ("-i" "-c")))) ;; add the current context/namespace to tramp methods
+                 (tramp-remote-shell-args  ("-i" "-c"))))) ;; add the current context/namespace to tramp methods
+
+(defun kubel-exec-pod ()
+  "Exec into the pod under the cursor -> find-file."
+  (interactive)
+  (kubel-setup-tramp)
   (setq dir-prefix (or
 		            (when (tramp-tramp-file-p default-directory)
 		              (with-parsed-tramp-file-name default-directory nil
@@ -701,6 +705,20 @@ P can be a single number or a localhost:container port pair."
   (find-file (format "/%skubectl:%s:/" dir-prefix (if (kubel--is-pod-view)
 						                              (kubel--get-resource-under-cursor)
 						                            (kubel--select-resource "Pods")))))
+
+(defun kubel-exec-shell-pod ()
+  "Exec into the pod under the cursor -> shell."
+  (interactive)
+  (kubel-setup-tramp)
+  (let* ((dir-prefix (or
+                    (when (tramp-tramp-file-p default-directory)
+                      (with-parsed-tramp-file-name default-directory nil
+                        (format "%s%s:%s@%s|" (or hop "") method user host))) ""))
+         (pod (if (kubel--is-pod-view)
+                  (kubel--get-resource-under-cursor)
+                (kubel--select-resource "Pods")))
+         (default-directory (format "/%skubectl:%s:/" dir-prefix pod)))
+    (shell (format "*kubel - shell - %s*" pod))))
 
 (defun kubel-delete-resource ()
   "Kubectl delete resource under cursor."
@@ -839,6 +857,7 @@ RESET is to be called if the search is nil after the first attempt."
    ("l" "Logs" kubel-log-popup)
    ("c" "Copy" kubel-copy-popup)
    ("e" "Exec" kubel-exec-pod)
+   ("b" "Shell" kubel-exec-shell-pod)
    ("j" "Jab" kubel-jab-deployment)])
 
 ;; mode map
@@ -864,6 +883,7 @@ RESET is to be called if the search is nil after the first attempt."
     (define-key map (kbd "l") 'kubel-log-popup)
     (define-key map (kbd "c") 'kubel-copy-popup)
     (define-key map (kbd "e") 'kubel-exec-pod)
+    (define-key map (kbd "b") 'kubel-exec-shell-pod)
     (define-key map (kbd "j") 'kubel-jab-deployment)
 
     ;; deprecated
