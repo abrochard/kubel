@@ -369,13 +369,15 @@ READONLY If true buffer will be in readonly mode(view-mode)."
   "Utility function to prefix the kubectl command with proper context and namespace."
   (mapconcat 'identity (append '("kubectl") (kubel--get-context-namespace)) " "))
 
-(defun kubel--get-containers (pod-name)
+(defun kubel--get-containers (pod-name &optional type)
   "List the containers in a pod.
 
-POD-NAME is the name of the pod."
+POD-NAME is the name of the pod.
+TYPE is containers or initContainers."
+  (unless type (setq type "containers"))
   (split-string
    (shell-command-to-string
-    (format "%s get pod %s -o jsonpath='{.spec.containers[*].name}'" (kubel--get-command-prefix) pod-name)) " "))
+    (format "%s get pod %s -o jsonpath='{.spec.%s[*].name}'" (kubel--get-command-prefix) pod-name type)) " "))
 
 (defun kubel--get-pod-labels ()
   "List labels of pods in a current namespace."
@@ -513,16 +515,18 @@ ARGS is the arg list from transient."
       args
     (append args (list (concat "--tail=" (format "%s" kubel-log-tail-n))))))
 
-(defun kubel-get-pod-logs (&optional args)
+(defun kubel-get-pod-logs (&optional args type)
   "Get the last N logs of the pod under the cursor.
 
-ARGS is the arguments list from transient."
+ARGS is the arguments list from transient.
+TYPE is containers or initContainers"
   (interactive
    (list (transient-args 'kubel-log-popup)))
   (let* ((pod (if (kubel--is-pod-view)
                   (kubel--get-resource-under-cursor)
                 (kubel--select-resource "Pods")))
-         (containers (kubel--get-containers pod))
+         (type (or type "containers"))
+         (containers (kubel--get-containers pod type))
          (container (if (equal (length containers) 1)
                         (car containers)
                       (completing-read "Select container: " containers)))
@@ -532,6 +536,14 @@ ARGS is the arguments list from transient."
       (setq async t))
     (kubel--exec buffer-name async
                  (append '("logs") (kubel--default-tail-arg args) (list pod container)) t)))
+
+(defun kubel-get-pod-logs--initContainer (&optional args)
+  "Get the last N logs of the pod under the cursor.
+
+ARGS is the arguments list from transient."
+  (interactive
+   (list (transient-args 'kubel-log-popup)))
+  (kubel-get-pod-logs args "initContainers"))
 
 (defun kubel-get-logs-by-labels (&optional args)
   "Get the last N logs of the pods by labels
@@ -794,6 +806,7 @@ RESET is to be called if the search is nil after the first attempt."
    ("-n" "Tail" "--tail=")]
   ["Actions"
    ("l" "Tail pod logs" kubel-get-pod-logs)
+   ("i" "Tail pod logs (initContainer)" kubel-get-pod-logs--initContainer)
    ("L" "Tail by labels" kubel-get-logs-by-labels)])
 
 (define-transient-command kubel-copy-popup ()
