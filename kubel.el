@@ -806,7 +806,7 @@ RESET is to be called if the search is nil after the first attempt."
    ("-n" "Tail" "--tail=")]
   ["Actions"
    ("l" "Tail pod logs" kubel-get-pod-logs)
-   ("i" "Tail pod logs (initContainer)" kubel-get-pod-logs--initContainer)
+   ("i" "Tail initContainer logs" kubel-get-pod-logs--initContainer)
    ("L" "Tail by labels" kubel-get-logs-by-labels)])
 
 (define-transient-command kubel-copy-popup ()
