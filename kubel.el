@@ -720,6 +720,22 @@ P can be a single number or a localhost:container port pair."
          (default-directory (format "/%skubectl:%s:/" dir-prefix pod)))
     (shell (format "*kubel - shell - %s*" pod))))
 
+(defvar eshell-buffer-name)
+(defun kubel-exec-eshell-pod ()
+  "Exec into the pod under the cursor -> eshell."
+  (interactive)
+  (kubel-setup-tramp)
+  (let* ((dir-prefix (or
+                    (when (tramp-tramp-file-p default-directory)
+                      (with-parsed-tramp-file-name default-directory nil
+                        (format "%s%s:%s@%s|" (or hop "") method user host))) ""))
+         (pod (if (kubel--is-pod-view)
+                  (kubel--get-resource-under-cursor)
+                (kubel--select-resource "Pods")))
+         (default-directory (format "/%skubectl:%s:/" dir-prefix pod))
+         (eshell-buffer-name (format "*kubel - eshell - %s*" pod)))
+    (eshell)))
+
 (defun kubel-delete-resource ()
   "Kubectl delete resource under cursor."
   (interactive)
@@ -804,6 +820,13 @@ RESET is to be called if the search is nil after the first attempt."
 
 ;; popups
 
+(define-transient-command kubel-exec-popup ()
+  "Kubel Exec Menu"
+  ["Actions"
+   ("f" "Find files" kubel-exec-pod)
+   ("e" "Eshell" kubel-exec-eshell-pod)
+   ("s" "Shell" kubel-exec-shell-pod)])
+
 (define-transient-command kubel-log-popup ()
   "Kubel Log Menu"
   ["Arguments"
@@ -856,8 +879,7 @@ RESET is to be called if the search is nil after the first attempt."
    ("p" "Port forward" kubel-port-forward-pod)
    ("l" "Logs" kubel-log-popup)
    ("c" "Copy" kubel-copy-popup)
-   ("e" "Exec" kubel-exec-pod)
-   ("b" "Shell" kubel-exec-shell-pod)
+   ("e" "Exec" kubel-exec-popup)
    ("j" "Jab" kubel-jab-deployment)])
 
 ;; mode map
@@ -882,8 +904,7 @@ RESET is to be called if the search is nil after the first attempt."
     (define-key map (kbd "p") 'kubel-port-forward-pod)
     (define-key map (kbd "l") 'kubel-log-popup)
     (define-key map (kbd "c") 'kubel-copy-popup)
-    (define-key map (kbd "e") 'kubel-exec-pod)
-    (define-key map (kbd "b") 'kubel-exec-shell-pod)
+    (define-key map (kbd "e") 'kubel-exec-popup)
     (define-key map (kbd "j") 'kubel-jab-deployment)
 
     ;; deprecated
