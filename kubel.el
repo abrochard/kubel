@@ -534,7 +534,7 @@ ARGS is the arguments list from transient."
                  (append '("logs") (kubel--default-tail-arg args) (list pod container)) t)))
 
 (defun kubel-get-logs-by-labels (&optional args)
-  "Get the last N logs of the pods by labels
+  "Get the last N logs of the pods by labels.
 ARGS is the arguments list from transient."
   (interactive
    (list (transient-args 'kubel-log-popup)))
@@ -694,7 +694,7 @@ P can be a single number or a localhost:container port pair."
                  (tramp-remote-shell-args  ("-i" "-c"))))) ;; add the current context/namespace to tramp methods
 
 (defun kubel-exec-pod ()
-  "Exec into the pod under the cursor -> find-file."
+  "Exec into the pod under the cursor -> `find-file."
   (interactive)
   (kubel-setup-tramp)
   (setq dir-prefix (or
