@@ -11,6 +11,10 @@ All notable changes to this project will be documented in this file.
 - top po command + sort by usage
 - safe way to help with rollbacks?
 
+## [2.2.0] -
+### Added
+- tailing logs of init container
+
 ## [2.1.0] - 2020-11-16
 ### Added
 - CI tests
