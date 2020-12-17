@@ -380,7 +380,7 @@ NAME is the buffer name."
 (defun kubel--exec (process-name args &optional readonly)
   "Utility function to run commands in the proper context and namespace.
 
-PROCESS-NAME is an identifier for the process. Default to \"kubel-command\".
+PROCESS-NAME is an identifier for the process.  Default to \"kubel-command\".
 ARGS is a ist of arguments.
 READONLY If true buffer will be in readonly mode(view-mode)."
   (when (equal process-name "")
@@ -570,7 +570,7 @@ ARGS is the arg list from transient."
   "Get the last N logs of the pod under the cursor.
 
 ARGS is the arguments list from transient.
-TYPE is containers or initContainers"
+TYPE is containers or initContainers."
   (interactive
    (list (transient-args 'kubel-log-popup)))
   (let* ((pod (if (kubel--is-pod-view)
