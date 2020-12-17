@@ -120,6 +120,7 @@
     ("True" . "green")
     ("Unknown" . "orange")
     ("Error" . "red")
+    ("Evicted" . "red")
     ("MemoryPressure" . "red")
     ("PIDPressure" . "red")
     ("DiskPressure" . "red")
