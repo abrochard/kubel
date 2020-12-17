@@ -169,14 +169,14 @@ off - always assume we cannot list namespaces"
 PROCESS-NAME is the name of the process.
 CMD is the kubectl command as a list."
   (kubel--append-to-process-buffer
-   (format "[%s]\ncommand=%s" process-name
+   (format "[%s]\ncommand: %s" process-name
            (if (equal 'string (type-of cmd)) cmd (mapconcat #'identity cmd " ")))))
 
 (defun kubel--exec-to-string (cmd)
   "Replace \"shell-command-to-string\" to log to process buffer.
 
 CMD is the command string to run."
-  (kubel--log-command "kubectl command" cmd)
+  (kubel--log-command "kubectl-command" cmd)
   (shell-command-to-string cmd))
 
 (defvar kubel-namespace "default"
@@ -370,11 +370,11 @@ NAME is the buffer name."
   "Sentinel function for PROCESS."
   (let ((process-name (process-name process))
         (exit-status (process-exit-status process)))
-    (kubel--append-to-process-buffer (format "[%s]\nexit-code=%s" process-name exit-status))
+    (kubel--append-to-process-buffer (format "[%s]\nexit-code: %s" process-name exit-status))
     (unless (eq 0 exit-status)
        (let ((err (with-current-buffer (kubel--process-error-buffer process-name)
                  (buffer-string))))
-      (kubel--append-to-process-buffer (format "error=%s" err))
+      (kubel--append-to-process-buffer (format "error: %s" err))
       (error (format "Kubel process %s error: %s" process-name err))))))
 
 (defun kubel--exec (process-name args &optional readonly)
