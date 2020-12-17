@@ -2,7 +2,6 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- add `kubel-process-buffer` to display all executed kubectl commands
 - ability to mark a resource to delete
 - `q` to exit resource details (`quit-window` or `kill-buffer`)
 - show diff and confirmation before applying a change
@@ -16,9 +15,12 @@ All notable changes to this project will be documented in this file.
 - tailing logs of init container
 - exec directly with shell & eshell
 - "evicted" state to status list
+- kubel process buffer (bound to `$`) to log executed `kubectl` commands and exit codes with errors
+- `kubel--exec-to-string` to replace `shell-exec-to-string` and log to process buffer
 
 ### Changed
 - `e` keybinding now opens a popup for exec options
+- `kubel--exec`  is now completely async
 
 ## [2.1.0] - 2020-11-16
 ### Added
