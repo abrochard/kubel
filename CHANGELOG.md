@@ -11,6 +11,15 @@ All notable changes to this project will be documented in this file.
 - top po command + sort by usage
 - safe way to help with rollbacks?
 
+## [3.0.0] -
+### Added
+- tailing logs of init container
+- exec directly with shell & eshell
+- "evicted" state to status list
+
+### Changed
+- `e` keybinding now opens a popup for exec options
+
 ## [2.1.0] - 2020-11-16
 ### Added
 - CI tests
@@ -41,7 +50,7 @@ All notable changes to this project will be documented in this file.
 - limited resource editing capability to work with the resource selecting capability
 
 ### Removed
-- `d` shortcut to edit a resource
+- `d` keybinding to edit a resource
 
 ## [1.0.0] - 2020-02-22
 ### Added

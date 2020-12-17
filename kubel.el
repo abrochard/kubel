@@ -96,6 +96,7 @@
 (require 'yaml-mode)
 (require 'tramp)
 (require 'subr-x)
+(require 'eshell)
 
 (defgroup kubel nil "Customisation group for kubel."
   :group 'extensions)
@@ -120,6 +121,7 @@
     ("True" . "green")
     ("Unknown" . "orange")
     ("Error" . "red")
+    ("Evicted" . "red")
     ("MemoryPressure" . "red")
     ("PIDPressure" . "red")
     ("DiskPressure" . "red")
@@ -418,13 +420,15 @@ READONLY If true buffer will be in readonly mode(view-mode)."
   "Utility function to prefix the kubectl command with proper context and namespace."
   (mapconcat 'identity (append '("kubectl") (kubel--get-context-namespace)) " "))
 
-(defun kubel--get-containers (pod-name)
+(defun kubel--get-containers (pod-name &optional type)
   "List the containers in a pod.
 
-POD-NAME is the name of the pod."
+POD-NAME is the name of the pod.
+TYPE is containers or initContainers."
+  (unless type (setq type "containers"))
   (split-string
    (kubel--exec-to-string
-    (format "%s get pod %s -o jsonpath='{.spec.containers[*].name}'" (kubel--get-command-prefix) pod-name)) " "))
+    (format "%s get pod %s -o jsonpath='{.spec.%s[*].name}'" (kubel--get-command-prefix) pod-name type)) " "))
 
 (defun kubel--get-pod-labels ()
   "List labels of pods in a current namespace."
@@ -562,16 +566,18 @@ ARGS is the arg list from transient."
       args
     (append args (list (concat "--tail=" (format "%s" kubel-log-tail-n))))))
 
-(defun kubel-get-pod-logs (&optional args)
+(defun kubel-get-pod-logs (&optional args type)
   "Get the last N logs of the pod under the cursor.
 
-ARGS is the arguments list from transient."
+ARGS is the arguments list from transient.
+TYPE is containers or initContainers"
   (interactive
    (list (transient-args 'kubel-log-popup)))
   (let* ((pod (if (kubel--is-pod-view)
                   (kubel--get-resource-under-cursor)
                 (kubel--select-resource "Pods")))
-         (containers (kubel--get-containers pod))
+         (type (or type "containers"))
+         (containers (kubel--get-containers pod type))
          (container (if (equal (length containers) 1)
                         (car containers)
                       (completing-read "Select container: " containers)))
@@ -579,9 +585,16 @@ ARGS is the arguments list from transient."
     (kubel--exec process-name
                  (append '("logs") (kubel--default-tail-arg args) (list pod container)) t)))
 
+(defun kubel-get-pod-logs--initContainer (&optional args)
+  "Get the last N logs of the pod under the cursor.
+
+ARGS is the arguments list from transient."
+  (interactive
+   (list (transient-args 'kubel-log-popup)))
+  (kubel-get-pod-logs args "initContainers"))
+
 (defun kubel-get-logs-by-labels (&optional args)
   "Get the last N logs of the pods by labels.
-
 ARGS is the arguments list from transient."
   (interactive
    (list (transient-args 'kubel-log-popup)))
@@ -726,9 +739,8 @@ P can be a single number or a localhost:container port pair."
          (process-name (format "kubel - port-forward - %s:%s" pod port)))
     (kubel--exec process-name (list "port-forward" pod port))))
 
-(defun kubel-exec-pod ()
-  "Setup a TRAMP to exec into the pod under the cursor."
-  (interactive)
+(defun kubel-setup-tramp ()
+  "Setup a kubectl TRAMP."
   (setq tramp-methods (delete (assoc "kubectl" tramp-methods) tramp-methods)) ;; cleanup previous tramp method
   ;; TODO error message if resource is not pod
   (add-to-list 'tramp-methods
@@ -736,7 +748,12 @@ P can be a single number or a localhost:container port pair."
                  (tramp-login-program      "kubectl")
                  (tramp-login-args         (,(kubel--get-context-namespace) ("exec" "-it") ("-u" "%u") ("%h") ("sh")))
                  (tramp-remote-shell       "sh")
-                 (tramp-remote-shell-args  ("-i" "-c")))) ;; add the current context/namespace to tramp methods
+                 (tramp-remote-shell-args  ("-i" "-c"))))) ;; add the current context/namespace to tramp methods
+
+(defun kubel-exec-pod ()
+  "Exec into the pod under the cursor -> `find-file."
+  (interactive)
+  (kubel-setup-tramp)
   (setq dir-prefix (or
 		            (when (tramp-tramp-file-p default-directory)
 		              (with-parsed-tramp-file-name default-directory nil
@@ -745,6 +762,35 @@ P can be a single number or a localhost:container port pair."
   (find-file (format "/%skubectl:%s:/" dir-prefix (if (kubel--is-pod-view)
 						                              (kubel--get-resource-under-cursor)
 						                            (kubel--select-resource "Pods")))))
+
+(defun kubel-exec-shell-pod ()
+  "Exec into the pod under the cursor -> shell."
+  (interactive)
+  (kubel-setup-tramp)
+  (let* ((dir-prefix (or
+                    (when (tramp-tramp-file-p default-directory)
+                      (with-parsed-tramp-file-name default-directory nil
+                        (format "%s%s:%s@%s|" (or hop "") method user host))) ""))
+         (pod (if (kubel--is-pod-view)
+                  (kubel--get-resource-under-cursor)
+                (kubel--select-resource "Pods")))
+         (default-directory (format "/%skubectl:%s:/" dir-prefix pod)))
+    (shell (format "*kubel - shell - %s*" pod))))
+
+(defun kubel-exec-eshell-pod ()
+  "Exec into the pod under the cursor -> eshell."
+  (interactive)
+  (kubel-setup-tramp)
+  (let* ((dir-prefix (or
+                    (when (tramp-tramp-file-p default-directory)
+                      (with-parsed-tramp-file-name default-directory nil
+                        (format "%s%s:%s@%s|" (or hop "") method user host))) ""))
+         (pod (if (kubel--is-pod-view)
+                  (kubel--get-resource-under-cursor)
+                (kubel--select-resource "Pods")))
+         (default-directory (format "/%skubectl:%s:/" dir-prefix pod))
+         (eshell-buffer-name (format "*kubel - eshell - %s*" pod)))
+    (eshell)))
 
 (defun kubel-delete-resource ()
   "Kubectl delete resource under cursor."
@@ -836,6 +882,13 @@ RESET is to be called if the search is nil after the first attempt."
 
 ;; popups
 
+(define-transient-command kubel-exec-popup ()
+  "Kubel Exec Menu"
+  ["Actions"
+   ("d" "Dired" kubel-exec-pod)
+   ("e" "Eshell" kubel-exec-eshell-pod)
+   ("s" "Shell" kubel-exec-shell-pod)])
+
 (define-transient-command kubel-log-popup ()
   "Kubel Log Menu"
   ["Arguments"
@@ -844,6 +897,7 @@ RESET is to be called if the search is nil after the first attempt."
    ("-n" "Tail" "--tail=")]
   ["Actions"
    ("l" "Tail pod logs" kubel-get-pod-logs)
+   ("i" "Tail initContainer logs" kubel-get-pod-logs--initContainer)
    ("L" "Tail by labels" kubel-get-logs-by-labels)])
 
 (define-transient-command kubel-copy-popup ()
@@ -889,7 +943,7 @@ RESET is to be called if the search is nil after the first attempt."
    ("p" "Port forward" kubel-port-forward-pod)
    ("l" "Logs" kubel-log-popup)
    ("c" "Copy" kubel-copy-popup)
-   ("e" "Exec" kubel-exec-pod)
+   ("e" "Exec" kubel-exec-popup)
    ("j" "Jab" kubel-jab-deployment)])
 
 ;; mode map
@@ -915,7 +969,7 @@ RESET is to be called if the search is nil after the first attempt."
     (define-key map (kbd "p") 'kubel-port-forward-pod)
     (define-key map (kbd "l") 'kubel-log-popup)
     (define-key map (kbd "c") 'kubel-copy-popup)
-    (define-key map (kbd "e") 'kubel-exec-pod)
+    (define-key map (kbd "e") 'kubel-exec-popup)
     (define-key map (kbd "j") 'kubel-jab-deployment)
 
     ;; deprecated
