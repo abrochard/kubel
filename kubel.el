@@ -601,7 +601,7 @@ ARGS is the arguments list from transient."
              (setq kubel--can-get-namespace-cached
                    (equal "yes\n"
                           (shell-command-to-string
-                           (format "kubectl --context %s auth can-i list namespaces" kubel-context))))))
+                           (format "kubectl --context %s auth can-i list namespaces --all-namespaces" kubel-context))))))
          kubel--can-get-namespace-cached)))
 
 (defun kubel--get-namespace ()
