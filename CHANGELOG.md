@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - tailing logs of init container
 - exec directly with shell & eshell
+- "evicted" state to status list
 
 ### Changed
 - `e` keybinding now opens a popup for exec options

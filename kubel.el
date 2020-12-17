@@ -96,6 +96,7 @@
 (require 'yaml-mode)
 (require 'tramp)
 (require 'subr-x)
+(require 'eshell)
 
 (defgroup kubel nil "Customisation group for kubel."
   :group 'extensions)
@@ -733,7 +734,6 @@ P can be a single number or a localhost:container port pair."
          (default-directory (format "/%skubectl:%s:/" dir-prefix pod)))
     (shell (format "*kubel - shell - %s*" pod))))
 
-(defvar eshell-buffer-name)
 (defun kubel-exec-eshell-pod ()
   "Exec into the pod under the cursor -> eshell."
   (interactive)
