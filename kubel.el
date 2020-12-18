@@ -518,7 +518,7 @@ TYPENAME is the resource type/name."
 
 (defun kubel--is-deployment-view ()
   "Return non-nil if this is the pod view."
-  (equal kubel-resource "Deployments"))
+  (-contains? '("Deployments" "deployments" "deployments.apps") kubel-resource))
 
 (defun kubel--save-line ()
   "Save the current line number if the view is unchanged."
@@ -831,14 +831,15 @@ P can be a single number or a localhost:container port pair."
 
 See https://github.com/kubernetes/kubernetes/issues/27081"
   (interactive)
-  (let* ((deployment
-          (if (kubel--is-deployment-view)
-              (kubel--get-resource-under-cursor)
-            (kubel--select-resource "Deployments")))
-         (process-name (format "kubel - bouncing - %s" deployment)))
-    (kubel--exec process-name (list "patch" "deployment" deployment "-p"
-				                       (format "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"%s\"}}}}}"
-					                           (round (time-to-seconds)))))))
+  (dolist (deployment (if (kubel--is-deployment-view)
+                          (if (kubel--active-selection-p)
+                              kubel--selected-items
+                            (list (kubel--get-resource-under-cursor)))
+                        (list (kubel--select-resource "Deployments"))))
+    (let ((process-name (format "kubel - bouncing - %s" deployment)))
+      (kubel--exec process-name (list "patch" "deployment" deployment "-p"
+				                      (format "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"%s\"}}}}}"
+					                          (round (time-to-seconds))))))))
 
 (defun kubel-set-filter (filter)
   "Set the pod filter.
