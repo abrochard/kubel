@@ -593,17 +593,19 @@ ARGS is the arguments list from transient.
 TYPE is containers or initContainers."
   (interactive
    (list (transient-args 'kubel-log-popup)))
-  (let* ((pod (if (kubel--is-pod-view)
-                  (kubel--get-resource-under-cursor)
-                (kubel--select-resource "Pods")))
-         (type (or type "containers"))
-         (containers (kubel--get-containers pod type))
-         (container (if (equal (length containers) 1)
-                        (car containers)
-                      (completing-read "Select container: " containers)))
-         (process-name (format "kubel - logs - %s - %s" pod container)))
-    (kubel--exec process-name
-                 (append '("logs") (kubel--default-tail-arg args) (list pod container)) t)))
+  (dolist (pod (if (kubel--is-pod-view)
+                   (if (kubel--active-selection-p)
+                       kubel--selected-items
+                     (list (kubel--get-resource-under-cursor)))
+                 (list (kubel--select-resource "Pods"))))
+    (let* ((type (or type "containers"))
+           (containers (kubel--get-containers pod type))
+           (container (if (equal (length containers) 1)
+                          (car containers)
+                        (completing-read "Select container: " containers)))
+           (process-name (format "kubel - logs - %s - %s" pod container)))
+      (kubel--exec process-name
+                   (append '("logs") (kubel--default-tail-arg args) (list pod container)) t))))
 
 (defun kubel-get-pod-logs--initContainer (&optional args)
   "Get the last N logs of the pod under the cursor.
