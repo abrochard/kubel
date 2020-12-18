@@ -2,6 +2,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
+- remove deprecated function
+- copy last command ran to clipboard
 - ability to mark a resource to delete
 - `q` to exit resource details (`quit-window` or `kill-buffer`)
 - show diff and confirmation before applying a change
