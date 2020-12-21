@@ -19,6 +19,10 @@ All notable changes to this project will be documented in this file.
 - "evicted" state to status list
 - kubel process buffer (bound to `$`) to log executed `kubectl` commands and exit codes with errors
 - `kubel--exec-to-string` to replace `shell-exec-to-string` and log to process buffer
+- can mark multiple items and perform bulk action:
+  - delete multiple items of the same resource (like multiple pods)
+  - tail logs of multiple pods
+  - jab multiple deployments
 
 ### Changed
 - `e` keybinding now opens a popup for exec options
