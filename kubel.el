@@ -594,7 +594,7 @@ TYPE is containers or initContainers."
   (interactive
    (list (transient-args 'kubel-log-popup)))
   (dolist (pod (if (kubel--is-pod-view)
-                   (if (kubel--active-selection-p)
+                   (if (kubel--items-selected-p)
                        kubel--selected-items
                      (list (kubel--get-resource-under-cursor)))
                  (list (kubel--select-resource "Pods"))))
@@ -817,7 +817,7 @@ P can be a single number or a localhost:container port pair."
 (defun kubel-delete-resource ()
   "Kubectl delete resource under cursor."
   (interactive)
-  (dolist (pod (if (kubel--active-selection-p)
+  (dolist (pod (if (kubel--items-selected-p)
                   kubel--selected-items
                  (list (kubel--get-resource-under-cursor))))
     (let* ((process-name (format "kubel - delete %s - %s" kubel-resource pod))
@@ -832,7 +832,7 @@ P can be a single number or a localhost:container port pair."
 See https://github.com/kubernetes/kubernetes/issues/27081"
   (interactive)
   (dolist (deployment (if (kubel--is-deployment-view)
-                          (if (kubel--active-selection-p)
+                          (if (kubel--items-selected-p)
                               kubel--selected-items
                             (list (kubel--get-resource-under-cursor)))
                         (list (kubel--select-resource "Deployments"))))
