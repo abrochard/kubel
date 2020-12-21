@@ -72,20 +72,36 @@
 
 (define-transient-command kubel-evil-help-popup ()
   "Kubel Evil Menu"
-  ["Actions"
-   ("RET" "Pod details" kubel-describe-popup)
-   ("C" "Set Context" kubel-set-context)
-   ("n" "Set namespace" kubel-set-namespace)
-   ("g" "Refresh" kubel-mode)
-   ("p" "Port forward" kubel-port-forward-pod)
-   ("l" "Logs" kubel-log-popup)
-   ("c" "Copy" kubel-copy-popup)
-   ("E" "Quick edit" kubel-quick-edit)
-   ("e" "Exec" kubel-exec-pod)
-   ("F" "Output format" kubel-set-output-format)
-   ("d" "Delete" kubel-delete-popup)
-   ("a" "Jab" kubel-jab-deployment)
-   ("R" "Set Resource" kubel-set-resource)])
+  [["Actions"
+    ;; global
+    ("RET" "Resource details" kubel-describe-popup)
+    ("E" "Quick edit" kubel-quick-edit)
+    ("g" "Refresh" kubel)
+    ("d" "Delete" kubel-delete-popup) ;; can't use k here
+    ("r" "Rollout" kubel-rollout-history)]
+   ["" ;; based on current view
+    ("p" "Port forward" kubel-port-forward-pod)
+    ("l" "Logs" kubel-log-popup)
+    ("e" "Exec" kubel-exec-popup)
+    ("a" "Jab" kubel-jab-deployment)] ;; can't use j here
+   ["Settings"
+    ("C" "Set context" kubel-set-context)
+    ("n" "Set namespace" kubel-set-namespace)
+    ("R" "Set resource" kubel-set-resource)
+    ("K" "Set kubectl config file" kubel-set-kubectl-config-file)
+    ("F" "Set output format" kubel-set-output-format)]
+   ["Filter"
+    ("f" "Filter" kubel-set-filter)
+    ("M-n" "Next highlight" kubel-jump-to-next-highlight)
+    ("M-p" "Previous highlight" kubel-jump-to-previous-highlight)]
+   ["Marking"
+    ("m" "Mark item" kubel-mark-item)
+    ("u" "Unmark item" kubel-unmark-item)
+    ("M" "Mark all items" kubel-mark-all)
+    ("U" "Unmark all items" kubel-unmark-all)]
+   ["Utilities"
+    ("c" "Copy to clipboad..." kubel-copy-popup)
+    ("$" "Show Process buffer" kubel-show-process-buffer)]])
 
 (evil-set-initial-state 'kubel-mode 'motion)
 
@@ -103,7 +119,8 @@
   (kbd "F") #'kubel-set-output-format
   (kbd "d") #'kubel-delete-popup
   (kbd "R") #'kubel-set-resource
-  (kbd "a") #'kubel-jab-deployment)
+  (kbd "a") #'kubel-jab-deployment
+  (kbd "M") #'kubel-mark-all)
 
 (provide 'kubel-evil)
 
