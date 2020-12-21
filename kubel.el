@@ -912,6 +912,7 @@ RESET is to be called if the search is nil after the first attempt."
     (unless (-contains? kubel--selected-items item)
       (progn
         (push item kubel--selected-items)
+        (forward-line 1)
         (kubel)))))
 
 (defun kubel-unmark-item ()
