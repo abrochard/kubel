@@ -983,33 +983,36 @@ RESET is to be called if the search is nil after the first attempt."
 
 (define-transient-command kubel-help-popup ()
   "Kubel Menu"
-  ["Actions"
-   ;; global
-   ("RET" "Resource details" kubel-describe-popup)
-   ("K" "Set kubectl config file" kubel-set-kubectl-config-file)
-   ("C" "Set context" kubel-set-context)
-   ("n" "Set namespace" kubel-set-namespace)
-   ("g" "Refresh" kubel)
-   ("F" "Set output format" kubel-set-output-format)
-   ("R" "Set resource" kubel-set-resource)
-   ("k" "Delete" kubel-delete-popup)
-   ("f" "Filter" kubel-set-filter)
-   ("M-n" "Next highlight" kubel-jump-to-next-highlight)
-   ("M-p" "Previous highlight" kubel-jump-to-previous-highlight)
-   ("r" "Rollout" kubel-rollout-history)
-   ("E" "Quick edit" kubel-quick-edit)
-   ("$" "Show Process buffer" kubel-show-process-buffer)
-   ("m" "Mark item" kubel-mark-item)
-   ("u" "Unmark item" kubel-unmark-item)
-   ("M" "Mark all items" kubel-mark-all)
-   ("U" "Unmark all items" kubel-unmark-all)
-   ;; based on current view
-   ("p" "Port forward" kubel-port-forward-pod)
-   ("l" "Logs" kubel-log-popup)
-   ("c" "Copy" kubel-copy-popup)
-   ("e" "Exec" kubel-exec-popup)
-   ("j" "Jab" kubel-jab-deployment)])
-
+  [["Actions"
+    ;; global
+    ("RET" "Resource details" kubel-describe-popup)
+    ("E" "Quick edit" kubel-quick-edit)
+    ("g" "Refresh" kubel)
+    ("k" "Delete" kubel-delete-popup)
+    ("r" "Rollout" kubel-rollout-history)]
+   ["" ;; based on current view
+    ("p" "Port forward" kubel-port-forward-pod)
+    ("l" "Logs" kubel-log-popup)
+    ("e" "Exec" kubel-exec-popup)
+    ("j" "Jab" kubel-jab-deployment)]
+   ["Settings"
+    ("C" "Set context" kubel-set-context)
+    ("n" "Set namespace" kubel-set-namespace)
+    ("R" "Set resource" kubel-set-resource)
+    ("K" "Set kubectl config file" kubel-set-kubectl-config-file)
+    ("F" "Set output format" kubel-set-output-format)]
+   ["Filter"
+    ("f" "Filter" kubel-set-filter)
+    ("M-n" "Next highlight" kubel-jump-to-next-highlight)
+    ("M-p" "Previous highlight" kubel-jump-to-previous-highlight)]
+   ["Marking"
+    ("m" "Mark item" kubel-mark-item)
+    ("u" "Unmark item" kubel-unmark-item)
+    ("M" "Mark all items" kubel-mark-all)
+    ("U" "Unmark all items" kubel-unmark-all)]
+   ["Utilities"
+    ("c" "Copy to clipboad..." kubel-copy-popup)
+    ("$" "Show Process buffer" kubel-show-process-buffer)]])
 
 ;; mode map
 (defvar kubel-mode-map
