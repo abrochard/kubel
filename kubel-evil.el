@@ -107,20 +107,29 @@
 
 (evil-define-key 'motion kubel-evil-mode-map
   (kbd "RET") #'kubel-get-resource-details
+  (kbd "K") #'kubel-set-kubectl-config-file
   (kbd "C") #'kubel-set-context
   (kbd "n") #'kubel-set-namespace
-  (kbd "g") #'kubel-mode
+  (kbd "g") #'kubel
+  (kbd "h") #'kubel-evil-help-popup
+  (kbd "?") #'kubel-evil-help-popup
+  (kbd "F") #'kubel-set-output-format
+  (kbd "R") #'kubel-set-resource
+  (kbd "d") #'kubel-delete-popup
+  (kbd "f") #'kubel-set-filter
+  (kbd "r") #'kubel-rollout-history
+  (kbd "E") #'kubel-quick-edit
+  (kbd "M-n") #'kubel-jump-to-next-highlight
+  (kbd "M-p") #'kubel-jump-to-previous-highlight
+  (kbd "$") #'kubel-show-process-buffer
   (kbd "p") #'kubel-port-forward-pod
   (kbd "l") #'kubel-log-popup
   (kbd "c") #'kubel-copy-popup
-  (kbd "h") #'kubel-evil-help-popup
-  (kbd "E") #'kubel-quick-edit
-  (kbd "e") #'kubel-exec-pod
-  (kbd "F") #'kubel-set-output-format
-  (kbd "d") #'kubel-delete-popup
-  (kbd "R") #'kubel-set-resource
+  (kbd "e") #'kubel-exec-popup
   (kbd "a") #'kubel-jab-deployment
-  (kbd "M") #'kubel-mark-all)
+  (kbd "u") #'kubel-unmark-item
+  (kbd "M") #'kubel-mark-all
+  (kbd "U") #'kubel-unmark-all)
 
 (provide 'kubel-evil)
 
