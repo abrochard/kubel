@@ -67,22 +67,29 @@
 ;;
 ;; enter => get resource details
 ;; h => help popup
+;; ? => help popup
+;; E => quick edit any resource
+;; g => refresh
+;; k => delete popup
+;; r => see the rollout history for resource
+;; p => port forward pod
+;; l => log popup
+;; e => exec popup
+;; j => jab deployment to force rolling update
 ;; C => set context
 ;; n => set namespace
 ;; R => set resource
+;; K => set kubectl config file
 ;; F => set output format
-;; g => refresh
 ;; f => set a substring filter for resource name
 ;; M-n => jump to the next highlighted resource
 ;; M-p => jump to previous highlighted resource
-;; E => quick edit any resource
-;; r => see the rollout history for resource
-;; l => log popup
+;; m => mark item
+;; u => unmark item
+;; M => mark all items
+;; U => unmark all items
 ;; c => copy popup
-;; k => delete popup
-;; e => exec into pod
-;; p => port forward pod
-;; j => jab deployment to force rolling update
+;; $ => show process buffer
 
 ;;; Customize:
 
