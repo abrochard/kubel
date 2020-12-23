@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- copy last command ran to clipboard
+- more unit tests
 - `q` to exit resource details (`quit-window` or `kill-buffer`)
 - show diff and confirmation before applying a change
 - easily get logs for a previous pod instance
@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 - exec directly with shell & eshell
 - "evicted" state to status list
 - kubel process buffer (bound to `$`) to log executed `kubectl` commands and exit codes with errors
+- `c C` to copy last command ran to clipboard
 - `kubel--exec-to-string` to replace `shell-exec-to-string` and log to process buffer
 - can mark multiple items and perform bulk action:
   - delete multiple items of the same resource (like multiple pods)
@@ -23,7 +24,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - `e` keybinding now opens a popup for exec options
-- `kubel--exec`  is now completely async
+- `kubel--exec` is now completely async
 
 ### Removed
 - remove deprecated function bound to `d`

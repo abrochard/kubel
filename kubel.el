@@ -171,14 +171,17 @@ off - always assume we cannot list namespaces"
     (goto-char (point-max))
     (insert (format "%s\n" str))))
 
+(defvar kubel--last-command nil)
+
 (defun kubel--log-command (process-name cmd)
   "Log the kubectl command to the process buffer.
 
 PROCESS-NAME is the name of the process.
 CMD is the kubectl command as a list."
-  (kubel--append-to-process-buffer
-   (format "[%s]\ncommand: %s" process-name
-           (if (equal 'string (type-of cmd)) cmd (mapconcat #'identity cmd " ")))))
+  (let ((str-cmd (if (equal 'string (type-of cmd)) cmd (mapconcat #'identity cmd " "))))
+    (setq kubel--last-command str-cmd)
+    (kubel--append-to-process-buffer
+     (format "[%s]\ncommand: %s" process-name str-cmd))))
 
 (defun kubel--exec-to-string (cmd)
   "Replace \"shell-command-to-string\" to log to process buffer.
@@ -657,6 +660,12 @@ ARGS is the arguments list from transient."
   (kill-new (kubel--get-command-prefix))
   (message "Command prefix copied to kill-ring"))
 
+(defun kubel-copy-last-command ()
+  "Copy the last kubectl command ran."
+  (interactive)
+  (kill-new kubel--last-command)
+  (message (concat "Last command copied: " kubel--last-command)))
+
 (defun kubel-set-kubectl-config-file (configfile)
   "Set the path to the kubectl CONFIGFILE."
   (interactive "f")
@@ -966,9 +975,10 @@ RESET is to be called if the search is nil after the first attempt."
 (define-transient-command kubel-copy-popup ()
   "Kubel Copy Menu"
   ["Actions"
-   ("c" "Copy pod name" kubel-copy-resource-name)
+   ("c" "Copy resource name" kubel-copy-resource-name)
    ("l" "Copy pod log command" kubel-copy-log-command)
-   ("p" "Copy command prefix" kubel-copy-command-prefix)])
+   ("p" "Copy command prefix" kubel-copy-command-prefix)
+   ("C" "Copy last command" kubel-copy-last-command)])
 
 (define-transient-command kubel-delete-popup ()
   "Kubel Delete menu"
