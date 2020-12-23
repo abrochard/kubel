@@ -72,38 +72,64 @@
 
 (define-transient-command kubel-evil-help-popup ()
   "Kubel Evil Menu"
-  ["Actions"
-   ("RET" "Pod details" kubel-describe-popup)
-   ("C" "Set Context" kubel-set-context)
-   ("n" "Set namespace" kubel-set-namespace)
-   ("g" "Refresh" kubel-mode)
-   ("p" "Port forward" kubel-port-forward-pod)
-   ("l" "Logs" kubel-log-popup)
-   ("c" "Copy" kubel-copy-popup)
-   ("E" "Quick edit" kubel-quick-edit)
-   ("e" "Exec" kubel-exec-pod)
-   ("F" "Output format" kubel-set-output-format)
-   ("d" "Delete" kubel-delete-popup)
-   ("a" "Jab" kubel-jab-deployment)
-   ("R" "Set Resource" kubel-set-resource)])
+  [["Actions"
+    ;; global
+    ("RET" "Resource details" kubel-describe-popup)
+    ("E" "Quick edit" kubel-quick-edit)
+    ("g" "Refresh" kubel)
+    ("d" "Delete" kubel-delete-popup) ;; can't use k here
+    ("r" "Rollout" kubel-rollout-history)]
+   ["" ;; based on current view
+    ("p" "Port forward" kubel-port-forward-pod)
+    ("l" "Logs" kubel-log-popup)
+    ("e" "Exec" kubel-exec-popup)
+    ("a" "Jab" kubel-jab-deployment)] ;; can't use j here
+   ["Settings"
+    ("C" "Set context" kubel-set-context)
+    ("n" "Set namespace" kubel-set-namespace)
+    ("R" "Set resource" kubel-set-resource)
+    ("K" "Set kubectl config file" kubel-set-kubectl-config-file)
+    ("F" "Set output format" kubel-set-output-format)]
+   ["Filter"
+    ("f" "Filter" kubel-set-filter)
+    ("M-n" "Next highlight" kubel-jump-to-next-highlight)
+    ("M-p" "Previous highlight" kubel-jump-to-previous-highlight)]
+   ["Marking"
+    ("m" "Mark item" kubel-mark-item)
+    ("u" "Unmark item" kubel-unmark-item)
+    ("M" "Mark all items" kubel-mark-all)
+    ("U" "Unmark all items" kubel-unmark-all)]
+   ["Utilities"
+    ("c" "Copy to clipboad..." kubel-copy-popup)
+    ("$" "Show Process buffer" kubel-show-process-buffer)]])
 
 (evil-set-initial-state 'kubel-mode 'motion)
 
 (evil-define-key 'motion kubel-evil-mode-map
   (kbd "RET") #'kubel-get-resource-details
+  (kbd "K") #'kubel-set-kubectl-config-file
   (kbd "C") #'kubel-set-context
   (kbd "n") #'kubel-set-namespace
-  (kbd "g") #'kubel-mode
+  (kbd "g") #'kubel
+  (kbd "h") #'kubel-evil-help-popup
+  (kbd "?") #'kubel-evil-help-popup
+  (kbd "F") #'kubel-set-output-format
+  (kbd "R") #'kubel-set-resource
+  (kbd "d") #'kubel-delete-popup
+  (kbd "f") #'kubel-set-filter
+  (kbd "r") #'kubel-rollout-history
+  (kbd "E") #'kubel-quick-edit
+  (kbd "M-n") #'kubel-jump-to-next-highlight
+  (kbd "M-p") #'kubel-jump-to-previous-highlight
+  (kbd "$") #'kubel-show-process-buffer
   (kbd "p") #'kubel-port-forward-pod
   (kbd "l") #'kubel-log-popup
   (kbd "c") #'kubel-copy-popup
-  (kbd "h") #'kubel-evil-help-popup
-  (kbd "E") #'kubel-quick-edit
-  (kbd "e") #'kubel-exec-pod
-  (kbd "F") #'kubel-set-output-format
-  (kbd "d") #'kubel-delete-popup
-  (kbd "R") #'kubel-set-resource
-  (kbd "a") #'kubel-jab-deployment)
+  (kbd "e") #'kubel-exec-popup
+  (kbd "a") #'kubel-jab-deployment
+  (kbd "u") #'kubel-unmark-item
+  (kbd "M") #'kubel-mark-all
+  (kbd "U") #'kubel-unmark-all)
 
 (provide 'kubel-evil)
 

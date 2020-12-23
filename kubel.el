@@ -67,22 +67,29 @@
 ;;
 ;; enter => get resource details
 ;; h => help popup
+;; ? => help popup
+;; E => quick edit any resource
+;; g => refresh
+;; k => delete popup
+;; r => see the rollout history for resource
+;; p => port forward pod
+;; l => log popup
+;; e => exec popup
+;; j => jab deployment to force rolling update
 ;; C => set context
 ;; n => set namespace
 ;; R => set resource
+;; K => set kubectl config file
 ;; F => set output format
-;; g => refresh
 ;; f => set a substring filter for resource name
 ;; M-n => jump to the next highlighted resource
 ;; M-p => jump to previous highlighted resource
-;; E => quick edit any resource
-;; r => see the rollout history for resource
-;; l => log popup
+;; m => mark item
+;; u => unmark item
+;; M => mark all items
+;; U => unmark all items
 ;; c => copy popup
-;; k => delete popup
-;; e => exec into pod
-;; p => port forward pod
-;; j => jab deployment to force rolling update
+;; $ => show process buffer
 
 ;;; Customize:
 
@@ -97,6 +104,7 @@
 (require 'tramp)
 (require 'subr-x)
 (require 'eshell)
+(require 'dired)
 
 (defgroup kubel nil "Customisation group for kubel."
   :group 'extensions)
@@ -233,6 +241,8 @@ CMD is the command string to run."
 
 (defvar kubel--namespace-list-cached nil)
 
+(defvar kubel--selected-items '())
+
 (defun kubel--invalidate-context-caches ()
   "Invalidate the context caches."
   (setq kubel--kubernetes-resources-list-cached nil)
@@ -289,14 +299,23 @@ ENTRYLIST is the output of the parsed body."
 	  (funcall kubel--get-entry colnum)))
   (cl-map 'vector #'kubel--get-column-entry (number-sequence 0 (- (kubel--ncols entrylist) 1))))
 
+(defun kubel--update-selected-items (entries)
+  "Check that all selected items still exist.
+
+ENTRIES are all resources."
+  (dolist (i (-difference kubel--selected-items (mapcar #'car entries)))
+    (setq kubel--selected-items (delete i kubel--selected-items))))
+
 (defun kubel--get-list-entries (entrylist)
   "Get the entries.
 
 ENTRYLIST is the output of the parsed body."
-  (mapcar (lambda (x)
-            (list (car x)
-                  (vconcat [] (mapcar #'kubel--propertize-status x))))
-          (cdr entrylist)))
+  (let ((entries (cdr entrylist)))
+    (kubel--update-selected-items entries)
+    (mapcar (lambda (x)
+              (list (car x)
+                    (vconcat [] (mapcar #'kubel--propertize-status x))))
+            entries)))
 
 (defun kubel--parse-body (body)
   "Parse the body of kubectl get resource call into a list.
@@ -344,13 +363,19 @@ If MAX is the end of the line, dynamically adjust."
   "Return kubel buffer name."
   (format "*kubel (%s) [%s]: %s*" kubel-namespace kubel-context kubel-resource))
 
+(defun kubel--items-selected-p ()
+  "Return non-nil if there are items selected."
+  (>= (length kubel--selected-items) 1))
+
 (defun kubel--propertize-status (status)
   "Return the status in proper font color.
 
 STATUS is the pod status string."
   (let ((pair (cdr (assoc status kubel--status-colors)))
-        (match (or (equal kubel-resource-filter "") (string-match-p kubel-resource-filter status))))
+        (match (or (equal kubel-resource-filter "") (string-match-p kubel-resource-filter status)))
+        (selected (and (kubel--items-selected-p) (-contains? kubel--selected-items status))))
     (cond (pair (propertize status 'font-lock-face `(:foreground ,pair)))
+          (selected (propertize (concat "*" status) 'face 'dired-marked))
           ((not match) (propertize status 'font-lock-face '(:foreground "darkgrey")))
           (t status))))
 
@@ -405,8 +430,10 @@ READONLY If true buffer will be in readonly mode(view-mode)."
           (view-mode)))))
 
 (defun kubel--get-resource-under-cursor ()
-  "Utility function to get the name of the pod under the cursor."
-  (aref (tabulated-list-get-entry) 0))
+  "Utility function to get the name of the resource under the cursor.
+Strip the `*` prefix if the resource is selected"
+  (replace-regexp-in-string
+   "^\*" "" (aref (tabulated-list-get-entry) 0)))
 
 (defun kubel--get-context-namespace ()
   "Utility function to return the proper context and namespace arguments."
@@ -498,7 +525,7 @@ TYPENAME is the resource type/name."
 
 (defun kubel--is-deployment-view ()
   "Return non-nil if this is the pod view."
-  (equal kubel-resource "Deployments"))
+  (-contains? '("Deployments" "deployments" "deployments.apps") kubel-resource))
 
 (defun kubel--save-line ()
   "Save the current line number if the view is unchanged."
@@ -573,17 +600,19 @@ ARGS is the arguments list from transient.
 TYPE is containers or initContainers."
   (interactive
    (list (transient-args 'kubel-log-popup)))
-  (let* ((pod (if (kubel--is-pod-view)
-                  (kubel--get-resource-under-cursor)
-                (kubel--select-resource "Pods")))
-         (type (or type "containers"))
-         (containers (kubel--get-containers pod type))
-         (container (if (equal (length containers) 1)
-                        (car containers)
-                      (completing-read "Select container: " containers)))
-         (process-name (format "kubel - logs - %s - %s" pod container)))
-    (kubel--exec process-name
-                 (append '("logs") (kubel--default-tail-arg args) (list pod container)) t)))
+  (dolist (pod (if (kubel--is-pod-view)
+                   (if (kubel--items-selected-p)
+                       kubel--selected-items
+                     (list (kubel--get-resource-under-cursor)))
+                 (list (kubel--select-resource "Pods"))))
+    (let* ((type (or type "containers"))
+           (containers (kubel--get-containers pod type))
+           (container (if (equal (length containers) 1)
+                          (car containers)
+                        (completing-read "Select container: " containers)))
+           (process-name (format "kubel - logs - %s - %s" pod container)))
+      (kubel--exec process-name
+                   (append '("logs") (kubel--default-tail-arg args) (list pod container)) t))))
 
 (defun kubel-get-pod-logs--initContainer (&optional args)
   "Get the last N logs of the pod under the cursor.
@@ -795,26 +824,29 @@ P can be a single number or a localhost:container port pair."
 (defun kubel-delete-resource ()
   "Kubectl delete resource under cursor."
   (interactive)
-  (let* ((pod (kubel--get-resource-under-cursor))
-         (process-name (format "kubel - delete %s - %s" kubel-resource pod))
-         (args (list "delete" kubel-resource pod)))
-    (when (transient-args 'kubel-delete-popup)
-      (setq args (append args (list "--force" "--grace-period=0"))))
-    (kubel--exec process-name args)))
+  (dolist (pod (if (kubel--items-selected-p)
+                  kubel--selected-items
+                 (list (kubel--get-resource-under-cursor))))
+    (let* ((process-name (format "kubel - delete %s - %s" kubel-resource pod))
+           (args (list "delete" kubel-resource pod)))
+      (when (transient-args 'kubel-delete-popup)
+        (setq args (append args (list "--force" "--grace-period=0"))))
+      (kubel--exec process-name args))))
 
 (defun kubel-jab-deployment ()
   "Make a trivial patch to force a new deployment.
 
 See https://github.com/kubernetes/kubernetes/issues/27081"
   (interactive)
-  (let* ((deployment
-          (if (kubel--is-deployment-view)
-              (kubel--get-resource-under-cursor)
-            (kubel--select-resource "Deployments")))
-         (process-name (format "kubel - bouncing - %s" deployment)))
-    (kubel--exec process-name (list "patch" "deployment" deployment "-p"
-				                       (format "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"%s\"}}}}}"
-					                           (round (time-to-seconds)))))))
+  (dolist (deployment (if (kubel--is-deployment-view)
+                          (if (kubel--items-selected-p)
+                              kubel--selected-items
+                            (list (kubel--get-resource-under-cursor)))
+                        (list (kubel--select-resource "Deployments"))))
+    (let ((process-name (format "kubel - bouncing - %s" deployment)))
+      (kubel--exec process-name (list "patch" "deployment" deployment "-p"
+				                      (format "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"%s\"}}}}}"
+					                          (round (time-to-seconds))))))))
 
 (defun kubel-set-filter (filter)
   "Set the pod filter.
@@ -880,6 +912,42 @@ RESET is to be called if the search is nil after the first attempt."
   (pop-to-buffer kubel--process-buffer)
   (special-mode))
 
+(defun kubel-mark-item ()
+  "Mark or unmark the item under cursor."
+  (interactive)
+  (let ((item (kubel--get-resource-under-cursor)))
+    (unless (-contains? kubel--selected-items item)
+      (progn
+        (push item kubel--selected-items)
+        (forward-line 1)
+        (kubel)))))
+
+(defun kubel-unmark-item ()
+  "Unmark the item under cursor."
+  (interactive)
+  (let ((item (kubel--get-resource-under-cursor)))
+    (when (-contains? kubel--selected-items item)
+      (progn
+        (setq kubel--selected-items (delete item kubel--selected-items))
+        (kubel)))))
+
+(defun kubel-mark-all ()
+  "Mark all items."
+  (interactive)
+  (setq kubel--selected-items '())
+  (save-excursion
+    (goto-char (point-min))
+    (while (not (eobp))
+      (push (kubel--get-resource-under-cursor) kubel--selected-items)
+      (forward-line 1)))
+  (kubel))
+
+(defun kubel-unmark-all ()
+  "Unmark all items."
+  (interactive)
+  (setq kubel--selected-items '())
+  (kubel))
+
 ;; popups
 
 (define-transient-command kubel-exec-popup ()
@@ -912,7 +980,7 @@ RESET is to be called if the search is nil after the first attempt."
   ["Arguments"
    ("-f" "Force" "--force --grace-period=0")]
   ["Actions"
-   ("k" "Delete resource" kubel-delete-resource)])
+   ("k" "Delete resource(s)" kubel-delete-resource)])
 
 (define-transient-command kubel-describe-popup ()
   "Kubel Describe Menu"
@@ -923,28 +991,36 @@ RESET is to be called if the search is nil after the first attempt."
 
 (define-transient-command kubel-help-popup ()
   "Kubel Menu"
-  ["Actions"
-   ;; global
-   ("RET" "Resource details" kubel-describe-popup)
-   ("K" "Set kubectl config file" kubel-set-kubectl-config-file)
-   ("C" "Set context" kubel-set-context)
-   ("n" "Set namespace" kubel-set-namespace)
-   ("g" "Refresh" kubel)
-   ("F" "Set output format" kubel-set-output-format)
-   ("R" "Set resource" kubel-set-resource)
-   ("k" "Delete" kubel-delete-popup)
-   ("f" "Filter" kubel-set-filter)
-   ("M-n" "Next highlight" kubel-jump-to-next-highlight)
-   ("M-p" "Previous highlight" kubel-jump-to-previous-highlight)
-   ("r" "Rollout" kubel-rollout-history)
-   ("E" "Quick edit" kubel-quick-edit)
-   ("$" "Show Process buffer" kubel-show-process-buffer)
-   ;; based on current view
-   ("p" "Port forward" kubel-port-forward-pod)
-   ("l" "Logs" kubel-log-popup)
-   ("c" "Copy" kubel-copy-popup)
-   ("e" "Exec" kubel-exec-popup)
-   ("j" "Jab" kubel-jab-deployment)])
+  [["Actions"
+    ;; global
+    ("RET" "Resource details" kubel-describe-popup)
+    ("E" "Quick edit" kubel-quick-edit)
+    ("g" "Refresh" kubel)
+    ("k" "Delete" kubel-delete-popup)
+    ("r" "Rollout" kubel-rollout-history)]
+   ["" ;; based on current view
+    ("p" "Port forward" kubel-port-forward-pod)
+    ("l" "Logs" kubel-log-popup)
+    ("e" "Exec" kubel-exec-popup)
+    ("j" "Jab" kubel-jab-deployment)]
+   ["Settings"
+    ("C" "Set context" kubel-set-context)
+    ("n" "Set namespace" kubel-set-namespace)
+    ("R" "Set resource" kubel-set-resource)
+    ("K" "Set kubectl config file" kubel-set-kubectl-config-file)
+    ("F" "Set output format" kubel-set-output-format)]
+   ["Filter"
+    ("f" "Filter" kubel-set-filter)
+    ("M-n" "Next highlight" kubel-jump-to-next-highlight)
+    ("M-p" "Previous highlight" kubel-jump-to-previous-highlight)]
+   ["Marking"
+    ("m" "Mark item" kubel-mark-item)
+    ("u" "Unmark item" kubel-unmark-item)
+    ("M" "Mark all items" kubel-mark-all)
+    ("U" "Unmark all items" kubel-unmark-all)]
+   ["Utilities"
+    ("c" "Copy to clipboad..." kubel-copy-popup)
+    ("$" "Show Process buffer" kubel-show-process-buffer)]])
 
 ;; mode map
 (defvar kubel-mode-map
@@ -956,6 +1032,7 @@ RESET is to be called if the search is nil after the first attempt."
     (define-key map (kbd "n") 'kubel-set-namespace)
     (define-key map (kbd "g") 'kubel)
     (define-key map (kbd "h") 'kubel-help-popup)
+    (define-key map (kbd "?") 'kubel-help-popup)
     (define-key map (kbd "F") 'kubel-set-output-format)
     (define-key map (kbd "R") 'kubel-set-resource)
     (define-key map (kbd "k") 'kubel-delete-popup)
@@ -971,6 +1048,11 @@ RESET is to be called if the search is nil after the first attempt."
     (define-key map (kbd "c") 'kubel-copy-popup)
     (define-key map (kbd "e") 'kubel-exec-popup)
     (define-key map (kbd "j") 'kubel-jab-deployment)
+
+    (define-key map (kbd "m") 'kubel-mark-item)
+    (define-key map (kbd "u") 'kubel-unmark-item)
+    (define-key map (kbd "M") 'kubel-mark-all)
+    (define-key map (kbd "U") 'kubel-unmark-all)
 
     ;; deprecated
     (define-key map (kbd "d") 'kubel-deprecated-warning)
