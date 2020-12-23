@@ -2,13 +2,10 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- remove deprecated function
 - copy last command ran to clipboard
-- ability to mark a resource to delete
 - `q` to exit resource details (`quit-window` or `kill-buffer`)
 - show diff and confirmation before applying a change
 - easily get logs for a previous pod instance
-- log for multiple pods or whole service/deployment
 - top po command + sort by usage
 - safe way to help with rollbacks?
 
@@ -27,6 +24,9 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - `e` keybinding now opens a popup for exec options
 - `kubel--exec`  is now completely async
+
+### Removed
+- remove deprecated function bound to `d`
 
 ## [2.1.0] - 2020-11-16
 ### Added

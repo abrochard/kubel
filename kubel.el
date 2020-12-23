@@ -895,11 +895,6 @@ RESET is to be called if the search is nil after the first attempt."
   (interactive)
   (browse-url "https://github.com/abrochard/kubel/blob/master/CHANGELOG.md"))
 
-(defun kubel-deprecated-warning ()
-  "Show a warning to the user to inform of new workflow."
-  (interactive)
-  (message "This command has been deprecated, use the R key to select resource instead.\nYou can also checkout the changelog with `M-x kubel-changelog`"))
-
 (defun kubel-quick-edit ()
   "Quickly edit any resource."
   (interactive)
@@ -1054,8 +1049,6 @@ RESET is to be called if the search is nil after the first attempt."
     (define-key map (kbd "M") 'kubel-mark-all)
     (define-key map (kbd "U") 'kubel-unmark-all)
 
-    ;; deprecated
-    (define-key map (kbd "d") 'kubel-deprecated-warning)
     map)
   "Keymap for `kubel-mode'.")
 
