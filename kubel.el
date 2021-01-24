@@ -79,6 +79,7 @@
 ;; C => set context
 ;; n => set namespace
 ;; R => set resource
+;; s => set label selector
 ;; K => set kubectl config file
 ;; F => set output format
 ;; f => set a substring filter for resource name
@@ -204,11 +205,17 @@ CMD is the command string to run."
 (defvar kubel-resource-filter ""
   "Substring filter for resource name.")
 
+(defvar kubel-selector ""
+  "Label selector for pods")
+
 (defvar kubel--line-number nil
   "Store the current line number to jump back after a refresh.")
 
 (defvar kubel-namespace-history '()
   "List of previously used namespaces.")
+
+(defvar kubel-selector-history '()
+  "List of previously used selectors")
 
 ;; fallback list of resources if the version of kubectl doesn't support api-resources command
 (defvar kubel-kubernetes-resources-list
@@ -446,9 +453,14 @@ Strip the `*` prefix if the resource is selected"
    (unless (equal kubel-namespace "default")
      (list "-n" kubel-namespace))))
 
+(defun kubel--get-selector ()
+  "Utility function to return current label selector."
+  (unless (equal kubel-selector "")
+    (list "--selector" kubel-selector)))
+
 (defun kubel--get-command-prefix ()
   "Utility function to prefix the kubectl command with proper context and namespace."
-  (mapconcat 'identity (append '("kubectl") (kubel--get-context-namespace)) " "))
+  (mapconcat 'identity (append '("kubectl") (kubel--get-context-namespace) (kubel--get-selector)) " "))
 
 (defun kubel--get-containers (pod-name &optional type)
   "List the containers in a pod.
@@ -731,6 +743,26 @@ ARGS is the arguments list from transient."
     (kubel--invalidate-context-caches)
     (setq kubel-namespace "default")
     (kubel last-default-directory)))
+
+(defun kubel--add-selector-to-history (selector)
+  "Add SELECTOR to history if it isn't there already."
+  (unless (member selector kubel-selector-history)
+    (push selector kubel-selector-history)))
+
+(defun kubel--list-selectors ()
+  "List selector expressions from history"
+  kubel-selector-history)
+
+(defun kubel-set-label-selector ()
+  "Set the selector"
+  (interactive)
+  (setq kubel-selector
+        (completing-read
+         "Selector: "
+         (kubel--list-selectors)))
+  (kubel--add-selector-to-history kubel-selector)
+  ; Update pod list according to the label selector
+  (kubel))
 
 (defun kubel--fetch-api-resource-list ()
   "Fetch the API resource list."
@@ -1017,7 +1049,8 @@ RESET is to be called if the search is nil after the first attempt."
    ["Filter"
     ("f" "Filter" kubel-set-filter)
     ("M-n" "Next highlight" kubel-jump-to-next-highlight)
-    ("M-p" "Previous highlight" kubel-jump-to-previous-highlight)]
+    ("M-p" "Previous highlight" kubel-jump-to-previous-highlight)
+    ("s" "Set label selector" kubel-set-label-selector)]
    ["Marking"
     ("m" "Mark item" kubel-mark-item)
     ("u" "Unmark item" kubel-unmark-item)
@@ -1047,6 +1080,7 @@ RESET is to be called if the search is nil after the first attempt."
     (define-key map (kbd "M-n") 'kubel-jump-to-next-highlight)
     (define-key map (kbd "M-p") 'kubel-jump-to-previous-highlight)
     (define-key map (kbd "$") 'kubel-show-process-buffer)
+    (define-key map (kbd "s") 'kubel-set-label-selector)
     ;; based on view
     (define-key map (kbd "p") 'kubel-port-forward-pod)
     (define-key map (kbd "l") 'kubel-log-popup)
