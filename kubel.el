@@ -755,10 +755,10 @@ ARGS is the arguments list from transient."
 (defun kubel--get-all-selectors ()
   (unless kubel--label-values-cached
     (let* ((raw-labels (kubel--get-pod-labels))
-         (splitted (mapcan (lambda (s) (split-string s ","))
-                           raw-labels))
-         (cleaned (mapcar (lambda (s) (replace-regexp-in-string "[{|\"|}]" "" s)) splitted))
-         (unique (-distinct cleaned)))
+           (splitted (mapcan (lambda (s) (split-string s ","))
+                             raw-labels))
+           (cleaned (mapcar (lambda (s) (replace-regexp-in-string "[{|\"|}]" "" s)) splitted))
+           (unique (-distinct cleaned)))
       (setq kubel--label-values-cached unique)))
   kubel--label-values-cached)
 
