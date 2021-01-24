@@ -251,6 +251,8 @@ CMD is the command string to run."
 
 (defvar kubel--namespace-list-cached nil)
 
+(defvar kubel--label-values-cached nil)
+
 (defvar kubel--selected-items '())
 
 (defun kubel--invalidate-context-caches ()
@@ -258,7 +260,8 @@ CMD is the command string to run."
   (setq kubel--kubernetes-resources-list-cached nil)
   (setq kubel--kubernetes-version-cached nil)
   (setq kubel--can-get-namespace-cached nil)
-  (setq kubel--namespace-list-cached nil))
+  (setq kubel--namespace-list-cached nil)
+  (setq kubel--label-values-cached nil))
 
 (defun kubel-kubernetes-version ()
   "Return a list with (major-version minor-version patch)."
@@ -749,9 +752,20 @@ ARGS is the arguments list from transient."
   (unless (member selector kubel-selector-history)
     (push selector kubel-selector-history)))
 
+(defun kubel--get-all-selectors ()
+  (unless kubel--label-values-cached
+    (let* ((raw-labels (kubel--get-pod-labels))
+         (splitted (mapcan (lambda (s) (split-string s ","))
+                           raw-labels))
+         (cleaned (mapcar (lambda (s) (replace-regexp-in-string "[{|\"|}]" "" s)) splitted))
+         (unique (-distinct cleaned)))
+      (setq kubel--label-values-cached unique)))
+  kubel--label-values-cached)
+
 (defun kubel--list-selectors ()
   "List selector expressions from history"
-  kubel-selector-history)
+  (append (kubel--get-all-selectors)
+          kubel-selector-history))
 
 (defun kubel-set-label-selector ()
   "Set the selector"
