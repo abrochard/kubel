@@ -206,7 +206,7 @@ CMD is the command string to run."
   "Substring filter for resource name.")
 
 (defvar kubel-selector ""
-  "Label selector for pods")
+  "Label selector for resources")
 
 (defvar kubel--line-number nil
   "Store the current line number to jump back after a refresh.")
