@@ -734,7 +734,8 @@ ARGS is the arguments list from transient."
 
 (defun kubel--fetch-api-resource-list ()
   "Fetch the API resource list."
-  (split-string (kubel--exec-to-string "kubectl api-resources -o name --no-headers=true") "\n"))
+  (split-string (kubel--exec-to-string
+		 (format "kubectl --context %s api-resources -o name --no-headers=true" kubel-context)) "\n"))
 
 (defun kubel-set-resource (&optional refresh)
   "Set the resource.
