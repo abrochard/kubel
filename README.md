@@ -81,6 +81,7 @@ M => mark all items
 U => unmark all items
 c => copy popup
 $ => show process buffer
+s => show only resources with specified label value
 ```
 
 ## Editing a resource
