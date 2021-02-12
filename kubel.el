@@ -206,7 +206,7 @@ CMD is the command string to run."
   "Substring filter for resource name.")
 
 (defvar kubel-selector ""
-  "Label selector for resources")
+  "Label selector for resources.")
 
 (defvar kubel--line-number nil
   "Store the current line number to jump back after a refresh.")
@@ -215,7 +215,7 @@ CMD is the command string to run."
   "List of previously used namespaces.")
 
 (defvar kubel-selector-history '()
-  "List of previously used selectors")
+  "List of previously used selectors.")
 
 ;; fallback list of resources if the version of kubectl doesn't support api-resources command
 (defvar kubel-kubernetes-resources-list
@@ -753,6 +753,7 @@ ARGS is the arguments list from transient."
     (push selector kubel-selector-history)))
 
 (defun kubel--get-all-selectors ()
+  "Get all selectors."
   (unless kubel--label-values-cached
     (let* ((raw-labels (kubel--get-pod-labels))
            (splitted (mapcan (lambda (s) (split-string s ","))
@@ -763,17 +764,19 @@ ARGS is the arguments list from transient."
   kubel--label-values-cached)
 
 (defun kubel--list-selectors ()
-  "List selector expressions from history"
-  (append (kubel--get-all-selectors)
+  "List selector expressions from history."
+  (append '("none") (kubel--get-all-selectors)
           kubel-selector-history))
 
 (defun kubel-set-label-selector ()
-  "Set the selector"
+  "Set the selector."
   (interactive)
-  (setq kubel-selector
-        (completing-read
+  (let ((selector (completing-read
          "Selector: "
-         (kubel--list-selectors)))
+         (kubel--list-selectors))))
+    (when (equal selector "none")
+      (setq selector ""))
+    (setq kubel-selector selector))
   (kubel--add-selector-to-history kubel-selector)
   ; Update pod list according to the label selector
   (kubel))
