@@ -21,6 +21,7 @@ All notable changes to this project will be documented in this file.
   - delete multiple items of the same resource (like multiple pods)
   - tail logs of multiple pods
   - jab multiple deployments
+- `s` command to filter by selector
 
 ### Changed
 - `e` keybinding now opens a popup for exec options
