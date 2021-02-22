@@ -22,10 +22,12 @@ All notable changes to this project will be documented in this file.
   - tail logs of multiple pods
   - jab multiple deployments
 - `s` command to filter by selector
+- added context to fetch api-resources
 
 ### Changed
 - `e` keybinding now opens a popup for exec options
 - `kubel--exec` is now completely async
+- support selecting container on exec function
 
 ### Removed
 - remove deprecated function bound to `d`
