@@ -837,7 +837,7 @@ P can be a single number or a localhost:container port pair."
   (add-to-list 'tramp-methods
                `("kubectl"
                  (tramp-login-program      "kubectl")
-                 (tramp-login-args         (,(kubel--get-context-namespace) ("exec" "-it") ("-u" "%u") ("%h") ("sh")))
+                 (tramp-login-args         (,(kubel--get-context-namespace) ("exec" "-it") ("-c" "%u") ("%h") ("sh")))
                  (tramp-remote-shell       "sh")
                  (tramp-remote-shell-args  ("-i" "-c"))))) ;; add the current context/namespace to tramp methods
 
@@ -845,42 +845,54 @@ P can be a single number or a localhost:container port pair."
   "Exec into the pod under the cursor -> `find-file."
   (interactive)
   (kubel-setup-tramp)
-  (setq dir-prefix (or
-		            (when (tramp-tramp-file-p default-directory)
-		              (with-parsed-tramp-file-name default-directory nil
-			            (format "%s%s:%s@%s|" (or hop "") method user host)))
-		            ""))
-  (find-file (format "/%skubectl:%s:/" dir-prefix (if (kubel--is-pod-view)
-						                              (kubel--get-resource-under-cursor)
-						                            (kubel--select-resource "Pods")))))
+  (let* ((dir-prefix (or
+		              (when (tramp-tramp-file-p default-directory)
+		                (with-parsed-tramp-file-name default-directory nil
+			              (format "%s%s:%s@%s|" (or hop "") method user host)))""))
+         (pod (if (kubel--is-pod-view)
+                  (kubel--get-resource-under-cursor)
+                (kubel--select-resource "Pods")))
+         (containers (kubel--get-containers pod))
+         (container (if (equal (length containers) 1)
+                        (car containers)
+                      (completing-read "Select container: " containers))))
+    (find-file (format "/%skubectl:%s@%s:/" dir-prefix container pod))))
 
 (defun kubel-exec-shell-pod ()
   "Exec into the pod under the cursor -> shell."
   (interactive)
   (kubel-setup-tramp)
   (let* ((dir-prefix (or
-                    (when (tramp-tramp-file-p default-directory)
-                      (with-parsed-tramp-file-name default-directory nil
-                        (format "%s%s:%s@%s|" (or hop "") method user host))) ""))
+                      (when (tramp-tramp-file-p default-directory)
+                        (with-parsed-tramp-file-name default-directory nil
+                          (format "%s%s:%s@%s|" (or hop "") method user host))) ""))
          (pod (if (kubel--is-pod-view)
                   (kubel--get-resource-under-cursor)
                 (kubel--select-resource "Pods")))
-         (default-directory (format "/%skubectl:%s:/" dir-prefix pod)))
-    (shell (format "*kubel - shell - %s*" pod))))
+         (containers (kubel--get-containers pod))
+         (container (if (equal (length containers) 1)
+                        (car containers)
+                      (completing-read "Select container: " containers)))
+         (default-directory (format "/%skubectl:%s@%s:/" dir-prefix container pod)))
+    (shell (format "*kubel - shell - %s@%s*" container pod))))
 
 (defun kubel-exec-eshell-pod ()
   "Exec into the pod under the cursor -> eshell."
   (interactive)
   (kubel-setup-tramp)
   (let* ((dir-prefix (or
-                    (when (tramp-tramp-file-p default-directory)
-                      (with-parsed-tramp-file-name default-directory nil
-                        (format "%s%s:%s@%s|" (or hop "") method user host))) ""))
+                      (when (tramp-tramp-file-p default-directory)
+                        (with-parsed-tramp-file-name default-directory nil
+                          (format "%s%s:%s@%s|" (or hop "") method user host))) ""))
          (pod (if (kubel--is-pod-view)
                   (kubel--get-resource-under-cursor)
                 (kubel--select-resource "Pods")))
-         (default-directory (format "/%skubectl:%s:/" dir-prefix pod))
-         (eshell-buffer-name (format "*kubel - eshell - %s*" pod)))
+         (containers (kubel--get-containers pod))
+         (container (if (equal (length containers) 1)
+                        (car containers)
+                      (completing-read "Select container: " containers)))
+         (default-directory (format "/%skubectl:%s@%s:/" dir-prefix container pod))
+         (eshell-buffer-name (format "*kubel - eshell - %s@%s*" container pod)))
     (eshell)))
 
 (defun kubel-delete-resource ()
