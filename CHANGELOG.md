@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 - easily get logs for a previous pod instance
 - top po command + sort by usage
 - safe way to help with rollbacks?
+- run `kubectl describe pod` 
 
 ## [3.0.0] -
 ### Added
