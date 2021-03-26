@@ -8,7 +8,8 @@ All notable changes to this project will be documented in this file.
 - easily get logs for a previous pod instance
 - top po command + sort by usage
 - safe way to help with rollbacks?
-- run `kubectl describe pod` 
+- run `kubectl describe pod`
+- `kubectl` apply a buffer to current context/namespace
 
 ## [3.0.0] -
 ### Added

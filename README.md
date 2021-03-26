@@ -57,6 +57,7 @@ This will let you select a resource and re-display the kubel buffer.
 On the kubel screen, place your cursor on a resource
 ```
 enter => get resource details
+C-u enter => describe resource
 h => help popup
 ? => help popup
 E => quick edit any resource

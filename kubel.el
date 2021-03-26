@@ -66,6 +66,7 @@
 ;; On the kubel screen, place your cursor on a resource
 ;;
 ;; enter => get resource details
+;; C-u enter => describe resource
 ;; h => help popup
 ;; ? => help popup
 ;; E => quick edit any resource
@@ -79,7 +80,6 @@
 ;; C => set context
 ;; n => set namespace
 ;; R => set resource
-;; s => set label selector
 ;; K => set kubectl config file
 ;; F => set output format
 ;; f => set a substring filter for resource name
@@ -91,6 +91,7 @@
 ;; U => unmark all items
 ;; c => copy popup
 ;; $ => show process buffer
+;; s => show only resources with specified label value
 
 ;;; Customize:
 
