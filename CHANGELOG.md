@@ -25,11 +25,13 @@ All notable changes to this project will be documented in this file.
   - jab multiple deployments
 - `s` command to filter by selector
 - added context to fetch api-resources
+- support selecting container on exec function
 
 ### Changed
 - `e` keybinding now opens a popup for exec options
 - `kubel--exec` is now completely async
 - support selecting container on exec function
+- pod label parsing updated for newer version of k8s
 
 ### Removed
 - remove deprecated function bound to `d`
