@@ -481,14 +481,19 @@ TYPE is containers or initContainers."
 
 (defun kubel--get-pod-labels ()
   "List labels of pods in a current namespace."
-  (delete-dups
-   (split-string
-    (replace-regexp-in-string
-     (regexp-quote ":") "="
-     (replace-regexp-in-string
-      "map\\[\\(.+?\\)\\]" "\\1"
-      (kubel--exec-to-string
-       (format "%s get pod -o jsonpath='{.items[*].metadata.labels}'" (kubel--get-command-prefix))))))))
+  (let* ((raw-labels
+           (split-string
+            (replace-regexp-in-string
+             (regexp-quote ":") "="
+             (replace-regexp-in-string
+              "map\\[\\(.+?\\)\\]" "\\1"
+              (kubel--exec-to-string
+               (format "%s get pod -o jsonpath='{.items[*].metadata.labels}'" (kubel--get-command-prefix)))))))
+         (splitted (mapcan (lambda (s) (split-string s ","))
+                           raw-labels))
+         (cleaned (mapcar (lambda (s) (replace-regexp-in-string "[{|\"|}]" "" s)) splitted))
+         (unique (-distinct cleaned)))
+    unique))
 
 (defun kubel--select-resource (name)
   "Prompt user to select an instance out of a list of resources.
@@ -759,18 +764,15 @@ ARGS is the arguments list from transient."
 (defun kubel--get-all-selectors ()
   "Get all selectors."
   (unless kubel--label-values-cached
-    (let* ((raw-labels (kubel--get-pod-labels))
-           (splitted (mapcan (lambda (s) (split-string s ","))
-                             raw-labels))
-           (cleaned (mapcar (lambda (s) (replace-regexp-in-string "[{|\"|}]" "" s)) splitted))
-           (unique (-distinct cleaned)))
-      (setq kubel--label-values-cached unique)))
+    (let ((labels (kubel--get-pod-labels)))
+      (setq kubel--label-values-cached labels)))
   kubel--label-values-cached)
 
 (defun kubel--list-selectors ()
   "List selector expressions from history."
-  (append '("none") (kubel--get-all-selectors)
-          kubel-selector-history))
+  (delete-dups
+   (append '("none") (kubel--get-all-selectors)
+          kubel-selector-history)))
 
 (defun kubel-set-label-selector ()
   "Set the selector."
