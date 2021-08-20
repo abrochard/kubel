@@ -173,7 +173,7 @@ off - always assume we cannot list namespaces"
     (goto-char (point-max))
     (insert (format "%s\n" str))))
 
-(defvar kubel--last-command nil)
+(defvar-local kubel--last-command nil)
 
 (defun kubel--log-command (process-name cmd)
   "Log the kubectl command to the process buffer.
@@ -192,24 +192,24 @@ CMD is the command string to run."
   (kubel--log-command "kubectl-command" cmd)
   (shell-command-to-string cmd))
 
-(defvar kubel-namespace "default"
+(defvar-local kubel-namespace "default"
   "Current namespace.")
 
-(defvar kubel-resource "Pods"
+(defvar-local kubel-resource "Pods"
   "Current resource.")
 
-(defvar kubel-context
+(defvar-local kubel-context
   (replace-regexp-in-string
    "\n" "" (kubel--exec-to-string "kubectl config current-context"))
   "Current context.  Tries to smart default.")
 
-(defvar kubel-resource-filter ""
+(defvar-local kubel-resource-filter ""
   "Substring filter for resource name.")
 
-(defvar kubel-selector ""
+(defvar-local kubel-selector ""
   "Label selector for resources.")
 
-(defvar kubel--line-number nil
+(defvar-local kubel--line-number nil
   "Store the current line number to jump back after a refresh.")
 
 (defvar kubel-namespace-history '()
@@ -244,17 +244,17 @@ CMD is the command string to run."
 	"RoleBindings"
 	"Roles"))
 
-(defvar kubel--kubernetes-version-cached nil)
+(defvar-local kubel--kubernetes-version-cached nil)
 
 (defvar kubel--kubernetes-resources-list-cached nil)
 
-(defvar kubel--can-get-namespace-cached nil)
+(defvar-local kubel--can-get-namespace-cached nil)
 
 (defvar kubel--namespace-list-cached nil)
 
-(defvar kubel--label-values-cached nil)
+(defvar-local kubel--label-values-cached nil)
 
-(defvar kubel--selected-items '())
+(defvar-local kubel--selected-items '())
 
 (defun kubel--invalidate-context-caches ()
   "Invalidate the context caches."
@@ -1132,7 +1132,7 @@ RESET is to be called if the search is nil after the first attempt."
     map)
   "Keymap for `kubel-mode'.")
 
-(defvar kubel-last-position nil)
+(defvar-local kubel-last-position nil)
 
 ;;;###autoload
 (defun kubel (&optional directory)
