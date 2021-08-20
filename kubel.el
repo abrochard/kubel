@@ -734,27 +734,25 @@ ARGS is the arguments list from transient."
   (interactive)
   (let* ((namespace (completing-read "Namespace: " (kubel--list-namespace)
                                      nil nil nil nil "default"))
-	     (kubel--buffer (get-buffer (kubel--buffer-name)))
-	     (last-default-directory (when kubel--buffer
-				                   (with-current-buffer kubel--buffer default-directory))))
-    (when kubel--buffer (kill-buffer kubel--buffer))
+         (kubel--buffer (get-buffer (kubel--buffer-name)))
+         (last-default-directory (when kubel--buffer
+                                   (with-current-buffer kubel--buffer default-directory))))
     (setq kubel-namespace namespace)
     (kubel--add-namespace-to-history namespace)
-    (kubel last-default-directory)))
+    (kubel-refresh last-default-directory)))
 
 (defun kubel-set-context ()
   "Set the context."
   (interactive)
   (let* ((kubel--buffer (get-buffer (kubel--buffer-name)))
-	     (last-default-directory (when kubel--buffer (with-current-buffer kubel--buffer default-directory))))
-    (when kubel--buffer (kill-buffer kubel--buffer));; kill buffer for previous context if possible
+         (last-default-directory (when kubel--buffer (with-current-buffer kubel--buffer default-directory))))
     (setq kubel-context
           (completing-read
            "Select context: "
            (split-string (kubel--exec-to-string "kubectl config view -o jsonpath='{.contexts[*].name}'") " ")))
     (kubel--invalidate-context-caches)
     (setq kubel-namespace "default")
-    (kubel last-default-directory)))
+    (kubel-refresh last-default-directory)))
 
 (defun kubel--add-selector-to-history (selector)
   "Add SELECTOR to history if it isn't there already."
@@ -785,7 +783,7 @@ ARGS is the arguments list from transient."
     (setq kubel-selector selector))
   (kubel--add-selector-to-history kubel-selector)
   ; Update pod list according to the label selector
-  (kubel))
+  (kubel-refresh))
 
 (defun kubel--fetch-api-resource-list ()
   "Fetch the API resource list."
@@ -809,8 +807,7 @@ the context caches, including the cached resource list."
 	     (last-default-directory (when kubel--buffer (with-current-buffer kubel--buffer default-directory))))
     (setq kubel-resource
 	      (completing-read "Select resource: " resource-list))
-    (when kubel--buffer (kill-buffer kubel--buffer)) ;; kill buffer for previous context if possible
-    (kubel last-default-directory)))
+    (kubel-refresh last-default-directory)))
 
 (defun kubel-set-output-format ()
   "Set output format of kubectl."
@@ -818,8 +815,9 @@ the context caches, including the cached resource list."
   (setq kubel-output
 	    (completing-read
 	     "Set output format: "
-	     '("yaml" "json" "wide" "custom-columns=")))
-  (kubel))
+        (completing-read
+         "Set output format: "
+         '("yaml" "json" "wide" "custom-columns="))))
 
 (defun kubel-port-forward-pod (p)
   "Port forward a pod to your local machine.
@@ -931,7 +929,7 @@ See https://github.com/kubernetes/kubernetes/issues/27081"
 FILTER is the filter string."
   (interactive "MFilter: ")
   (setq kubel-resource-filter filter)
-  (kubel))
+  (kubel-refresh))
 
 (defun kubel--jump-to-highlight (init search reset)
   "Base function to jump to highlight.
@@ -992,7 +990,7 @@ RESET is to be called if the search is nil after the first attempt."
       (progn
         (push item kubel--selected-items)
         (forward-line 1)
-        (kubel)))))
+        (kubel-refresh)))))
 
 (defun kubel-unmark-item ()
   "Unmark the item under cursor."
@@ -1001,7 +999,7 @@ RESET is to be called if the search is nil after the first attempt."
     (when (-contains? kubel--selected-items item)
       (progn
         (setq kubel--selected-items (delete item kubel--selected-items))
-        (kubel)))))
+        (kubel-refresh)))))
 
 (defun kubel-mark-all ()
   "Mark all items."
@@ -1012,13 +1010,13 @@ RESET is to be called if the search is nil after the first attempt."
     (while (not (eobp))
       (push (kubel--get-resource-under-cursor) kubel--selected-items)
       (forward-line 1)))
-  (kubel))
+  (kubel-refresh))
 
 (defun kubel-unmark-all ()
   "Unmark all items."
   (interactive)
   (setq kubel--selected-items '())
-  (kubel))
+  (kubel-refresh))
 
 ;; popups
 
@@ -1068,7 +1066,7 @@ RESET is to be called if the search is nil after the first attempt."
     ;; global
     ("RET" "Resource details" kubel-describe-popup)
     ("E" "Quick edit" kubel-quick-edit)
-    ("g" "Refresh" kubel)
+    ("g" "Refresh" kubel-refresh)
     ("k" "Delete" kubel-delete-popup)
     ("r" "Rollout" kubel-rollout-history)]
    ["" ;; based on current view
@@ -1104,7 +1102,7 @@ RESET is to be called if the search is nil after the first attempt."
     (define-key map (kbd "K") 'kubel-set-kubectl-config-file)
     (define-key map (kbd "C") 'kubel-set-context)
     (define-key map (kbd "n") 'kubel-set-namespace)
-    (define-key map (kbd "g") 'kubel)
+    (define-key map (kbd "g") 'kubel-refresh)
     (define-key map (kbd "h") 'kubel-help-popup)
     (define-key map (kbd "?") 'kubel-help-popup)
     (define-key map (kbd "F") 'kubel-set-output-format)
@@ -1134,17 +1132,49 @@ RESET is to be called if the search is nil after the first attempt."
 
 (defvar-local kubel-last-position nil)
 
+(defun kubel--current-state ()
+  "Show in the Echo Area the current context, namespace, and resource."
+  (message (concat
+            (format "[Context: %s] [Namespace: %s] [Resource: %s]" kubel-context kubel-namespace kubel-resource)
+            (unless (equal kubel-selector "")
+              (format " (%s)" kubel-selector)))))
+
+;;;###autoload
+(defun kubel-refresh (&optional directory)
+  "Refresh the current kubel buffer, calling kubectl using the configured
+context, namespace, and resource.
+
+DIRECTORY is optional for TRAMP support."
+  (interactive)
+  (kubel--save-line)
+  (when directory (setq default-directory directory))
+  (let ((name (kubel--buffer-name)))
+    (unless (get-buffer name)
+      (rename-buffer name))
+    (message (format "Running kubectl for: %s..." name)))
+  (let ((entries (kubel--populate-list)))
+    (setq tabulated-list-format (car entries))
+    (setq tabulated-list-entries (cadr entries)))   ; TODO handle "No resource found"
+  (setq tabulated-list-sort-key kubel--list-sort-key)
+  (setq tabulated-list-sort-key nil)
+  (tabulated-list-init-header)
+  (tabulated-list-print)
+  (kubel--current-state)
+  (kubel--jump-back-to-line))
+
 ;;;###autoload
 (defun kubel (&optional directory)
   "Invoke the kubel buffer.
 
 DIRECTORY is optional for TRAMP support."
   (interactive)
-  (kubel--save-line)
-  (kubel--pop-to-buffer (kubel--buffer-name))
-  (when directory (setq default-directory directory))
-  (kubel-mode)
-  (message (concat "Namespace: " kubel-namespace)))
+
+  (let* ((name (kubel--buffer-name))
+         (buf (generate-new-buffer name)))
+    (switch-to-buffer buf)
+    (with-current-buffer buf
+      (kubel-mode)
+      (kubel-refresh directory))))
 
 (define-derived-mode kubel-mode tabulated-list-mode "Kubel"
   "Special mode for kubel buffers."
@@ -1154,17 +1184,8 @@ DIRECTORY is optional for TRAMP support."
   (setq mode-name "Kubel")
   (setq major-mode 'kubel-mode)
   (use-local-map kubel-mode-map)
-  (let ((entries (kubel--populate-list)))
-    (setq tabulated-list-format (car entries))
-    (setq tabulated-list-entries (cadr entries)))   ; TODO handle "No resource found"
-  (setq tabulated-list-sort-key kubel--list-sort-key)
-  (setq tabulated-list-sort-key nil)
-  (tabulated-list-init-header)
-  (tabulated-list-print)
   (hl-line-mode 1)
   (run-mode-hooks 'kubel-mode-hook))
-
-(add-hook 'kubel-mode-hook #'kubel--jump-back-to-line)
 
 (provide 'kubel)
 ;;; kubel.el ends here
