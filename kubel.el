@@ -813,11 +813,11 @@ the context caches, including the cached resource list."
   "Set output format of kubectl."
   (interactive)
   (setq kubel-output
-	    (completing-read
-	     "Set output format: "
         (completing-read
          "Set output format: "
-         '("yaml" "json" "wide" "custom-columns="))))
+        (completing-read
+         "Set output format: "
+         '("yaml" "json" "wide" "custom-columns=")))))
 
 (defun kubel-port-forward-pod (p)
   "Port forward a pod to your local machine.

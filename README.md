@@ -35,7 +35,7 @@ load the `kubel-evil.el` file.
 
 To list the pods in your current context and namespace, call
 ```
-M-x kubel
+M-x kubel-refresh
 ```
 To set said namespace and context, respectively call
 ```
