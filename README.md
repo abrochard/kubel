@@ -12,17 +12,18 @@ You can [watch how kubel started](https://www.youtube.com/watch?v=w3krYEeqnyk) o
 ## Features
 We now support managing pretty much any resource!
 
-- switch context and namespace
-- show any resource (pods/services/deployments/etc)
-- highlight a resource by name
-- copy resource name to clipboard
-- show and edit resource details
-- show rollout history for a resource
-- delete a resource
-- tail container logs (possibly with `-f` follow flag)
-- copy container log command to clipboard
-- port forward a pod to your localhost
-- exec into a pod using tramp
+- Switch context and namespace.
+- Show any resource (pods/services/deployments/etc).
+- Highlight a resource by name.
+- Copy resource name to clipboard.
+- Show and edit resource details.
+- Show rollout history for a resource.
+- Delete a resource.
+- Tail container logs (possibly with `-f` follow flag).
+- Copy container log command to clipboard.
+- Port forward a pod to your localhost.
+- Exec into a pod using tramp.
+- Multiple kubel buffers, each one with different context, namespace, and resource.
 
 ## Installation
 
@@ -51,6 +52,11 @@ To switch to showing a different resource, use the `R` command or
 M-x kubel-set-resource
 ```
 This will let you select a resource and re-display the kubel buffer.
+
+You can also use `kubel-open` to open directly a kubel buffer with the given parameters, example:
+``` lisp
+(kubel-open "custom-context" "custom-namespace" "custom-resource"))
+```
 
 ## Shortcuts
 

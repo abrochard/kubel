@@ -373,9 +373,13 @@ If MAX is the end of the line, dynamically adjust."
   "Return the width of a specific COLNUM in ENTRYLIST."
   (seq-max (mapcar (lambda (x) (length (nth colnum x) )) entrylist)))
 
+(defun kubel--buffer-name-from-parameters (context namespace resource)
+  "Return a preconfigured kubel buffer name."
+  (concat (format "*kubel [%s] (%s): %s*" context namespace resource)))
+
 (defun kubel--buffer-name ()
   "Return kubel buffer name."
-  (concat (format "*kubel [%s] (%s): %s" kubel-context kubel-namespace kubel-resource)
+  (concat (kubel--buffer-name-from-parameters kubel-context kubel-namespace kubel-resource)
           (unless (equal kubel-selector "")
             (format " (%s)" kubel-selector))
           "*"))
@@ -1161,6 +1165,21 @@ DIRECTORY is optional for TRAMP support."
   (tabulated-list-print)
   (kubel--current-state)
   (kubel--jump-back-to-line))
+
+;;;###autoload
+(defun kubel-open (context namespace resource)
+  "Create a new kubel buffer using passed parameters CONTEXT NAMESPACE RESOURCE."
+  (let ((tmpname "*kubel-tmp*")
+        (name (kubel--buffer-name-from-parameters context namespace resource)))
+    (if (get-buffer name)
+        (pop-to-buffer-same-window name)
+      (with-current-buffer (get-buffer-create tmpname)
+        (kubel-mode)
+        (setq kubel-context context)
+        (setq kubel-namespace namespace)
+        (setq kubel-resource resource)
+        (pop-to-buffer-same-window tmpname)
+        (kubel-refresh)))))
 
 ;;;###autoload
 (defun kubel (&optional directory)
