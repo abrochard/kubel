@@ -119,10 +119,6 @@
    ("Age" 15 t)]
   "List format.")
 
-(defconst kubel--list-sort-key
-  '("NAME" . nil)
-  "Sort table on this key.")
-
 (defconst kubel--status-colors
   '(("Running" . "green")
     ("Healthy" . "green")
@@ -1157,7 +1153,6 @@ DIRECTORY is optional for TRAMP support."
   (let ((entries (kubel--populate-list)))
     (setq tabulated-list-format (car entries))
     (setq tabulated-list-entries (cadr entries)))   ; TODO handle "No resource found"
-  (setq tabulated-list-sort-key kubel--list-sort-key)
   (setq tabulated-list-sort-key nil)
   (tabulated-list-init-header)
   (tabulated-list-print)
