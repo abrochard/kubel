@@ -26,6 +26,7 @@ All notable changes to this project will be documented in this file.
 - `s` command to filter by selector
 - added context to fetch api-resources
 - support selecting container on exec function
+- support multiple words column headers
 
 ### Changed
 - `e` keybinding now opens a popup for exec options
