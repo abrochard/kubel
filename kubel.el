@@ -337,7 +337,8 @@ ENTRYLIST is the output of the parsed body."
 BODY is the raw output of kubectl get resource."
   (let* ((lines (nbutlast (split-string body "\n")))
          (header (car lines))
-         (cols (split-string header))
+         ;; Cronjobs have a "LAST SCHEDULE" column, so need to split on 2+ whitespace chars.
+         (cols (split-string header (rx (>= 2 whitespace)) t))
          (start-pos (mapcar (lambda (x) (string-match x header)) cols))
          (end-pos (delete 0 (append start-pos '("end"))))
          (position (-zip-with 'cons start-pos end-pos))
