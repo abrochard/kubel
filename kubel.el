@@ -381,8 +381,7 @@ If MAX is the end of the line, dynamically adjust."
   "Return kubel buffer name."
   (concat (kubel--buffer-name-from-parameters kubel-context kubel-namespace kubel-resource)
           (unless (equal kubel-selector "")
-            (format " (%s)" kubel-selector))
-          "*"))
+            (format " (%s)" kubel-selector))))
 
 (defun kubel--items-selected-p ()
   "Return non-nil if there are items selected."
