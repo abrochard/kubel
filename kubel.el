@@ -430,7 +430,7 @@ ARGS is a ist of arguments.
 READONLY If true buffer will be in readonly mode(view-mode)."
   (when (equal process-name "")
     (setq process-name "kubel-command"))
-  (let ((buffer-name (format "*%s*" process-name))
+  (let ((buffer-name (format "*kubel resource: |%s|%s|%s|*" kubel-context kubel-namespace (string-join args "_")))
         (error-buffer (kubel--process-error-buffer process-name))
         (cmd (append (list "kubectl") (kubel--get-context-namespace) args)))
     (when (get-buffer buffer-name)
