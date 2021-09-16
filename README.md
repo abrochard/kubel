@@ -23,7 +23,7 @@ We now support managing pretty much any resource!
 - copy container log command to clipboard
 - port forward a pod to your localhost
 - exec into a pod using tramp
-- run fast shell-command
+- quick run shell-command
 
 ## Installation
 
@@ -61,7 +61,7 @@ enter => get resource details
 C-u enter => describe resource
 h => help popup
 ? => help popup
-! => run fast shell-command
+! => quick run shell-command
 E => quick edit any resource
 g => refresh
 k => delete popup

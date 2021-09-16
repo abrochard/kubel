@@ -1039,6 +1039,7 @@ RESET is to be called if the search is nil after the first attempt."
 (define-transient-command kubel-exec-popup ()
   "Kubel Exec Menu"
   ["Actions"
+   ("!" "Shell command" kubel-exec-pod-by-shell-command)
    ("d" "Dired" kubel-exec-pod)
    ("e" "Eshell" kubel-exec-eshell-pod)
    ("s" "Shell" kubel-exec-shell-pod)])

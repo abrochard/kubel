@@ -12,7 +12,7 @@ All notable changes to this project will be documented in this file.
 - `kubectl` apply a buffer to current context/namespace
 
 ### Added
-- `kubel-exec-pod-by-shell-command` by using shell-command we can run fast a command
+- `kubel-exec-pod-by-shell-command` by using shell-command we can quickly run a command.
 
 ## [3.0.0] -
 ### Added
