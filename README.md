@@ -24,6 +24,7 @@ We now support managing pretty much any resource!
 - port forward a pod to your localhost
 - exec into a pod using tramp
 - quick run shell-command
+- scale replicas
 
 ## Installation
 
@@ -70,6 +71,7 @@ p => port forward pod
 l => log popup
 e => exec popup
 j => jab deployment to force rolling update
+S => scale resource replicas
 C => set context
 n => set namespace
 R => set resource
