@@ -604,15 +604,20 @@ Use C-c C-c to kubectl apply the current yaml buffer."
  DESCRIBE is the optional param to describe instead of get."
   (interactive "P")
   (let* ((resource (kubel--get-resource-under-cursor))
+         (ctx kubel-context)
+         (ns kubel-namespace)
+         (res kubel-resource)
          (process-name (format "kubel - %s - %s" kubel-resource resource)))
     (if describe
         (kubel--exec process-name (list "describe" kubel-resource (kubel--get-resource-under-cursor)))
       (kubel--exec process-name (list "get" kubel-resource (kubel--get-resource-under-cursor) "-o" kubel-output)))
     (when (or (string-equal kubel-output "yaml") (transient-args 'kubel-describe-popup))
       (yaml-mode)
-      (kubel-yaml-editing-mode))
-    (goto-char (point-min))))
-
+      (kubel-yaml-editing-mode)
+      (setq kubel-context ctx)
+      (setq kubel-namespace ns)
+      (setq kubel-resource res)
+      (goto-char (point-min)))))
 
 (defun kubel--default-tail-arg (args)
   "Ugly function to make sure that there is at least the default tail.
