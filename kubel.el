@@ -375,7 +375,7 @@ If MAX is the end of the line, dynamically adjust."
 
 (defun kubel--buffer-name-from-parameters (context namespace resource)
   "Return a preconfigured kubel buffer name."
-  (concat (format "*kubel [%s] (%s): %s*" context namespace resource)))
+  (concat (format "*kubel manager: |%s|%s|%s|*" context namespace resource)))
 
 (defun kubel--buffer-name ()
   "Return kubel buffer name."
