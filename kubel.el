@@ -899,6 +899,20 @@ P can be a single number or a localhost:container port pair."
          (eshell-buffer-name (format "*kubel - eshell - %s@%s*" container pod)))
     (eshell)))
 
+(defun kubel-exec-pod-by-shell-command ()
+  "Prompt shell with kubectl exec command at pod under cursor."
+  (interactive)
+  (kubel-setup-tramp)
+  (let* ((pod (if (kubel--is-pod-view)
+                  (kubel--get-resource-under-cursor)
+                (kubel--select-resource "Pods")))
+         (containers (kubel--get-containers pod))
+         (container (if (equal (length containers) 1)
+                        (car containers)
+                      (completing-read "Select container: " containers)))
+         (command (read-string "Shell command: " (format "%s exec %s -c %s -- " (kubel--get-command-prefix) pod container))))
+    (shell-command command)))
+
 (defun kubel-delete-resource ()
   "Kubectl delete resource under cursor."
   (interactive)
@@ -1026,6 +1040,7 @@ RESET is to be called if the search is nil after the first attempt."
 (define-transient-command kubel-exec-popup ()
   "Kubel Exec Menu"
   ["Actions"
+   ("!" "Shell command" kubel-exec-pod-by-shell-command)
    ("d" "Dired" kubel-exec-pod)
    ("e" "Eshell" kubel-exec-eshell-pod)
    ("s" "Shell" kubel-exec-shell-pod)])
@@ -1123,6 +1138,7 @@ RESET is to be called if the search is nil after the first attempt."
     (define-key map (kbd "l") 'kubel-log-popup)
     (define-key map (kbd "c") 'kubel-copy-popup)
     (define-key map (kbd "e") 'kubel-exec-popup)
+    (define-key map (kbd "!") 'kubel-exec-pod-by-shell-command)
     (define-key map (kbd "j") 'kubel-jab-deployment)
 
     (define-key map (kbd "m") 'kubel-mark-item)
