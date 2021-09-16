@@ -588,10 +588,7 @@ Use C-c C-c to kubectl apply the current yaml buffer."
 		            ""))
 
   (let* ((filename-without-tramp-prefix (format "/tmp/kubel/%s-%s.yaml"
-						                        (replace-regexp-in-string "\*\\| " "" (buffer-name))
-						                        (floor (float-time))))
-	     (filename (format "%s%s" dir-prefix filename-without-tramp-prefix)))
-    (when (y-or-n-p "Apply the changes? ")
+                                                (replace-regexp-in-string "[^[:alnum:]-_]" "" (buffer-name))
       (unless  (file-exists-p (format "%s/tmp/kubel" dir-prefix))
 	    (make-directory (format "%s/tmp/kubel" dir-prefix) t))
       (write-region (point-min) (point-max) filename)
