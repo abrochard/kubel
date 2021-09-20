@@ -48,6 +48,7 @@
 ;; c => copy popup
 ;; d => delete pod
 ;; a => jab deployment to force rolling update
+;; S => scale replicas
 ;;
 
 ;;; Customize:
