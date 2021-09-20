@@ -84,7 +84,7 @@
     ("l" "Logs" kubel-log-popup)
     ("e" "Exec" kubel-exec-popup)
     ("a" "Jab" kubel-jab-deployment) ;; can't use j here
-    ("s" "Scale replicas" kubel-scale-replicas)]
+    ("S" "Scale replicas" kubel-scale-replicas)]
    ["Settings"
     ("C" "Set context" kubel-set-context)
     ("n" "Set namespace" kubel-set-namespace)
@@ -128,7 +128,7 @@
   (kbd "c") #'kubel-copy-popup
   (kbd "e") #'kubel-exec-popup
   (kbd "a") #'kubel-jab-deployment
-  (kbd "s") #'kubel-scale-replicas
+  (kbd "S") #'kubel-scale-replicas
   (kbd "u") #'kubel-unmark-item
   (kbd "M") #'kubel-mark-all
   (kbd "U") #'kubel-unmark-all)

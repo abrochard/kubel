@@ -1111,7 +1111,7 @@ RESET is to be called if the search is nil after the first attempt."
     ("l" "Logs" kubel-log-popup)
     ("e" "Exec" kubel-exec-popup)
     ("j" "Jab" kubel-jab-deployment)
-    ("s" "Scale replicas" kubel-scale-replicas)]
+    ("S" "Scale replicas" kubel-scale-replicas)]
    ["Settings"
     ("C" "Set context" kubel-set-context)
     ("n" "Set namespace" kubel-set-namespace)
