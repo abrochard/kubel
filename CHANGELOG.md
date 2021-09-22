@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 - `kubel-exec-pod-by-shell-command` by using shell-command we can quickly run a command.
+- `kubel-scale-resource` to scale a deployment, replica set, replication controller, or stateful set.
 
 ## [3.0.0] -
 ### Added
