@@ -954,8 +954,9 @@ See https://github.com/kubernetes/kubernetes/issues/27081"
 REPLICAS is the number of desired replicas."
   (interactive (list (read-number "Replicas: ")))
   (if (kubel--is-scalable)
-      (let ((resource (kubel--get-resource-under-cursor)))
-        (kubel--exec (list "scale" kubel-resource resource "--replicas" (number-to-string replicas))))
+      (let* ((resource (kubel--get-resource-under-cursor))
+             (process-name (format "kubel:scale:%s/%s" kubel-resource resource)))
+        (kubel--exec process-name (list "scale" kubel-resource resource "--replicas" (number-to-string replicas))))
     (message
      "[%s] cannot be scaled.\nOnly these resources can be scaled: [deployment, replica set, replication controller, and stateful set]."
      kubel-resource)))
