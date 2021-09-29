@@ -416,10 +416,10 @@ NAME is the buffer name."
         (exit-status (process-exit-status process)))
     (kubel--append-to-process-buffer (format "[%s]\nexit-code: %s" process-name exit-status))
     (unless (eq 0 exit-status)
-       (let ((err (with-current-buffer (kubel--process-error-buffer process-name)
-                 (buffer-string))))
-      (kubel--append-to-process-buffer (format "error: %s" err))
-      (error (format "Kubel process %s error: %s" process-name err))))))
+      (let ((err (with-current-buffer (kubel--process-error-buffer process-name)
+                   (buffer-string))))
+        (kubel--append-to-process-buffer (format "error: %s" err))
+        (error (format "Kubel process %s error: %s" process-name err))))))
 
 (defun kubel--exec (process-name args &optional readonly)
   "Utility function to run commands in the proper context and namespace.
@@ -484,13 +484,13 @@ TYPE is containers or initContainers."
 (defun kubel--get-pod-labels ()
   "List labels of pods in a current namespace."
   (let* ((raw-labels
-           (split-string
+          (split-string
+           (replace-regexp-in-string
+            (regexp-quote ":") "="
             (replace-regexp-in-string
-             (regexp-quote ":") "="
-             (replace-regexp-in-string
-              "map\\[\\(.+?\\)\\]" "\\1"
-              (kubel--exec-to-string
-               (format "%s get pod -o jsonpath='{.items[*].metadata.labels}'" (kubel--get-command-prefix)))))))
+             "map\\[\\(.+?\\)\\]" "\\1"
+             (kubel--exec-to-string
+              (format "%s get pod -o jsonpath='{.items[*].metadata.labels}'" (kubel--get-command-prefix)))))))
          (splitted (mapcan (lambda (s) (split-string s ","))
                            raw-labels))
          (cleaned (mapcar (lambda (s) (replace-regexp-in-string "[{|\"|}]" "" s)) splitted))
@@ -781,25 +781,24 @@ ARGS is the arguments list from transient."
   "List selector expressions from history."
   (delete-dups
    (append '("none") (kubel--get-all-selectors)
-          kubel-selector-history)))
+           kubel-selector-history)))
 
 (defun kubel-set-label-selector ()
   "Set the selector."
   (interactive)
   (let ((selector (completing-read
-         "Selector: "
-         (kubel--list-selectors))))
+                   "Selector: "
+                   (kubel--list-selectors))))
     (when (equal selector "none")
       (setq selector ""))
     (setq kubel-selector selector))
-  (kubel--add-selector-to-history kubel-selector)
-  ; Update pod list according to the label selector
+  (kubel--add-selector-to-history kubel-selector) ; Update pod list according to the label selector
   (kubel))
 
 (defun kubel--fetch-api-resource-list ()
   "Fetch the API resource list."
   (split-string (kubel--exec-to-string
-         (format "kubectl --context %s api-resources -o name --no-headers=true" kubel-context)) "\n"))
+                 (format "kubectl --context %s api-resources -o name --no-headers=true" kubel-context)) "\n"))
 
 (defun kubel-set-resource (&optional refresh)
   "Set the resource.
@@ -925,7 +924,7 @@ P can be a single number or a localhost:container port pair."
   "Kubectl delete resource under cursor."
   (interactive)
   (dolist (pod (if (kubel--items-selected-p)
-                  kubel--selected-items
+                   kubel--selected-items
                  (list (kubel--get-resource-under-cursor))))
     (let* ((process-name (format "kubel - delete %s - %s" kubel-resource pod))
            (args (list "delete" kubel-resource pod)))
