@@ -222,28 +222,28 @@ CMD is the command string to run."
 ;; fallback list of resources if the version of kubectl doesn't support api-resources command
 (defvar kubel-kubernetes-resources-list
   '("Pods"
-	"Services"
-	"Namespaces"
-	"Nodes"
-	"Configmaps"
-	"Secrets"
-	"Bindings"
-	"PersistentVolumeClaims"
-	"PersistentVolumes"
-	"ReplicationControllers"
-	"ResourceQuotas"
-	"ServiceAccounts"
-	"Deployments"
-	"DaemonSets"
-	"ReplicaSets"
-	"StatefulSets"
-	"Jobs"
+    "Services"
+    "Namespaces"
+    "Nodes"
+    "Configmaps"
+    "Secrets"
+    "Bindings"
+    "PersistentVolumeClaims"
+    "PersistentVolumes"
+    "ReplicationControllers"
+    "ResourceQuotas"
+    "ServiceAccounts"
+    "Deployments"
+    "DaemonSets"
+    "ReplicaSets"
+    "StatefulSets"
+    "Jobs"
     "hpa"
-	"Images"
-	"Ingresses"
-	"ClusterRoles"
-	"RoleBindings"
-	"Roles"))
+    "Images"
+    "Ingresses"
+    "ClusterRoles"
+    "RoleBindings"
+    "Roles"))
 
 (defvar kubel--kubernetes-version-cached nil)
 
@@ -293,9 +293,9 @@ VERSION should be a list of (major-version minor-version patch)."
 (defun kubel--populate-list ()
   "Return a list with a tabulated list format and \"tabulated-list-entries\"."
   (let*  ((body (kubel--exec-to-string (concat (kubel--get-command-prefix) " get " kubel-resource)))
-	      (entrylist (kubel--parse-body body)))
+          (entrylist (kubel--parse-body body)))
     (when (string-prefix-p "No resources found" body)
-	  (message "No resources found"))  ;; TODO exception here
+      (message "No resources found"))  ;; TODO exception here
     (list (kubel--get-list-format entrylist) (kubel--get-list-entries entrylist))))
 
 (defun kubel--column-entry (entrylist)
@@ -311,7 +311,7 @@ VERSION should be a list of (major-version minor-version patch)."
 ENTRYLIST is the output of the parsed body."
   (defun kubel--get-column-entry (colnum)
     (let ((kubel--get-entry (kubel--column-entry entrylist)))
-	  (funcall kubel--get-entry colnum)))
+      (funcall kubel--get-entry colnum)))
   (cl-map 'vector #'kubel--get-column-entry (number-sequence 0 (- (kubel--ncols entrylist) 1))))
 
 (defun kubel--update-selected-items (entries)
@@ -416,10 +416,10 @@ NAME is the buffer name."
         (exit-status (process-exit-status process)))
     (kubel--append-to-process-buffer (format "[%s]\nexit-code: %s" process-name exit-status))
     (unless (eq 0 exit-status)
-       (let ((err (with-current-buffer (kubel--process-error-buffer process-name)
-                 (buffer-string))))
-      (kubel--append-to-process-buffer (format "error: %s" err))
-      (error (format "Kubel process %s error: %s" process-name err))))))
+      (let ((err (with-current-buffer (kubel--process-error-buffer process-name)
+                   (buffer-string))))
+        (kubel--append-to-process-buffer (format "error: %s" err))
+        (error (format "Kubel process %s error: %s" process-name err))))))
 
 (defun kubel--exec (process-name args &optional readonly)
   "Utility function to run commands in the proper context and namespace.
@@ -484,13 +484,13 @@ TYPE is containers or initContainers."
 (defun kubel--get-pod-labels ()
   "List labels of pods in a current namespace."
   (let* ((raw-labels
-           (split-string
+          (split-string
+           (replace-regexp-in-string
+            (regexp-quote ":") "="
             (replace-regexp-in-string
-             (regexp-quote ":") "="
-             (replace-regexp-in-string
-              "map\\[\\(.+?\\)\\]" "\\1"
-              (kubel--exec-to-string
-               (format "%s get pod -o jsonpath='{.items[*].metadata.labels}'" (kubel--get-command-prefix)))))))
+             "map\\[\\(.+?\\)\\]" "\\1"
+             (kubel--exec-to-string
+              (format "%s get pod -o jsonpath='{.items[*].metadata.labels}'" (kubel--get-command-prefix)))))))
          (splitted (mapcan (lambda (s) (split-string s ","))
                            raw-labels))
          (cleaned (mapcar (lambda (s) (replace-regexp-in-string "[{|\"|}]" "" s)) splitted))
@@ -514,7 +514,7 @@ DESCRIBE is boolean to describe instead of get resource details"
   (let* ((resource (kubel--select-resource name))
          (process-name (format "kubel - %s - %s" name resource)))
     (if describe
-	    (kubel--exec process-name (list "describe" name resource))
+        (kubel--exec process-name (list "describe" name resource))
       (kubel--exec process-name (list "get" name "-o" kubel-output resource)))
     (when (string-equal kubel-output "yaml")
       (yaml-mode)
@@ -588,18 +588,18 @@ Use C-c C-c to kubectl apply the current yaml buffer."
   "Save the current buffer to a temp file and try to kubectl apply it."
   (interactive)
   (setq dir-prefix (or
-		            (when (tramp-tramp-file-p default-directory)
-		              (with-parsed-tramp-file-name default-directory nil
-			            (format "/%s%s:%s@%s:" (or hop "") method user host)))
-		            ""))
+                    (when (tramp-tramp-file-p default-directory)
+                      (with-parsed-tramp-file-name default-directory nil
+                        (format "/%s%s:%s@%s:" (or hop "") method user host)))
+                    ""))
 
   (let* ((filename-without-tramp-prefix (format "/tmp/kubel/%s-%s.yaml"
-						                        (replace-regexp-in-string "\*\\| " "" (buffer-name))
-						                        (floor (float-time))))
-	     (filename (format "%s%s" dir-prefix filename-without-tramp-prefix)))
+                                                (replace-regexp-in-string "\*\\| " "" (buffer-name))
+                                                (floor (float-time))))
+         (filename (format "%s%s" dir-prefix filename-without-tramp-prefix)))
     (when (y-or-n-p "Apply the changes? ")
       (unless  (file-exists-p (format "%s/tmp/kubel" dir-prefix))
-	    (make-directory (format "%s/tmp/kubel" dir-prefix) t))
+        (make-directory (format "%s/tmp/kubel" dir-prefix) t))
       (write-region (point-min) (point-max) filename)
       (kubel--exec (format "kubectl - apply - %s" filename) (list "apply" "-f" filename-without-tramp-prefix))
       (message "Applied %s" filename))))
@@ -704,7 +704,7 @@ ARGS is the arguments list from transient."
   (interactive "f")
   (let ((configfile (or configfile "~/.kube/config")))
     (if (file-exists-p (expand-file-name configfile))
-	    (setenv "KUBECONFIG" (expand-file-name configfile))
+        (setenv "KUBECONFIG" (expand-file-name configfile))
       (error "Kubectl config file '%s' does not exist!" configfile))))
 
 (defun kubel--can-get-namespace ()
@@ -743,9 +743,9 @@ ARGS is the arguments list from transient."
   (interactive)
   (let* ((namespace (completing-read "Namespace: " (kubel--list-namespace)
                                      nil nil nil nil "default"))
-	     (kubel--buffer (get-buffer (kubel--buffer-name)))
-	     (last-default-directory (when kubel--buffer
-				                   (with-current-buffer kubel--buffer default-directory))))
+         (kubel--buffer (get-buffer (kubel--buffer-name)))
+         (last-default-directory (when kubel--buffer
+                                   (with-current-buffer kubel--buffer default-directory))))
     (when kubel--buffer (kill-buffer kubel--buffer))
     (setq kubel-namespace namespace)
     (kubel--add-namespace-to-history namespace)
@@ -755,7 +755,7 @@ ARGS is the arguments list from transient."
   "Set the context."
   (interactive)
   (let* ((kubel--buffer (get-buffer (kubel--buffer-name)))
-	     (last-default-directory (when kubel--buffer (with-current-buffer kubel--buffer default-directory))))
+         (last-default-directory (when kubel--buffer (with-current-buffer kubel--buffer default-directory))))
     (when kubel--buffer (kill-buffer kubel--buffer));; kill buffer for previous context if possible
     (setq kubel-context
           (completing-read
@@ -781,25 +781,24 @@ ARGS is the arguments list from transient."
   "List selector expressions from history."
   (delete-dups
    (append '("none") (kubel--get-all-selectors)
-          kubel-selector-history)))
+           kubel-selector-history)))
 
 (defun kubel-set-label-selector ()
   "Set the selector."
   (interactive)
   (let ((selector (completing-read
-         "Selector: "
-         (kubel--list-selectors))))
+                   "Selector: "
+                   (kubel--list-selectors))))
     (when (equal selector "none")
       (setq selector ""))
     (setq kubel-selector selector))
-  (kubel--add-selector-to-history kubel-selector)
-  ; Update pod list according to the label selector
+  (kubel--add-selector-to-history kubel-selector) ; Update pod list according to the label selector
   (kubel))
 
 (defun kubel--fetch-api-resource-list ()
   "Fetch the API resource list."
   (split-string (kubel--exec-to-string
-		 (format "kubectl --context %s api-resources -o name --no-headers=true" kubel-context)) "\n"))
+                 (format "kubectl --context %s api-resources -o name --no-headers=true" kubel-context)) "\n"))
 
 (defun kubel-set-resource (&optional refresh)
   "Set the resource.
@@ -809,15 +808,15 @@ the context caches, including the cached resource list."
   (when refresh (kubel--invalidate-context-caches))
   (let* ((current-buffer-name (kubel--buffer-name))
          (resource-list (if (kubel-kubernetes-compatible-p '(1 13 3))
-	                        (if (null kubel--kubernetes-resources-list-cached)
-				                (setq kubel--kubernetes-resources-list-cached
+                            (if (null kubel--kubernetes-resources-list-cached)
+                                (setq kubel--kubernetes-resources-list-cached
                                       (kubel--fetch-api-resource-list))
                               kubel--kubernetes-resources-list-cached)
-	                      kubel-kubernetes-resources-list))
-	     (kubel--buffer (get-buffer current-buffer-name))
-	     (last-default-directory (when kubel--buffer (with-current-buffer kubel--buffer default-directory))))
+                          kubel-kubernetes-resources-list))
+         (kubel--buffer (get-buffer current-buffer-name))
+         (last-default-directory (when kubel--buffer (with-current-buffer kubel--buffer default-directory))))
     (setq kubel-resource
-	      (completing-read "Select resource: " resource-list))
+          (completing-read "Select resource: " resource-list))
     (when kubel--buffer (kill-buffer kubel--buffer)) ;; kill buffer for previous context if possible
     (kubel last-default-directory)))
 
@@ -825,9 +824,9 @@ the context caches, including the cached resource list."
   "Set output format of kubectl."
   (interactive)
   (setq kubel-output
-	    (completing-read
-	     "Set output format: "
-	     '("yaml" "json" "wide" "custom-columns=")))
+        (completing-read
+         "Set output format: "
+         '("yaml" "json" "wide" "custom-columns=")))
   (kubel))
 
 (defun kubel-port-forward-pod (p)
@@ -858,9 +857,9 @@ P can be a single number or a localhost:container port pair."
   (interactive)
   (kubel-setup-tramp)
   (let* ((dir-prefix (or
-		              (when (tramp-tramp-file-p default-directory)
-		                (with-parsed-tramp-file-name default-directory nil
-			              (format "%s%s:%s@%s|" (or hop "") method user host)))""))
+                      (when (tramp-tramp-file-p default-directory)
+                        (with-parsed-tramp-file-name default-directory nil
+                          (format "%s%s:%s@%s|" (or hop "") method user host)))""))
          (pod (if (kubel--is-pod-view)
                   (kubel--get-resource-under-cursor)
                 (kubel--select-resource "Pods")))
@@ -925,7 +924,7 @@ P can be a single number or a localhost:container port pair."
   "Kubectl delete resource under cursor."
   (interactive)
   (dolist (pod (if (kubel--items-selected-p)
-                  kubel--selected-items
+                   kubel--selected-items
                  (list (kubel--get-resource-under-cursor))))
     (let* ((process-name (format "kubel - delete %s - %s" kubel-resource pod))
            (args (list "delete" kubel-resource pod)))
@@ -945,8 +944,8 @@ See https://github.com/kubernetes/kubernetes/issues/27081"
                         (list (kubel--select-resource "Deployments"))))
     (let ((process-name (format "kubel - bouncing - %s" deployment)))
       (kubel--exec process-name (list "patch" "deployment" deployment "-p"
-				                      (format "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"%s\"}}}}}"
-					                          (round (time-to-seconds))))))))
+                                      (format "{\"spec\":{\"template\":{\"metadata\":{\"labels\":{\"date\":\"%s\"}}}}}"
+                                              (round (time-to-seconds))))))))
 
 (defun kubel-scale-replicas (replicas)
   "Scale resource replicas.
