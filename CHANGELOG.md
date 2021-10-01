@@ -11,10 +11,6 @@ All notable changes to this project will be documented in this file.
 - run `kubectl describe pod`
 - `kubectl` apply a buffer to current context/namespace
 
-### Added
-- `kubel-exec-pod-by-shell-command` by using shell-command we can quickly run a command.
-- `kubel-scale-resource` to scale a deployment, replica set, replication controller, or stateful set.
-
 ## [3.0.0] -
 ### Added
 - tailing logs of init container
@@ -30,13 +26,16 @@ All notable changes to this project will be documented in this file.
 - `s` command to filter by selector
 - added context to fetch api-resources
 - support selecting container on exec function
-- support multiple words column headers
+- `kubel-exec-pod-by-shell-command` by using shell-command we can quickly run a command
+- support multiple words column headers (and fix output parsing for cronjobs.batch)
+- `kubel-scale-replicas` to scale a deployment, replica set, replication controller, or stateful set
 
 ### Changed
 - `e` keybinding now opens a popup for exec options
 - `kubel--exec` is now completely async
 - support selecting container on exec function
 - pod label parsing updated for newer version of k8s
+- empty space "" from showing up in selection candidates
 
 ### Removed
 - remove deprecated function bound to `d`
