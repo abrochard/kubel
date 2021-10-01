@@ -538,7 +538,7 @@ NAME is the resource name."
 
 TYPENAME is the resource type/name."
   (let ((cmd (format "%s rollout history %s" (kubel--get-command-prefix) typename)))
-    (nthcdr 2 (split-string (kubel--exec-to-string cmd) "\n"))))
+    (nthcdr 2 (split-string (kubel--exec-to-string cmd) "\n" t))))
 
 (defun kubel--select-rollout (typename)
   "Select a rollout version.
@@ -798,7 +798,7 @@ ARGS is the arguments list from transient."
 (defun kubel--fetch-api-resource-list ()
   "Fetch the API resource list."
   (split-string (kubel--exec-to-string
-                 (format "kubectl --context %s api-resources -o name --no-headers=true" kubel-context)) "\n"))
+                 (format "kubectl --context %s api-resources -o name --no-headers=true" kubel-context)) "\n" t))
 
 (defun kubel-set-resource (&optional refresh)
   "Set the resource.
