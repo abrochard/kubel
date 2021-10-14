@@ -556,7 +556,7 @@ TYPENAME is the resource type/name."
   (equal (capitalize kubel-resource) "Pods"))
 
 (defun kubel--is-deployment-view ()
-  "Return non-nil if this is the pod view."
+  "Return non-nil if this is a deployment view."
   (-contains? '("Deployments" "deployments" "deployments.apps") kubel-resource))
 
 (defun kubel--is-scalable ()
@@ -579,12 +579,13 @@ TYPENAME is the resource type/name."
     (goto-line kubel--line-number)))
 
 ;; interactive
+;;;###autoload
 (define-minor-mode kubel-yaml-editing-mode
   "Kubel Yaml editing mode.
 Use C-c C-c to kubectl apply the current yaml buffer."
   :init-value nil
   :keymap (let ((map (make-sparse-keymap)))
-            (define-key map (kbd "C-c C-c") 'kubel-apply)
+            (define-key map (kbd "C-c C-c") #'kubel-apply)
             map))
 
 (defun kubel-apply ()
@@ -595,7 +596,6 @@ Use C-c C-c to kubectl apply the current yaml buffer."
                       (with-parsed-tramp-file-name default-directory nil
                         (format "/%s%s:%s@%s:" (or hop "") method user host)))
                     ""))
-
   (let* ((filename-without-tramp-prefix (format "/tmp/kubel/%s-%s.yaml"
                                                 (replace-regexp-in-string "[^[:alnum:]-_]" "" (buffer-name))
                                                 (floor (float-time))))
@@ -799,7 +799,7 @@ ARGS is the arguments list from transient."
       (setq selector ""))
     (setq kubel-selector selector))
   (kubel--add-selector-to-history kubel-selector)
-  ; Update pod list according to the label selector
+  ;; Update pod list according to the label selector
   (kubel-refresh))
 
 (defun kubel--fetch-api-resource-list ()
@@ -832,9 +832,9 @@ the context caches, including the cached resource list."
   (setq kubel-output
         (completing-read
          "Set output format: "
-        (completing-read
-         "Set output format: "
-         '("yaml" "json" "wide" "custom-columns=")))))
+         (completing-read
+          "Set output format: "
+          '("yaml" "json" "wide" "custom-columns=")))))
 
 (defun kubel-port-forward-pod (p)
   "Port forward a pod to your local machine.
