@@ -1211,8 +1211,9 @@ DIRECTORY is optional for TRAMP support."
   (kubel--jump-back-to-line))
 
 ;;;###autoload
-(defun kubel-open (context namespace resource)
-  "Create a new kubel buffer using passed parameters CONTEXT NAMESPACE RESOURCE."
+(defun kubel-open (context namespace resource &optional directory)
+  "Create a new kubel buffer using passed parameters CONTEXT NAMESPACE RESOURCE.
+DIRECTORY is optional for TRAMP support."
   (let ((tmpname "*kubel-tmp*")
         (name (kubel--buffer-name-from-parameters context namespace resource)))
     (if (get-buffer name)
@@ -1223,7 +1224,7 @@ DIRECTORY is optional for TRAMP support."
         (setq kubel-namespace namespace)
         (setq kubel-resource resource)
         (pop-to-buffer-same-window tmpname)
-        (kubel-refresh)))))
+        (kubel-refresh directory)))))
 
 ;;;###autoload
 (defun kubel (&optional directory)
