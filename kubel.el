@@ -377,7 +377,7 @@ If MAX is the end of the line, dynamically adjust."
 
 (defun kubel--buffer-name-from-parameters (context namespace resource)
   "Return a preconfigured kubel buffer name."
-  (concat (format "*kubel manager:  |%s|%s|%s|*" context namespace resource)))
+  (concat (format "*kubel session:  |%s|%s|%s|*" context namespace resource)))
 
 (defun kubel--buffer-name ()
   "Return kubel buffer name."
@@ -1229,7 +1229,6 @@ DIRECTORY is optional for TRAMP support."
 ;;;###autoload
 (defun kubel (&optional directory)
   "Invoke the kubel buffer.
-
 DIRECTORY is optional for TRAMP support."
   (interactive)
 
