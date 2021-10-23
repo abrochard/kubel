@@ -36,29 +36,40 @@ load the `kubel-evil.el` file.
 
 ## Usage
 
-To list the pods in your current context and namespace, call
-```
-M-x kubel-refresh
-```
-To set said namespace and context, respectively call
-```
-M-x kubel-set-namespace
-M-x kubel-set-context
-```
-Note that context will autocomplete but not necessarily namespaces
-depending on your permissions and cluster setup.
-See the [customize section](#Customize) on how to tune `kubel-use-namespace-list`.
+### `M-x kubel`
 
-To switch to showing a different resource, use the `R` command or
-```
-M-x kubel-set-resource
-```
-This will let you select a resource and re-display the kubel buffer.
+Call `kubel` to open a new kubel buffer. Call `kubel` again to start a new
+session for a different context/namespace/resource.
 
-You can also use `kubel-open` to open directly a kubel buffer with the given parameters, example:
-``` lisp
-(kubel-open "custom-context" "custom-namespace" "custom-resource"))
+Each kubel buffer will automatically be renamed using the following template:
 ```
+*kubel session:  |<context>|<namespace>|<resource>|*
+```
+
+### `M-x kubel-refresh`
+
+Call `kubel-refresh` or hit `g` to refresh the current kubel buffer using the
+configured context/namespace/resource for that session.
+
+### `M-x kubel-open`
+
+Call `kubel-open` to programmatically open a new session for the passed context,
+namespace, and resource.
+
+```lisp
+(kubel-open "<context>" "<namespace>" "<resource>*kubel session:  |management-deploys-us-east1-2|gkrane-jobs|Pods|*")
+```
+
+### Changing context, namespace, and resource for a kubel session
+
+To change the context, namespace, or resource for a session, call:
+- `M-x kubel-set-context` or hit `C`.
+- `M-x kubel-set-namespace` or hit `n`.
+- `M-x kubel-set-resource` or hit `R`.
+
+Note that context will autocomplete but not necessarily namespaces depending on
+your permissions and cluster setup.  See the [customize section](#Customize) on
+how to tune `kubel-use-namespace-list`.
 
 ## Shortcuts
 
