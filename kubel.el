@@ -112,14 +112,6 @@
 (defgroup kubel nil "Customisation group for kubel."
   :group 'extensions)
 
-(defvar kubel--list-format
-  [("Name" 50 t)
-   ("Ready" 10 t)
-   ("Status" 20 t)
-   ("Restarts" 10 t)
-   ("Age" 15 t)]
-  "List format.")
-
 (defconst kubel--list-sort-key
   '("NAME" . nil)
   "Sort table on this key.")
@@ -298,12 +290,39 @@ VERSION should be a list of (major-version minor-version patch)."
       (message "No resources found"))  ;; TODO exception here
     (list (kubel--get-list-format entrylist) (kubel--get-list-entries entrylist))))
 
+(defun kubel--age-to-secs (age)
+  "Convert AGE in format 1d2h3m4s to seconds."
+  (let ((rex (rx bol
+                 (opt (group (one-or-more digit)) "d")
+                 (opt (group (one-or-more digit)) "h")
+                 (opt (group (one-or-more digit)) "m")
+                 (opt (group (one-or-more digit)) "s")
+                 eol)))
+    (if (string-match rex age)
+        (-sum (--map-indexed
+               (* (--if-let (match-string (1+ it-index) age)
+                      (string-to-number it)
+                    0)
+                  it)
+               '(86400 3600 60 1)))
+      0)))
+
+(defun kubel--make-age-comparator (colnum)
+  "Return a function that compares two ages at given column COLNUM."
+  (lambda (row1 row2)
+    (let ((age1 (elt (cadr row1) colnum))
+          (age2 (elt (cadr row2) colnum)))
+      (< (kubel--age-to-secs age1)
+         (kubel--age-to-secs age2)))))
+
 (defun kubel--column-entry (entrylist)
   "Return a function of colnum to retrieve an entry in a given column for ENTRYLIST."
   (function
    (lambda (colnum)
-     (list (kubel--column-header entrylist colnum) (+ 4 (kubel--column-width entrylist colnum)) t))))
-
+     (let* ((name (kubel--column-header entrylist colnum))
+            (width (+ 4 (kubel--column-width entrylist colnum)))
+            (sort (if (equal name "AGE") (kubel--make-age-comparator colnum) t)))
+       (list name width sort)))))
 
 (defun kubel--get-list-format (entrylist)
   "Get the list format.
