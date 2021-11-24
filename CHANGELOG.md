@@ -29,6 +29,7 @@ All notable changes to this project will be documented in this file.
 - `kubel-exec-pod-by-shell-command` by using shell-command we can quickly run a command
 - support multiple words column headers (and fix output parsing for cronjobs.batch)
 - `kubel-scale-replicas` to scale a deployment, replica set, replication controller, or stateful set
+- proper sort by age
 
 ### Changed
 - `e` keybinding now opens a popup for exec options
