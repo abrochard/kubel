@@ -112,14 +112,6 @@
 (defgroup kubel nil "Customisation group for kubel."
   :group 'extensions)
 
-(defvar kubel--list-format
-  [("Name" 50 t)
-   ("Ready" 10 t)
-   ("Status" 20 t)
-   ("Restarts" 10 t)
-   ("Age" 15 t)]
-  "List format.")
-
 (defconst kubel--list-sort-key
   '("NAME" . nil)
   "Sort table on this key.")
