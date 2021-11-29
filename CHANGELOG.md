@@ -29,7 +29,7 @@ All notable changes to this project will be documented in this file.
 - `kubel-exec-pod-by-shell-command` by using shell-command we can quickly run a command
 - support multiple words column headers (and fix output parsing for cronjobs.batch)
 - `kubel-scale-replicas` to scale a deployment, replica set, replication controller, or stateful set
-- proper sort by age
+- proper sort by duration for "AGE", "DURATION", and "LAST SCHEDULE" columns
 
 ### Changed
 - `e` keybinding now opens a popup for exec options
@@ -37,6 +37,7 @@ All notable changes to this project will be documented in this file.
 - support selecting container on exec function
 - pod label parsing updated for newer version of k8s
 - empty space "" from showing up in selection candidates
+- fix position calculations in kubel--parse-body 
 
 ### Removed
 - remove deprecated function bound to `d`
