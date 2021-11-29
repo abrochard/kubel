@@ -321,7 +321,9 @@ VERSION should be a list of (major-version minor-version patch)."
    (lambda (colnum)
      (let* ((name (kubel--column-header entrylist colnum))
             (width (+ 4 (kubel--column-width entrylist colnum)))
-            (sort (if (equal name "AGE") (kubel--make-age-comparator colnum) t)))
+            (sort (if (member name '("AGE" "DURATION" "LAST SCHEDULE"))
+                      (kubel--make-age-comparator colnum)
+                    t)))
        (list name width sort)))))
 
 (defun kubel--get-list-format (entrylist)
