@@ -37,7 +37,8 @@ All notable changes to this project will be documented in this file.
 - support selecting container on exec function
 - pod label parsing updated for newer version of k8s
 - empty space "" from showing up in selection candidates
-- fix position calculations in kubel--parse-body 
+- fix position calculations in kubel--parse-body
+- string regex to ignore warning on `can-i` list namespace
 
 ### Removed
 - remove deprecated function bound to `d`
