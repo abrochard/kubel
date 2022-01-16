@@ -1,0 +1,48 @@
+version: 2.1
+
+steps: &steps
+  working_directory: /kubel
+  steps:
+    - run: apt update && apt install -y git ssh make
+    - checkout
+    - run:
+        name: Install packages
+        command: |
+          emacs -Q --batch -l .circleci/make.el --funcall make-install-packages
+
+    - run:
+        name: ERT tests
+        command: |
+          emacs -Q --batch -l .circleci/make.el --funcall make-ert
+
+    - run:
+        name: Compile
+        command: |
+          emacs -Q --batch -l .circleci/make.el --funcall make-compile kubel.el
+
+    - run:
+        name: Lint
+        command: |
+          emacs -Q --batch -l .circleci/make.el --funcall make-lint kubel.el
+
+jobs:
+  emacs-27:
+    docker:
+      - image: silex/emacs:27.2
+    <<: *steps
+  emacs-26:
+    docker:
+      - image: silex/emacs:26.3
+    <<: *steps
+  emacs-25:
+    docker:
+      - image: silex/emacs:25.3
+    <<: *steps
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      - emacs-25
+      - emacs-26
+      - emacs-27

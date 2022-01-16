@@ -1,4 +1,5 @@
 [![MELPA](https://melpa.org/packages/kubel-badge.svg)](https://melpa.org/#/kubel)
+[![abrochard](https://circleci.com/gh/abrochard/kubel.svg?style=svg)](https://app.circleci.com/pipelines/github/abrochard/kubel)
 
 # kubel
 
@@ -22,6 +23,8 @@ We now support managing pretty much any resource!
 - copy container log command to clipboard
 - port forward a pod to your localhost
 - exec into a pod using tramp
+- quick run shell-command
+- scale replicas
 
 ## Installation
 
@@ -41,9 +44,9 @@ To set said namespace and context, respectively call
 M-x kubel-set-namespace
 M-x kubel-set-context
 ```
-Note that namespace will autocomplete but not context,
-this is because I interact with kubernetes through a user who
-does not have permissions to list namespaces.
+Note that context will autocomplete but not necessarily namespaces
+depending on your permissions and cluster setup.
+See the [customize section](#Customize) on how to tune `kubel-use-namespace-list`.
 
 To switch to showing a different resource, use the `R` command or
 ```
@@ -56,24 +59,34 @@ This will let you select a resource and re-display the kubel buffer.
 On the kubel screen, place your cursor on a resource
 ```
 enter => get resource details
+C-u enter => describe resource
 h => help popup
+? => help popup
+! => quick run shell-command
+E => quick edit any resource
+g => refresh
+k => delete popup
+r => see the rollout history for resource
+p => port forward pod
+l => log popup
+e => exec popup
+j => jab deployment to force rolling update
+S => scale resource replicas
 C => set context
 n => set namespace
-K => set kubectl config file
 R => set resource
+K => set kubectl config file
 F => set output format
-g => refresh
 f => set a substring filter for resource name
 M-n => jump to the next highlighted resource
 M-p => jump to previous highlighted resource
-E => quick edit any resource
-r => see the rollout history for resource
-l => log popup
+m => mark item
+u => unmark item
+M => mark all items
+U => unmark all items
 c => copy popup
-k => delete popup
-e => exec into pod
-p => port forward pod
-j => jab deployment to force rolling update
+$ => show process buffer
+s => show only resources with specified label value
 ```
 
 ## Editing a resource
@@ -86,9 +99,12 @@ Alternatively, you can hit `E` to then select the resource type and the resource
 
 ## Customize
 
-By default, kubel log tails from the last 100 lines, you can change the `kubel-log-tail-n` variable to set another line number.
-
-If you need to switch or set your kubectl config file by setting your `KUBECONFIG` environment variable, you can use the wrapper function `kubel-set-kubectl-config-file` or the `K` shortcut.
+- By default, kubel log tails from the last 100 lines, you can change the `kubel-log-tail-n` variable to set another line number.
+- If you need to switch or set your kubectl config file by setting your `KUBECONFIG` environment variable, you can use the wrapper function `kubel-set-kubectl-config-file` or the `K` shortcut.
+- Namespace listing for auto-completion is controlled by `kubel-use-namespace-list`:
+  - auto - default, use `kubectl auth can-i list namespace` to determine if we can list namespaces
+  - on - always assume we can list namespaces
+  - off - always assume we cannot list namespaces
 
 ## Releases
 
