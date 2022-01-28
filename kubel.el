@@ -553,7 +553,7 @@ NAME is the resource name."
          (revision (car (split-string (kubel--select-rollout typename))))
          (process-name (format "kubel - rollout - %s - %s" typename revision)))
     (kubel--exec process-name
-                 (list "rollout" "history" typename (format "--revision=%s" revision)))
+                 (list "rollout" "history" typename (format "--revision=%s" revision)) t)
     (goto-char (point-min))))
 
 (defun kubel--list-rollout (typename)
@@ -624,7 +624,7 @@ Use C-c C-c to kubectl apply the current yaml buffer."
       (unless  (file-exists-p (format "%s/tmp/kubel" dir-prefix))
         (make-directory (format "%s/tmp/kubel" dir-prefix) t))
       (write-region (point-min) (point-max) filename)
-      (kubel--exec (format "kubectl - apply - %s" filename) (list "apply" "-f" filename-without-tramp-prefix))
+      (kubel--exec (format "kubectl - apply - %s" filename) (list "apply" "-f" filename-without-tramp-prefix) t)
       (message "Applied %s" filename))))
 
 (defun kubel-get-resource-details (&optional describe)
@@ -955,7 +955,7 @@ P can be a single number or a localhost:container port pair."
            (args (list "delete" kubel-resource pod)))
       (when (transient-args 'kubel-delete-popup)
         (setq args (append args (list "--force" "--grace-period=0"))))
-      (kubel--exec process-name args))))
+      (kubel--exec process-name args t))))
 
 (defun kubel-jab-deployment ()
   "Make a trivial patch to force a new deployment.
@@ -980,7 +980,7 @@ REPLICAS is the number of desired replicas."
   (if (kubel--is-scalable)
       (let* ((resource (kubel--get-resource-under-cursor))
              (process-name (format "kubel:scale:%s/%s" kubel-resource resource)))
-        (kubel--exec process-name (list "scale" kubel-resource resource "--replicas" (number-to-string replicas))))
+        (kubel--exec process-name (list "scale" kubel-resource resource "--replicas" (number-to-string replicas)) t))
     (message
      "[%s] cannot be scaled.\nOnly these resources can be scaled: [deployment, replica set, replication controller, and stateful set]."
      kubel-resource)))
