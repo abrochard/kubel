@@ -540,6 +540,8 @@ DESCRIBE is boolean to describe instead of get resource details"
     (when (string-equal kubel-output "yaml")
       (yaml-mode)
       (kubel-yaml-editing-mode))
+    (if describe
+        (view-mode))
     (goto-char (point-min))))
 
 (defun kubel--show-rollout-revision (type name)
@@ -638,6 +640,8 @@ Use C-c C-c to kubectl apply the current yaml buffer."
     (when (or (string-equal kubel-output "yaml") (transient-args 'kubel-describe-popup))
       (yaml-mode)
       (kubel-yaml-editing-mode))
+    (if describe
+        (view-mode))
     (goto-char (point-min))))
 
 
