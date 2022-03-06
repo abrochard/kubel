@@ -77,7 +77,7 @@
     ;; global
     ("RET" "Resource details" kubel-describe-popup)
     ("E" "Quick edit" kubel-quick-edit)
-    ("g" "Refresh" kubel-refresh)
+    ("x" "Refresh" kubel-refresh)
     ("d" "Delete" kubel-delete-popup) ;; can't use k here
     ("r" "Rollout" kubel-rollout-history)]
    ["" ;; based on current view
@@ -112,7 +112,7 @@
   (kbd "K") #'kubel-set-kubectl-config-file
   (kbd "C") #'kubel-set-context
   (kbd "n") #'kubel-set-namespace
-  (kbd "g") #'kubel-refresh
+  (kbd "x") #'kubel-refresh
   (kbd "h") #'kubel-evil-help-popup
   (kbd "?") #'kubel-evil-help-popup
   (kbd "F") #'kubel-set-output-format
