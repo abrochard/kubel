@@ -927,6 +927,29 @@ P can be a single number or a localhost:container port pair."
          (eshell-buffer-name (format "*kubel - eshell - %s@%s*" container pod)))
     (eshell)))
 
+(defun kubel-run-in-vterm-kill (process event)
+  "A process sentinel. Kills PROCESS's buffer if it is live."
+  (let ((b (process-buffer process)))
+    (and (buffer-live-p b)
+         (kill-buffer b))))
+
+(defun kubel-exec-vterm-pod ()
+  "Exec into the pod under the cursor -> vterm."
+  (require 'vterm)
+  (interactive)
+    (let* ((pod (if (kubel--is-pod-view)
+                  (kubel--get-resource-under-cursor)
+                (kubel--select-resource "Pods")))
+         (containers (kubel--get-containers pod))
+         (container (if (equal (length containers) 1)
+                        (car containers)
+                      (completing-read "Select container: " containers)))
+         (command (format "%s exec %s -c %s -i -t -- /usr/bin/env bash" (kubel--get-command-prefix) pod container)))
+  (with-current-buffer (vterm (concat "*kubel - " container ":"  pod "*"))
+    (set-process-sentinel vterm--process #'run-in-vterm-kill)
+    (vterm-send-string command)
+    (vterm-send-return))))
+
 (defun kubel-exec-pod-by-shell-command ()
   "Prompt shell with kubectl exec command at pod under cursor."
   (interactive)
@@ -1084,6 +1107,7 @@ RESET is to be called if the search is nil after the first attempt."
    ("!" "Shell command" kubel-exec-pod-by-shell-command)
    ("d" "Dired" kubel-exec-pod)
    ("e" "Eshell" kubel-exec-eshell-pod)
+   ("v" "Vterm" kubel-exec-vterm-pod)
    ("s" "Shell" kubel-exec-shell-pod)])
 
 (define-transient-command kubel-log-popup ()
