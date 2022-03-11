@@ -927,7 +927,7 @@ P can be a single number or a localhost:container port pair."
          (eshell-buffer-name (format "*kubel - eshell - %s@%s*" container pod)))
     (eshell)))
 
-(defun kubel-run-in-vterm-kill (process event)
+(defun run-in-vterm-kill (process event)
   "A process sentinel. Kills PROCESS's buffer if it is live."
   (let ((b (process-buffer process)))
     (and (buffer-live-p b)
@@ -946,7 +946,7 @@ P can be a single number or a localhost:container port pair."
                       (completing-read "Select container: " containers)))
          (command (format "%s exec %s -c %s -i -t -- /usr/bin/env bash" (kubel--get-command-prefix) pod container)))
   (with-current-buffer (vterm (concat "*kubel - " container ":"  pod "*"))
-    (set-process-sentinel vterm--process #'kubel-run-in-vterm-kill)
+    (set-process-sentinel vterm--process #'run-in-vterm-kill)
     (vterm-send-string command)
     (vterm-send-return))))
 
