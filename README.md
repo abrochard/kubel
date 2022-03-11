@@ -48,7 +48,7 @@ Each kubel buffer will automatically be renamed using the following template:
 
 ### `M-x kubel-refresh`
 
-Call `kubel-refresh` or hit `g` to refresh the current kubel buffer using the
+Call `kubel-refresh` or hit `g` (`x` in evil-mode) to refresh the current kubel buffer using the
 configured context/namespace/resource for that session.
 
 ### `M-x kubel-open`
@@ -81,7 +81,7 @@ h => help popup
 ? => help popup
 ! => quick run shell-command
 E => quick edit any resource
-g => refresh
+g => refresh (`x` in evil-mode)
 k => delete popup
 r => see the rollout history for resource
 p => port forward pod

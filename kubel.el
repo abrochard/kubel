@@ -70,7 +70,7 @@
 ;; h => help popup
 ;; ? => help popup
 ;; E => quick edit any resource
-;; x => refresh
+;; g => refresh
 ;; k => delete popup
 ;; r => see the rollout history for resource
 ;; p => port forward pod
@@ -1111,7 +1111,7 @@ RESET is to be called if the search is nil after the first attempt."
     ;; global
     ("RET" "Resource details" kubel-describe-popup)
     ("E" "Quick edit" kubel-quick-edit)
-    ("x" "Refresh" kubel-refresh)
+    ("g" "Refresh" kubel-refresh)
     ("k" "Delete" kubel-delete-popup)
     ("r" "Rollout" kubel-rollout-history)]
    ["" ;; based on current view
@@ -1148,7 +1148,7 @@ RESET is to be called if the search is nil after the first attempt."
     (define-key map (kbd "K") 'kubel-set-kubectl-config-file)
     (define-key map (kbd "C") 'kubel-set-context)
     (define-key map (kbd "n") 'kubel-set-namespace)
-    (define-key map (kbd "x") 'kubel-refresh)
+    (define-key map (kbd "g") 'kubel-refresh)
     (define-key map (kbd "h") 'kubel-help-popup)
     (define-key map (kbd "?") 'kubel-help-popup)
     (define-key map (kbd "F") 'kubel-set-output-format)

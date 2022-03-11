@@ -39,7 +39,7 @@
 ;; C => set context
 ;; n => set namespace
 ;; R => set resource
-;; g => refresh pods
+;; x => refresh pods
 ;; E => quick edit
 ;; p => port forward pod
 ;; e => exec into pod
