@@ -946,7 +946,7 @@ P can be a single number or a localhost:container port pair."
                       (completing-read "Select container: " containers)))
          (command (format "%s exec %s -c %s -i -t -- /usr/bin/env bash" (kubel--get-command-prefix) pod container)))
   (with-current-buffer (vterm (concat "*kubel - " container ":"  pod "*"))
-    (set-process-sentinel vterm--process #'run-in-vterm-kill)
+    (set-process-sentinel vterm--process #'kubel-run-in-vterm-kill)
     (vterm-send-string command)
     (vterm-send-return))))
 
