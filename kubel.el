@@ -136,6 +136,11 @@
     ("Terminating" . "blue"))
   "Associative list of status to color.")
 
+(defcustom kubel-kubectl "kubectl"
+  "Kubectl binary path."
+  :type 'string
+  :group 'kubel)
+
 (defconst kubel--process-buffer "*kubel-process*"
   "Kubel process buffer name.")
 
@@ -452,7 +457,7 @@ READONLY If true buffer will be in readonly mode(view-mode)."
     (setq process-name "kubel-command"))
   (let ((buffer-name (format "*%s*" process-name))
         (error-buffer (kubel--process-error-buffer process-name))
-        (cmd (append (list "kubectl") (kubel--get-context-namespace) args)))
+        (cmd (append (list kubel-kubectl) (kubel--get-context-namespace) args)))
     (when (get-buffer buffer-name)
       (kill-buffer buffer-name))
     (when (get-buffer error-buffer)
@@ -490,7 +495,7 @@ Strip the `*` prefix if the resource is selected"
 
 (defun kubel--get-command-prefix ()
   "Utility function to prefix the kubectl command with proper context and namespace."
-  (mapconcat 'identity (append '("kubectl") (kubel--get-context-namespace) (kubel--get-selector)) " "))
+  (mapconcat 'identity (append (list kubel-kubectl) (kubel--get-context-namespace) (kubel--get-selector)) " "))
 
 (defun kubel--get-containers (pod-name &optional type)
   "List the containers in a pod.
@@ -737,7 +742,7 @@ ARGS is the arguments list from transient."
              (setq kubel--can-get-namespace-cached
                    (string-match-p "yes\n"
                           (kubel--exec-to-string
-                           (format "kubectl --context %s auth can-i list namespaces" kubel-context))))))
+                           (format "%s --context %s auth can-i list namespaces" kubel-kubectl kubel-context))))))
          kubel--can-get-namespace-cached)))
 
 (defun kubel--get-namespace ()
@@ -745,7 +750,7 @@ ARGS is the arguments list from transient."
   (unless kubel--namespace-list-cached
     (setq kubel--namespace-list-cached
           (split-string (kubel--exec-to-string
-                         (format "kubectl --context %s get namespace -o jsonpath='{.items[*].metadata.name}'" kubel-context)) " ")))
+                         (format "%s --context %s get namespace -o jsonpath='{.items[*].metadata.name}'" kubel-kubectl kubel-context)) " ")))
   kubel--namespace-list-cached)
 
 (defun kubel--list-namespace ()
@@ -764,7 +769,7 @@ ARGS is the arguments list from transient."
   (interactive)
   (let* ((namespace (completing-read "Namespace: " (kubel--list-namespace)
                                      nil nil nil nil "default"))
-         (kubel--buffer (get-buffer (kubel--buffer-name)))
+         ( kubel--buffer (get-buffer (kubel--buffer-name)))
          (last-default-directory (when kubel--buffer
                                    (with-current-buffer kubel--buffer default-directory))))
     (when kubel--buffer (kill-buffer kubel--buffer))
@@ -781,7 +786,7 @@ ARGS is the arguments list from transient."
     (setq kubel-context
           (completing-read
            "Select context: "
-           (split-string (kubel--exec-to-string "kubectl config view -o jsonpath='{.contexts[*].name}'") " ")))
+           (split-string (kubel--exec-to-string (format "%s config view -o jsonpath='{.contexts[*].name}'" kubel-kubectl)) " ")))
     (kubel--invalidate-context-caches)
     (setq kubel-namespace "default")
     (kubel last-default-directory)))
@@ -819,7 +824,7 @@ ARGS is the arguments list from transient."
 (defun kubel--fetch-api-resource-list ()
   "Fetch the API resource list."
   (split-string (kubel--exec-to-string
-                 (format "kubectl --context %s api-resources -o name --no-headers=true" kubel-context)) "\n" t))
+                 (format "%s --context %s api-resources -o name --no-headers=true" kubel-kubectl kubel-context)) "\n" t))
 
 (defun kubel-set-resource (&optional refresh)
   "Set the resource.
@@ -868,7 +873,7 @@ P can be a single number or a localhost:container port pair."
   ;; TODO error message if resource is not pod
   (add-to-list 'tramp-methods
                `("kubectl"
-                 (tramp-login-program      "kubectl")
+                 (tramp-login-program      kubel-kubectl)
                  (tramp-login-args         (,(kubel--get-context-namespace) ("exec" "-it") ("-c" "%u") ("%h") ("sh")))
                  (tramp-remote-shell       "sh")
                  (tramp-remote-shell-args  ("-i" "-c"))))) ;; add the current context/namespace to tramp methods
