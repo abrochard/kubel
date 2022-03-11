@@ -769,7 +769,7 @@ ARGS is the arguments list from transient."
   (interactive)
   (let* ((namespace (completing-read "Namespace: " (kubel--list-namespace)
                                      nil nil nil nil "default"))
-         ( kubel--buffer (get-buffer (kubel--buffer-name)))
+         (kubel--buffer (get-buffer (kubel--buffer-name)))
          (last-default-directory (when kubel--buffer
                                    (with-current-buffer kubel--buffer default-directory))))
     (when kubel--buffer (kill-buffer kubel--buffer))
