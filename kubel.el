@@ -1078,7 +1078,7 @@ RESET is to be called if the search is nil after the first attempt."
 
 ;; popups
 
-(define-transient-command kubel-exec-popup ()
+(transient-define-prefix kubel-exec-popup ()
   "Kubel Exec Menu"
   ["Actions"
    ("!" "Shell command" kubel-exec-pod-by-shell-command)
@@ -1086,7 +1086,7 @@ RESET is to be called if the search is nil after the first attempt."
    ("e" "Eshell" kubel-exec-eshell-pod)
    ("s" "Shell" kubel-exec-shell-pod)])
 
-(define-transient-command kubel-log-popup ()
+(transient-define-prefix kubel-log-popup ()
   "Kubel Log Menu"
   ["Arguments"
    ("-f" "Follow" "-f")
@@ -1097,7 +1097,7 @@ RESET is to be called if the search is nil after the first attempt."
    ("i" "Tail initContainer logs" kubel-get-pod-logs--initContainer)
    ("L" "Tail by labels" kubel-get-logs-by-labels)])
 
-(define-transient-command kubel-copy-popup ()
+(transient-define-prefix kubel-copy-popup ()
   "Kubel Copy Menu"
   ["Actions"
    ("c" "Copy resource name" kubel-copy-resource-name)
@@ -1105,21 +1105,21 @@ RESET is to be called if the search is nil after the first attempt."
    ("p" "Copy command prefix" kubel-copy-command-prefix)
    ("C" "Copy last command" kubel-copy-last-command)])
 
-(define-transient-command kubel-delete-popup ()
+(transient-define-prefix kubel-delete-popup ()
   "Kubel Delete menu"
   ["Arguments"
    ("-f" "Force" "--force --grace-period=0")]
   ["Actions"
    ("k" "Delete resource(s)" kubel-delete-resource)])
 
-(define-transient-command kubel-describe-popup ()
+(transient-define-prefix kubel-describe-popup ()
   "Kubel Describe Menu"
   ["Arguments"
    ("-y" "Yaml" "-o yaml")]
   ["Actions"
    ("RET" "Describe" kubel-get-resource-details)])
 
-(define-transient-command kubel-help-popup ()
+(transient-define-prefix kubel-help-popup ()
   "Kubel Menu"
   [["Actions"
     ;; global

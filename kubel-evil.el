@@ -71,7 +71,7 @@
 
 (add-hook 'kubel-mode-hook 'kubel-evil-mode)
 
-(define-transient-command kubel-evil-help-popup ()
+(transient-define-prefix kubel-evil-help-popup ()
   "Kubel Evil Menu"
   [["Actions"
     ;; global
