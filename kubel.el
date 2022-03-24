@@ -185,6 +185,15 @@ CMD is the command string to run."
   (kubel--log-command "kubectl-command" cmd)
   (shell-command-to-string cmd))
 
+(defun kubel--prompt-for-container ()
+  "If the pod had multiple containers prompt for the correct one"
+  (let* ((pod (kubel--get-resource-under-cursor))
+	 (containers (kubel--get-containers pod "containers"))
+         (container (if (equal (length containers) 1)
+                        (car containers)
+                      (completing-read "Select container: " containers))))
+    (list "-c" container)))
+
 (defvar kubel-namespace "default"
   "Current namespace.")
 
@@ -869,9 +878,9 @@ P can be a single number or a localhost:container port pair."
   (add-to-list 'tramp-methods
                `("kubectl"
                  (tramp-login-program      "kubectl")
-                 (tramp-login-args         (,(kubel--get-context-namespace) ("exec" "-it") ("-c" "%u") ("%h") ("sh")))
+                 (tramp-login-args         (,(kubel--get-context-namespace) ("exec" "-it") ,(kubel--prompt-for-container) ("-u" "%u") ("%h") ("sh")))
                  (tramp-remote-shell       "sh")
-                 (tramp-remote-shell-args  ("-i" "-c"))))) ;; add the current context/namespace to tramp methods
+                 (tramp-remote-shell-args  ("-i" "-c")))))
 
 (defun kubel-exec-pod ()
   "Exec into the pod under the cursor -> `find-file."
