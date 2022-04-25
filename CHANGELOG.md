@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 - safe way to help with rollbacks?
 - run `kubectl describe pod`
 - `kubectl` apply a buffer to current context/namespace
+- ansi-term support for `kubectl exec`
 
 ## [3.0.0] -
 ### Added

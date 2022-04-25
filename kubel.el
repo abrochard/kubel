@@ -955,6 +955,21 @@ P can be a single number or a localhost:container port pair."
     (vterm-send-string command)
     (vterm-send-return))))
 
+(defun kubel-exec-ansi-term-pod ()
+  "Exec into the pod under the cursor -> `ansi-term'."
+  (interactive)
+  (require 'term)
+  (let* ((pod (if (kubel--is-pod-view)
+                  (kubel--get-resource-under-cursor)
+                (kubel--select-resource "Pods")))
+         (containers (kubel--get-containers pod))
+         (container (if (equal (length containers) 1)
+                        (car containers)
+                      (completing-read "Select container: " containers)))
+         (command (format "%s exec %s -c %s -i -t -- /usr/bin/env sh" (kubel--get-command-prefix) pod container)))
+    (with-current-buffer (ansi-term "bash" (concat "kubel:ansi-term:" container "@" pod))
+      (process-send-string (current-buffer) (format "%s\n" command)))))
+
 (defun kubel-exec-pod-by-shell-command ()
   "Prompt shell with kubectl exec command at pod under cursor."
   (interactive)
@@ -1113,6 +1128,7 @@ RESET is to be called if the search is nil after the first attempt."
    ("d" "Dired" kubel-exec-pod)
    ("e" "Eshell" kubel-exec-eshell-pod)
    ("v" "Vterm" kubel-exec-vterm-pod)
+   ("a" "Ansi-term" kubel-exec-ansi-term-pod)
    ("s" "Shell" kubel-exec-shell-pod)])
 
 (transient-define-prefix kubel-log-popup ()
