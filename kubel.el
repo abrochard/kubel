@@ -881,7 +881,7 @@ P can be a single number or a localhost:container port pair."
 (defun kubel--get-container-under-cursor ()
   "Get `(container . pod)' name under cursor."
   (let* ((pod (if (kubel--is-pod-view)
-                 (kubel--get-resource-under-cursor)
+                  (kubel--get-resource-under-cursor)
                 (kubel--select-resource "Pods")))
          (containers (kubel--get-containers pod))
          (container (if (equal (length containers) 1)
@@ -909,8 +909,10 @@ P can be a single number or a localhost:container port pair."
                         (with-parsed-tramp-file-name default-directory nil
                           (format "%s%s:%s@%s|" (or hop "") method user host))) ""))
          (con-pod (kubel--get-container-under-cursor))
-         (default-directory (format "/%skubectl:%s@%s:/" dir-prefix (car con-pod) (cdr con-pod))))
-    (shell (format "*kubel - shell - %s@%s*" (car con-pod) (cdr con-pod)))))
+         (container (car con-pod))
+         (pod (cdr con-pod))
+         (default-directory (format "/%skubectl:%s@%s:/" dir-prefix container pod)))
+    (shell (format "*kubel - shell - %s@%s*" container pod))))
 
 (defun kubel-exec-eshell-pod ()
   "Exec into the pod under the cursor -> eshell."
@@ -921,8 +923,10 @@ P can be a single number or a localhost:container port pair."
                         (with-parsed-tramp-file-name default-directory nil
                           (format "%s%s:%s@%s|" (or hop "") method user host))) ""))
          (con-pod (kubel--get-container-under-cursor))
-         (default-directory (format "/%skubectl:%s@%s:/" dir-prefix (car con-pod) (cdr con-pod)))
-         (eshell-buffer-name (format "*kubel - eshell - %s@%s*" (car con-pod) (cdr con-pod))))
+         (container (car con-pod))
+         (pod (cdr con-pod))
+         (default-directory (format "/%skubectl:%s@%s:/" dir-prefix container pod))
+         (eshell-buffer-name (format "*kubel - eshell - %s@%s*" container pod)))
     (eshell)))
 
 (defun kubel-in-vterm-kill (process event)
@@ -936,8 +940,10 @@ P can be a single number or a localhost:container port pair."
   (require 'vterm)
   (interactive)
   (let* ((con-pod (kubel--get-container-under-cursor))
-         (command (format "%s exec %s -c %s -i -t -- /usr/bin/env bash" (kubel--get-command-prefix) (cdr con-pod) (car con-pod))))
-    (with-current-buffer (vterm (concat "*kubel:vterm:" (car con-pod) "@" (cdr con-pod) "*"))
+         (container (car con-pod))
+         (pod (cdr con-pod))
+         (command (format "%s exec %s -c %s -i -t -- /usr/bin/env bash" (kubel--get-command-prefix) pod container)))
+    (with-current-buffer (vterm (concat "*kubel:vterm:" container "@" pod "*"))
       (set-process-sentinel vterm--process #'kubel-in-vterm-kill)
       (vterm-send-string command)
       (vterm-send-return))))
@@ -946,8 +952,10 @@ P can be a single number or a localhost:container port pair."
   "Exec into the pod under the cursor -> `ansi-term'."
   (interactive)
   (let* ((con-pod (kubel--get-container-under-cursor))
-         (command (format "%s exec %s -c %s -i -t -- /usr/bin/env sh" (kubel--get-command-prefix) (cdr con-pod) (car con-pod))))
-    (with-current-buffer (ansi-term "bash" (concat "kubel:ansi-term:" (car con-pod) "@" (cdr con-pod)))
+         (container (car con-pod))
+         (pod (cdr con-pod))
+         (command (format "%s exec %s -c %s -i -t -- /usr/bin/env sh" (kubel--get-command-prefix) pod container)))
+    (with-current-buffer (ansi-term "bash" (concat "kubel:ansi-term:" container "@" pod))
       (process-send-string (current-buffer) (format "%s\n" command)))))
 
 (defun kubel-exec-pod-by-shell-command ()
