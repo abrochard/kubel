@@ -10,7 +10,6 @@ All notable changes to this project will be documented in this file.
 - safe way to help with rollbacks?
 - run `kubectl describe pod`
 - `kubectl` apply a buffer to current context/namespace
-- ansi-term support for `kubectl exec`
 
 ## [3.0.0] -
 ### Added
@@ -32,6 +31,7 @@ All notable changes to this project will be documented in this file.
 - `kubel-scale-replicas` to scale a deployment, replica set, replication controller, or stateful set
 - proper sort by duration for "AGE", "DURATION", and "LAST SCHEDULE" columns
 - vterm support for `kubectl exec`
+- ansi-term support for `kubectl exec`
 
 ### Changed
 - `e` keybinding now opens a popup for exec options
