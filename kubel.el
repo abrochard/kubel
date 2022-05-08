@@ -929,24 +929,21 @@ P can be a single number or a localhost:container port pair."
          (eshell-buffer-name (format "*kubel - eshell - %s@%s*" container pod)))
     (eshell)))
 
-(defun kubel-in-vterm-kill (process event)
-  "A process sentinel. Kills PROCESS's buffer if it is live."
-  (let ((b (process-buffer process)))
-    (and (buffer-live-p b)
-         (kill-buffer b))))
-
 (defun kubel-exec-vterm-pod ()
   "Exec into the pod under the cursor -> vterm."
   (require 'vterm)
   (interactive)
-  (let* ((con-pod (kubel--get-container-under-cursor))
+  (kubel-setup-tramp)
+  (let* ((dir-prefix (or
+                      (when (tramp-tramp-file-p default-directory)
+                        (with-parsed-tramp-file-name default-directory nil
+                          (format "%s%s:%s@%s|" (or hop "") method user host))) ""))
+         (con-pod (kubel--get-container-under-cursor))
          (container (car con-pod))
          (pod (cdr con-pod))
-         (command (format "%s exec %s -c %s -i -t -- /usr/bin/env bash" (kubel--get-command-prefix) pod container)))
-    (with-current-buffer (vterm (concat "*kubel:vterm:" container "@" pod "*"))
-      (set-process-sentinel vterm--process #'kubel-in-vterm-kill)
-      (vterm-send-string command)
-      (vterm-send-return))))
+         (default-directory (format "/%skubectl:%s@%s:/" dir-prefix container pod))
+         (vterm-buffer-name (format "*kubel - vterm - %s@%s*" container pod)))
+  (vterm)))
 
 (defun kubel-exec-ansi-term-pod ()
   "Exec into the pod under the cursor -> `ansi-term'."
