@@ -782,11 +782,11 @@ ARGS is the arguments list from transient."
   (interactive)
   (let* ((kubel--buffer (get-buffer (kubel--buffer-name)))
          (last-default-directory (when kubel--buffer (with-current-buffer kubel--buffer default-directory))))
-    (when kubel--buffer (kill-buffer kubel--buffer));; kill buffer for previous context if possible
     (setq kubel-context
           (completing-read
            "Select context: "
            (split-string (kubel--exec-to-string (format "%s config view -o jsonpath='{.contexts[*].name}'" kubel-kubectl)) " ")))
+    (when kubel--buffer (kill-buffer kubel--buffer));; kill buffer for previous context if possible
     (kubel--invalidate-context-caches)
     (setq kubel-namespace "default")
     (kubel last-default-directory)))
