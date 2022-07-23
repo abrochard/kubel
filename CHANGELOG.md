@@ -43,6 +43,7 @@ All notable changes to this project will be documented in this file.
 - string regex to ignore warning on `can-i` list namespace
 - update transient's definition macros by their new names
 - use `kubel-kubectl` variable to find `kubectl` path rather than hardcode it
+- kill kubel buffer after prompting for new the context
 
 ### Removed
 - remove deprecated function bound to `d`
