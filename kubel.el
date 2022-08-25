@@ -1216,7 +1216,17 @@ RESET is to be called if the search is nil after the first attempt."
     map)
   "Keymap for `kubel-mode'.")
 
-(defvar kubel-last-position nil)
+;;;###autoload
+(defun kubel-open (context &optional namespace resource directory)
+  "Open kubel pointing to CONTEXT and NAMESPACE.
+
+NAMEPACE is optional, will default to \"default\".
+RESOURCE is optional, will default to pods.
+DIRECTORY is optional for TRAMP support."
+  (setq kubel-context context)
+  (setq kubel-namespace (or namespace "default"))
+  (setq kubel-resource (or resource "Pods"))
+  (kubel directory))
 
 ;;;###autoload
 (defun kubel (&optional directory)
