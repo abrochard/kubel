@@ -32,7 +32,7 @@ All notable changes to this project will be documented in this file.
 - proper sort by duration for "AGE", "DURATION", and "LAST SCHEDULE" columns
 - vterm support for `kubectl exec`
 - ansi-term support for `kubectl exec`
-- `kubel-open` function to programatically open to a specific context/namespace
+- `kubel-open` function to programatically open to a specific context/namespace/resource
 
 ### Changed
 - `e` keybinding now opens a popup for exec options
