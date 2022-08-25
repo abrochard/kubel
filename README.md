@@ -55,10 +55,7 @@ M-x kubel-set-resource
 This will let you select a resource and re-display the kubel buffer.
 
 
-### `M-x kubel-open`
-
-Call `kubel-open` to programmatically open a new session for the passed context,
-namespace, and resource (optional).
+To programmatically open a session for a specific context/namespace/resource, call `kubel-open` from elisp
 
 ```lisp
 (kubel-open "<context>" "<namespace>" "<OPTIONAL resource>")
