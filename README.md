@@ -54,6 +54,16 @@ M-x kubel-set-resource
 ```
 This will let you select a resource and re-display the kubel buffer.
 
+
+### `M-x kubel-open`
+
+Call `kubel-open` to programmatically open a new session for the passed context,
+namespace, and resource (optional).
+
+```lisp
+(kubel-open "<context>" "<namespace>" "<OPTIONAL resource>")
+```
+
 ## Shortcuts
 
 On the kubel screen, place your cursor on a resource
