@@ -45,6 +45,7 @@ All notable changes to this project will be documented in this file.
 - update transient's definition macros by their new names
 - use `kubel-kubectl` variable to find `kubectl` path rather than hardcode it
 - kill kubel buffer after prompting for new the context
+- changed kubel-exec-vterm-pod to use to /bin/sh for stability
 
 ### Removed
 - remove deprecated function bound to `d`
