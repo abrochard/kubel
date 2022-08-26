@@ -889,14 +889,19 @@ P can be a single number or a localhost:container port pair."
                       (completing-read "Select container: " containers))))
     (cons container pod)))
 
+(defun kubel--dir-prefix ()
+  "Return the current directory prefix for a TRAMP connection."
+  (or
+   (when (tramp-tramp-file-p default-directory)
+     (with-parsed-tramp-file-name default-directory nil
+       (format "%s%s:%s@%s|" (or hop "") method user host)))
+   ""))
+
 (defun kubel-exec-pod ()
   "Exec into the pod under the cursor -> `find-file."
   (interactive)
   (kubel-setup-tramp)
-  (let* ((dir-prefix (or
-                      (when (tramp-tramp-file-p default-directory)
-                        (with-parsed-tramp-file-name default-directory nil
-                          (format "%s%s:%s@%s|" (or hop "") method user host)))""))
+  (let* ((dir-prefix (kubel--dir-prefix))
          (con-pod (kubel--get-container-under-cursor)))
     (find-file (format "/%skubectl:%s@%s:/" dir-prefix (car con-pod) (cdr con-pod)))))
 
@@ -904,10 +909,7 @@ P can be a single number or a localhost:container port pair."
   "Exec into the pod under the cursor -> shell."
   (interactive)
   (kubel-setup-tramp)
-  (let* ((dir-prefix (or
-                      (when (tramp-tramp-file-p default-directory)
-                        (with-parsed-tramp-file-name default-directory nil
-                          (format "%s%s:%s@%s|" (or hop "") method user host))) ""))
+  (let* ((dir-prefix (kubel--dir-prefix))
          (con-pod (kubel--get-container-under-cursor))
          (container (car con-pod))
          (pod (cdr con-pod))
@@ -918,10 +920,7 @@ P can be a single number or a localhost:container port pair."
   "Exec into the pod under the cursor -> eshell."
   (interactive)
   (kubel-setup-tramp)
-  (let* ((dir-prefix (or
-                      (when (tramp-tramp-file-p default-directory)
-                        (with-parsed-tramp-file-name default-directory nil
-                          (format "%s%s:%s@%s|" (or hop "") method user host))) ""))
+  (let* ((dir-prefix (kubel--dir-prefix))
          (con-pod (kubel--get-container-under-cursor))
          (container (car con-pod))
          (pod (cdr con-pod))
@@ -934,16 +933,14 @@ P can be a single number or a localhost:container port pair."
   (require 'vterm)
   (interactive)
   (kubel-setup-tramp)
-  (let* ((dir-prefix (or
-                      (when (tramp-tramp-file-p default-directory)
-                        (with-parsed-tramp-file-name default-directory nil
-                          (format "%s%s:%s@%s|" (or hop "") method user host))) ""))
+  (let* ((dir-prefix (kubel--dir-prefix))
          (con-pod (kubel--get-container-under-cursor))
          (container (car con-pod))
          (pod (cdr con-pod))
          (default-directory (format "/%skubectl:%s@%s:/" dir-prefix container pod))
-         (vterm-buffer-name (format "*kubel - vterm - %s@%s*" container pod)))
-  (vterm)))
+         (vterm-buffer-name (format "*kubel - vterm - %s@%s*" container pod))
+         (vterm-shell "/bin/sh"))
+    (vterm)))
 
 (defun kubel-exec-ansi-term-pod ()
   "Exec into the pod under the cursor -> `ansi-term'."
