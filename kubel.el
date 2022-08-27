@@ -1006,8 +1006,8 @@ P can be a single number or a localhost:container port pair."
 
 (defun kubel-exec-vterm-pod ()
   "Exec into the pod under the cursor -> vterm."
-  (require 'vterm)
   (interactive)
+  (require 'vterm)
   (kubel-setup-tramp)
   (let* ((dir-prefix (kubel--dir-prefix))
          (con-pod (kubel--get-container-under-cursor))
