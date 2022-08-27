@@ -601,7 +601,8 @@ TYPENAME is the resource type/name."
 (defun kubel--jump-back-to-line ()
   "Jump back to the last cached line number."
   (when kubel--line-number
-    (goto-line kubel--line-number)))
+    (goto-char (point-min))
+    (forward-line (1- kubel--line-number))))
 
 ;; interactive
 (define-minor-mode kubel-yaml-editing-mode
