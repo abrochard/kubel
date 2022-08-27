@@ -46,6 +46,7 @@ All notable changes to this project will be documented in this file.
 - use `kubel-kubectl` variable to find `kubectl` path rather than hardcode it
 - kill kubel buffer after prompting for new the context
 - changed kubel-exec-vterm-pod to use to /bin/sh for stability
+- defcustom :type entries
 
 ### Removed
 - remove deprecated function bound to `d`
