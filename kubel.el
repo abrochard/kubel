@@ -138,7 +138,7 @@
 
 (defcustom kubel-kubectl "kubectl"
   "Kubectl binary path."
-  :type 'string
+  :type '(file :must-match t)
   :group 'kubel)
 
 (defconst kubel--process-buffer "*kubel-process*"
@@ -157,12 +157,14 @@
 (defcustom kubel-use-namespace-list 'auto
   "Control behavior for namespace completion.
 
-auto - default, use `kubectl auth can-i list namespace` to determine if we can list namespaces
-on - always assume we can list namespaces
-off - always assume we cannot list namespaces"
-  :type 'symbol
-  :group 'kubel
-  :options '('auto 'on 'off))
+auto - default, use `kubectl auth can-i list namespace` to determine if we can
+       list namespaces
+on   - always assume we can list namespaces
+off  - always assume we cannot list namespaces"
+  :type '(choice (const :tag "Auto" auto)
+                 (const :tag "On" on)
+                 (const :tag "Off" off))
+  :group 'kubel)
 
 (defun kubel--append-to-process-buffer (str)
   "Append string STR to the process buffer."
