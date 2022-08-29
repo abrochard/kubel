@@ -116,27 +116,95 @@
   '("NAME" . nil)
   "Sort table on this key.")
 
-(defcustom kubel-status-colors
-  '(("Running" . "green")
-    ("Healthy" . "green")
-    ("Active" . "green")
-    ("Ready" . "green")
-    ("True" . "green")
-    ("Unknown" . "orange")
-    ("Error" . "red")
-    ("Evicted" . "red")
-    ("MemoryPressure" . "red")
-    ("PIDPressure" . "red")
-    ("DiskPressure" . "red")
-    ("RevisionMissing" . "red")
-    ("RevisionFailed" . "red")
-    ("NetworkUnavailable" . "red")
-    ("Completed" . "yellow")
-    ("CrashLoopBackOff" . "red")
-    ("Terminating" . "blue"))
-  "Associative list of status to color."
+(defface kubel-status-running
+  '((default . (:foreground "green")))
+  "The face to use for the Running status")
+
+(defface kubel-status-healthy
+  '((default . (:foreground "green")))
+  "The face to use for the Healthy status")
+
+(defface kubel-status-active
+  '((default . (:foreground "green")))
+  "The face to use for the Active status")
+
+(defface kubel-status-ready
+  '((default . (:foreground "green")))
+  "The face to use for the Ready status")
+
+(defface kubel-status-true
+  '((default . (:foreground "green")))
+  "The face to use for the True status")
+
+(defface kubel-status-unknown
+  '((default . (:foreground "orange")))
+  "The face to use for the Unknown status")
+
+(defface kubel-status-error
+  '((default . (:foreground "red")))
+  "The face to use for the Error status")
+
+(defface kubel-status-evicted
+  '((default . (:foreground "red")))
+  "The face to use for the Evicted status")
+
+(defface kubel-status-memory-pressure
+  '((default . (:foreground "red")))
+  "The face to use for the Memory Pressure status")
+
+(defface kubel-status-pid-pressure
+  '((default . (:foreground "red")))
+  "The face to use for the PID Pressure status")
+
+(defface kubel-status-disk-pressure
+  '((default . (:foreground "red")))
+  "The face to use for the Disk Pressure status")
+
+(defface kubel-status-revision-missing
+  '((default . (:foreground "red")))
+  "The face to use for the Revision Missing status")
+
+(defface kubel-status-revision-failed
+  '((default . (:foreground "red")))
+  "The face to use for the Revision Failed status")
+
+(defface kubel-status-network-unavailable
+  '((default . (:foreground "red")))
+  "The face to use for the Network Unavailable status")
+
+(defface kubel-status-completed
+  '((default . (:foreground "yellow")))
+  "The face to use for the Completed status")
+
+(defface kubel-status-crash-loop-backoff
+  '((default . (:foreground "red")))
+  "The face to use for the Crash Loop Backoff status")
+
+(defface kubel-status-terminating
+  '((default . (:foreground "blue")))
+  "The face to use for the Terminating status")
+
+(defcustom kubel-status-faces
+  '(("Running" . kubel-status-running)
+    ("Healthy" . kubel-status-healthy)
+    ("Active" . kubel-status-active)
+    ("Ready" . kubel-status-ready)
+    ("True" . kubel-status-true)
+    ("Unknown" . kubel-status-unknown)
+    ("Error" . kubel-status-error)
+    ("Evicted" . kubel-status-evicted)
+    ("MemoryPressure" . kubel-status-memory-pressure)
+    ("PIDPressure" . kubel-status-pid-pressure)
+    ("DiskPressure" . kubel-status-disk-pressure)
+    ("RevisionMissing" . kubel-status-revision-missing)
+    ("RevisionFailed" . kubel-status-revision-failed)
+    ("NetworkUnavailable" . kubel-status-network-unavailable)
+    ("Completed" . kubel-status-completed)
+    ("CrashLoopBackOff" . kubel-status-crash-loop-backoff)
+    ("Terminating" . kubel-status-terminating))
+  "Associative list of status to face."
   :type '(alist :key-type string
-                :value-type string)
+                :value-type face)
   :group 'kubel)
 
 (defcustom kubel-kubectl "kubectl"
@@ -421,10 +489,10 @@ If MAX is the end of the line, dynamically adjust."
   "Return the status in proper font color.
 
 STATUS is the pod status string."
-  (let ((pair (cdr (assoc status kubel-status-colors)))
+  (let ((status-face (cdr (assoc status kubel-status-faces)))
         (match (or (equal kubel-resource-filter "") (string-match-p kubel-resource-filter status)))
         (selected (and (kubel--items-selected-p) (-contains? kubel--selected-items status))))
-    (cond (pair (propertize status 'font-lock-face `(:foreground ,pair)))
+    (cond (status-face (propertize status 'face status-face))
           (selected (propertize (concat "*" status) 'face 'dired-marked))
           ((not match) (propertize status 'face 'shadow))
           (t status))))
