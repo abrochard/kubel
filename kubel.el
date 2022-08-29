@@ -116,7 +116,7 @@
   '("NAME" . nil)
   "Sort table on this key.")
 
-(defconst kubel--status-colors
+(defcustom kubel-status-colors
   '(("Running" . "green")
     ("Healthy" . "green")
     ("Active" . "green")
@@ -134,7 +134,10 @@
     ("Completed" . "yellow")
     ("CrashLoopBackOff" . "red")
     ("Terminating" . "blue"))
-  "Associative list of status to color.")
+  "Associative list of status to color."
+  :type '(alist :key-type string
+                :value-type string)
+  :group 'kubel)
 
 (defcustom kubel-kubectl "kubectl"
   "Kubectl binary path."
@@ -418,7 +421,7 @@ If MAX is the end of the line, dynamically adjust."
   "Return the status in proper font color.
 
 STATUS is the pod status string."
-  (let ((pair (cdr (assoc status kubel--status-colors)))
+  (let ((pair (cdr (assoc status kubel-status-colors)))
         (match (or (equal kubel-resource-filter "") (string-match-p kubel-resource-filter status)))
         (selected (and (kubel--items-selected-p) (-contains? kubel--selected-items status))))
     (cond (pair (propertize status 'font-lock-face `(:foreground ,pair)))
