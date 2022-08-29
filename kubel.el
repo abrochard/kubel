@@ -423,7 +423,7 @@ STATUS is the pod status string."
         (selected (and (kubel--items-selected-p) (-contains? kubel--selected-items status))))
     (cond (pair (propertize status 'font-lock-face `(:foreground ,pair)))
           (selected (propertize (concat "*" status) 'face 'dired-marked))
-          ((not match) (propertize status 'font-lock-face '(:foreground "darkgrey")))
+          ((not match) (propertize status 'face 'shadow))
           (t status))))
 
 (defun kubel--pop-to-buffer (name)
