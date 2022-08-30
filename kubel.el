@@ -117,72 +117,72 @@
   "Sort table on this key.")
 
 (defface kubel-status-running
-  '((default . (:foreground "green")))
-  "The face to use for the Running status")
+  '((default . (:inherit success)))
+  "The face to use for the Running status.")
 
 (defface kubel-status-healthy
-  '((default . (:foreground "green")))
-  "The face to use for the Healthy status")
+  '((default . (:inherit success)))
+  "The face to use for the Healthy status.")
 
 (defface kubel-status-active
-  '((default . (:foreground "green")))
-  "The face to use for the Active status")
+  '((default . (:inherit success)))
+  "The face to use for the Active status.")
 
 (defface kubel-status-ready
-  '((default . (:foreground "green")))
-  "The face to use for the Ready status")
+  '((default . (:inherit success)))
+  "The face to use for the Ready status.")
 
 (defface kubel-status-true
-  '((default . (:foreground "green")))
-  "The face to use for the True status")
+  '((default . (:inherit success)))
+  "The face to use for the True status.")
 
 (defface kubel-status-unknown
-  '((default . (:foreground "orange")))
-  "The face to use for the Unknown status")
+  '((default . (:inherit warning)))
+  "The face to use for the Unknown status.")
 
 (defface kubel-status-error
-  '((default . (:foreground "red")))
-  "The face to use for the Error status")
+  '((default . (:inherit error)))
+  "The face to use for the Error status.")
 
 (defface kubel-status-evicted
-  '((default . (:foreground "red")))
-  "The face to use for the Evicted status")
+  '((default . (:inherit error)))
+  "The face to use for the Evicted status.")
 
 (defface kubel-status-memory-pressure
-  '((default . (:foreground "red")))
-  "The face to use for the Memory Pressure status")
+  '((default . (:inherit error)))
+  "The face to use for the Memory Pressure status.")
 
 (defface kubel-status-pid-pressure
-  '((default . (:foreground "red")))
-  "The face to use for the PID Pressure status")
+  '((default . (:inherit error)))
+  "The face to use for the PID Pressure status.")
 
 (defface kubel-status-disk-pressure
-  '((default . (:foreground "red")))
-  "The face to use for the Disk Pressure status")
+  '((default . (:inherit error)))
+  "The face to use for the Disk Pressure status.")
 
 (defface kubel-status-revision-missing
-  '((default . (:foreground "red")))
-  "The face to use for the Revision Missing status")
+  '((default . (:inherit error)))
+  "The face to use for the Revision Missing status.")
 
 (defface kubel-status-revision-failed
-  '((default . (:foreground "red")))
-  "The face to use for the Revision Failed status")
+  '((default . (:inherit error)))
+  "The face to use for the Revision Failed status.")
 
 (defface kubel-status-network-unavailable
-  '((default . (:foreground "red")))
-  "The face to use for the Network Unavailable status")
+  '((default . (:inherit error)))
+  "The face to use for the Network Unavailable status.")
 
 (defface kubel-status-completed
   '((default . (:foreground "yellow")))
-  "The face to use for the Completed status")
+  "The face to use for the Completed status.")
 
 (defface kubel-status-crash-loop-backoff
-  '((default . (:foreground "red")))
-  "The face to use for the Crash Loop Backoff status")
+  '((default . (:inherit error)))
+  "The face to use for the Crash Loop Backoff status.")
 
 (defface kubel-status-terminating
   '((default . (:foreground "blue")))
-  "The face to use for the Terminating status")
+  "The face to use for the Terminating status.")
 
 (defcustom kubel-status-faces
   '(("Running" . kubel-status-running)
