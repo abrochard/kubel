@@ -1007,7 +1007,6 @@ P can be a single number or a localhost:container port pair."
 (defun kubel-exec-vterm-pod ()
   "Exec into the pod under the cursor -> vterm."
   (interactive)
-  (require 'vterm)
   (kubel-setup-tramp)
   (let* ((dir-prefix (kubel--dir-prefix))
          (con-pod (kubel--get-container-under-cursor))
@@ -1017,6 +1016,13 @@ P can be a single number or a localhost:container port pair."
          (vterm-buffer-name (format "*kubel - vterm - %s@%s*" container pod))
          (vterm-shell "/bin/sh"))
     (vterm)))
+
+;;;###autoload
+(defun kubel-vterm-setup ()
+  "Adds a vterm enty to the KUBEL-EXEC-POP."
+  (require 'vterm)
+  (transient-append-suffix 'kubel-exec-popup "e"
+    '("v" "Vterm" kubel-exec-vterm-pod)))
 
 (defun kubel-exec-ansi-term-pod ()
   "Exec into the pod under the cursor -> `ansi-term'."
@@ -1179,7 +1185,6 @@ RESET is to be called if the search is nil after the first attempt."
    ("!" "Shell command" kubel-exec-pod-by-shell-command)
    ("d" "Dired" kubel-exec-pod)
    ("e" "Eshell" kubel-exec-eshell-pod)
-   ("v" "Vterm" kubel-exec-vterm-pod)
    ("a" "Ansi-term" kubel-exec-ansi-term-pod)
    ("s" "Shell" kubel-exec-shell-pod)])
 
