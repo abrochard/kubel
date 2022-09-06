@@ -47,6 +47,7 @@ All notable changes to this project will be documented in this file.
 - kill kubel buffer after prompting for new the context
 - changed kubel-exec-vterm-pod to use to /bin/sh for stability
 - defcustom :type entries
+- status color is now derived from theme
 
 ### Removed
 - remove deprecated function bound to `d`
