@@ -51,6 +51,7 @@ All notable changes to this project will be documented in this file.
 
 ### Removed
 - remove deprecated function bound to `d`
+- use of `goto-line` outside of interactive use
 
 ## [2.1.0] - 2020-11-16
 ### Added
