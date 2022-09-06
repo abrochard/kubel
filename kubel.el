@@ -261,7 +261,9 @@ CMD is the kubectl command as a list."
 
 CMD is the command string to run."
   (kubel--log-command "kubectl-command" cmd)
-  (shell-command-to-string cmd))
+  (with-output-to-string
+    (with-current-buffer standard-output
+      (shell-command cmd t "*kubel stderr*"))))
 
 (defvar kubel-namespace "default"
   "Current namespace.")
