@@ -49,6 +49,7 @@ All notable changes to this project will be documented in this file.
 - defcustom :type entries
 - status color is now derived from theme
 - better stderr handling for context selection
+- better line tracking between refreshes using tabulated-list-mode
 
 ### Removed
 - remove deprecated function bound to `d`
