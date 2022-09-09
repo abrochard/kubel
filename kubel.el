@@ -282,9 +282,6 @@ CMD is the command string to run."
 (defvar kubel-selector ""
   "Label selector for resources.")
 
-(defvar kubel--line-number nil
-  "Store the current line number to jump back after a refresh.")
-
 (defvar kubel-namespace-history '()
   "List of previously used namespaces.")
 
@@ -664,19 +661,6 @@ TYPENAME is the resource type/name."
    (-contains? '("ReplicaSets" "replicasets" "replicasets.apps") kubel-resource)
    (-contains? '("StatefulSets" "statefulsets" "statefulsets.apps") kubel-resource)))
 
-(defun kubel--save-line ()
-  "Save the current line number if the view is unchanged."
-  (if (equal (buffer-name (current-buffer))
-             (kubel--buffer-name))
-      (setq kubel--line-number (+ 1 (count-lines 1 (point))))
-    (setq kubel--line-number nil)))
-
-(defun kubel--jump-back-to-line ()
-  "Jump back to the last cached line number."
-  (when kubel--line-number
-    (goto-char (point-min))
-    (forward-line (1- kubel--line-number))))
-
 ;; interactive
 (define-minor-mode kubel-yaml-editing-mode
   "Kubel Yaml editing mode.
@@ -817,8 +801,8 @@ ARGS is the arguments list from transient."
            (unless kubel--can-get-namespace-cached
              (setq kubel--can-get-namespace-cached
                    (string-match-p "yes\n"
-                          (kubel--exec-to-string
-                           (format "%s --context %s auth can-i list namespaces" kubel-kubectl kubel-context))))))
+                                   (kubel--exec-to-string
+                                    (format "%s --context %s auth can-i list namespaces" kubel-kubectl kubel-context))))))
          kubel--can-get-namespace-cached)))
 
 (defun kubel--get-namespace ()
@@ -1307,7 +1291,6 @@ DIRECTORY is optional for TRAMP support."
 
 DIRECTORY is optional for TRAMP support."
   (interactive)
-  (kubel--save-line)
   (kubel--pop-to-buffer (kubel--buffer-name))
   (when directory (setq default-directory directory))
   (kubel-mode)
@@ -1327,11 +1310,16 @@ DIRECTORY is optional for TRAMP support."
   (setq tabulated-list-sort-key kubel--list-sort-key)
   (setq tabulated-list-sort-key nil)
   (tabulated-list-init-header)
-  (tabulated-list-print)
+  (let ((line-num (line-number-at-pos (point)))
+        (current-id (tabulated-list-get-id)))
+    (tabulated-list-print t)
+    (unless (string-equal current-id (tabulated-list-get-id))
+      ;; tabulated-list could not follow the current entry, then fallback on
+      ;; keeping the same line.
+      (goto-char (point-min))
+      (forward-line (1- line-num))))
   (hl-line-mode 1)
   (run-mode-hooks 'kubel-mode-hook))
-
-(add-hook 'kubel-mode-hook #'kubel--jump-back-to-line)
 
 (provide 'kubel)
 ;;; kubel.el ends here
