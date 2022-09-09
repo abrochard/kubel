@@ -50,6 +50,7 @@ All notable changes to this project will be documented in this file.
 - status color is now derived from theme
 - better stderr handling for context selection
 - better line tracking between refreshes using tabulated-list-mode
+- vterm dep is now optional
 
 ### Removed
 - remove deprecated function bound to `d`
