@@ -33,7 +33,7 @@ Get it from Melpa, or copy and load the `kubel.el` file.
 If you want to have the evil compatibility package, get it from Melpa as well or
 load the `kubel-evil.el` file.
 
-# Setup
+## Setup
 
 ```elisp
 (require 'kubel)
