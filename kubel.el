@@ -1327,5 +1327,11 @@ DIRECTORY is optional for TRAMP support."
   (hl-line-mode 1)
   (run-mode-hooks 'kubel-mode-hook))
 
+(add-hook 'kubel-mode-hook #'kubel--jump-back-to-line)
+
+(eval-after-load 'tramp
+  '(progn
+     (kubel-setup-tramp)))
+
 (provide 'kubel)
 ;;; kubel.el ends here
