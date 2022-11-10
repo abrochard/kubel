@@ -549,8 +549,9 @@ READONLY If true buffer will be in readonly mode(view-mode)."
 (defun kubel--get-resource-under-cursor ()
   "Utility function to get the name of the resource under the cursor.
 Strip the `*` prefix if the resource is selected"
-  (replace-regexp-in-string
-   "^\*" "" (aref (tabulated-list-get-entry) 0)))
+  (string-remove-suffix " (default)" ;; see https://github.com/abrochard/kubel/issues/106
+                        (replace-regexp-in-string
+                         "^\*" "" (aref (tabulated-list-get-entry) 0))))
 
 (defun kubel--get-context-namespace ()
   "Utility function to return the proper context and namespace arguments."
