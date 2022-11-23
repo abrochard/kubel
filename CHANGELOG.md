@@ -11,6 +11,14 @@ All notable changes to this project will be documented in this file.
 - run `kubectl describe pod`
 - `kubectl` apply a buffer to current context/namespace
 
+## [3.1.0] - 
+### Added
+
+### Changed
+- Remove suffix "(default)" when acting on resources of StorageClasses
+
+### Removed
+
 ## [3.0.0] - 2022-09-09
 ### Added
 - tailing logs of init container
