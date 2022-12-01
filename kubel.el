@@ -212,6 +212,11 @@
   :type '(file :must-match t)
   :group 'kubel)
 
+(defcustom kubel-env-variables nil
+  "The environment variables that needs to be propagated in kubel session."
+  :type '(list string)
+  :group 'kubel)
+
 (defconst kubel--process-buffer "*kubel-process*"
   "Kubel process buffer name.")
 
@@ -256,14 +261,20 @@ CMD is the kubectl command as a list."
     (kubel--append-to-process-buffer
      (format "[%s]\ncommand: %s" process-name str-cmd))))
 
+(defun kubel--env-values ()
+  "Utility function to propgate kubernetes related environment variables."
+  (map 'list (lambda(env) `(:name ,env :value ,(getenv env))) kubel-env-variables))
+
 (defun kubel--exec-to-string (cmd)
   "Replace \"shell-command-to-string\" to log to process buffer.
 
 CMD is the command string to run."
   (kubel--log-command "kubectl-command" cmd)
-  (with-output-to-string
-    (with-current-buffer standard-output
-      (shell-command cmd t "*kubel stderr*"))))
+  (let ((env-values (kubel--env-values)))
+    (with-output-to-string
+      (with-current-buffer standard-output
+        (map 'list (lambda (env) (setenv (plist-get env ':name) (plist-get env ':value))) env-values)
+        (shell-command cmd t "*kubel stderr*")))))
 
 (defvar kubel-namespace "default"
   "Current namespace.")
