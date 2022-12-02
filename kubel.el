@@ -273,7 +273,7 @@ CMD is the command string to run."
   (let ((env-values (kubel--env-values)))
     (with-output-to-string
       (with-current-buffer standard-output
-        (map 'list (lambda (env) (setenv (plist-get env ':name) (plist-get env ':value))) env-values)
+        (cl-map 'list (lambda (env) (setenv (plist-get env ':name) (plist-get env ':value))) env-values)
         (shell-command cmd t "*kubel stderr*")))))
 
 (defvar kubel-namespace "default"
