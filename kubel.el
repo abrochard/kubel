@@ -263,7 +263,7 @@ CMD is the kubectl command as a list."
 
 (defun kubel--env-values ()
   "Utility function to propgate kubernetes related environment variables."
-  (map 'list (lambda(env) `(:name ,env :value ,(getenv env))) kubel-env-variables))
+  (cl-map 'list (lambda(env) `(:name ,env :value ,(getenv env))) kubel-env-variables))
 
 (defun kubel--exec-to-string (cmd)
   "Replace \"shell-command-to-string\" to log to process buffer.
