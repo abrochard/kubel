@@ -127,6 +127,14 @@ Alternatively, you can hit `E` to then select the resource type and the resource
   - auto - default, use `kubectl auth can-i list namespace` to determine if we can list namespaces
   - on - always assume we can list namespaces
   - off - always assume we cannot list namespaces
+- If you want to propagate environment variables, you can use
+  customize on `kubel-env-variables` to propagate it. This is useful
+  for scenarios where you are using something like [envrc](https://github.com/purcell/envrc) to
+  manage multiple clusters:
+
+``` emacs-lisp
+(customize-set-variable 'kubel-env-variables '("KUBECONFIG" "AWS_ACCESS_KEY_ID" "AWS_SECRET_ACCESS_KEY"))
+```
 
 ## Releases
 
