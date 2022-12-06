@@ -263,7 +263,7 @@ CMD is the kubectl command as a list."
 
 (defun kubel--env-values ()
   "Utility function to propgate kubernetes related environment variables."
-  (mapcar 'list (lambda(env) `(:name ,env :value ,(getenv env))) kubel-env-variables))
+  (mapcar (lambda(env) `(:name ,env :value ,(getenv env))) kubel-env-variables))
 
 (defun kubel--exec-to-string (cmd)
   "Replace \"shell-command-to-string\" to log to process buffer.
@@ -273,7 +273,7 @@ CMD is the command string to run."
   (let ((env-values (kubel--env-values)))
     (with-output-to-string
       (with-current-buffer standard-output
-        (mapcar 'list (lambda (env) (setenv (plist-get env ':name) (plist-get env ':value))) env-values)
+        (mapcar (lambda (env) (setenv (plist-get env ':name) (plist-get env ':value))) env-values)
         (shell-command cmd t "*kubel stderr*")))))
 
 (defvar kubel-namespace "default"
