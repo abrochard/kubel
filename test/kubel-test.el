@@ -27,9 +27,33 @@
 (ert-deftest kubel--test-kubernetes-version ()
   (setq kubel--kubernetes-version-cached nil)
   (cl-letf (((symbol-function 'kubel--exec-to-string)
-             (lambda (cmd) "Client Version: version.Info{Major:\"1\", Minor:\"14\", GitVersion:\"v1.14.10\", GitCommit:\"575467a0eaf3ca1f20eb86215b3bde40a5ae617a\", GitTreeState:\"clean\", BuildDate:\"2019-12-11T12:41:00Z\", GoVersion:\"go1.12.12\", Compiler:\"gc\", Platform:\"darwin/amd64\"}
-Server Version: version.Info{Major:\"1\", Minor:\"12\", GitVersion:\"v1.12.7\", GitCommit:\"6f482974b76db3f1e0f5d24605a9d1d38fad9a2b\", GitTreeState:\"clean\", BuildDate:\"2019-03-25T02:41:57Z\", GoVersion:\"go1.10.8\", Compiler:\"gc\", Platform:\"linux/amd64\"}")))
-    (should (equal '(1 14 10) (kubel-kubernetes-version)))))
+             (lambda (cmd) "{
+  \"clientVersion\": {
+    \"major\": \"1\",
+    \"minor\": \"28\",
+    \"gitVersion\": \"v1.28.1\",
+    \"gitCommit\": \"8dc49c4b984b897d423aab4971090e1879eb4f23\",
+    \"gitTreeState\": \"archive\",
+    \"buildDate\": \"1980-01-01T00:00:00Z\",
+    \"goVersion\": \"go1.20.7\",
+    \"compiler\": \"gc\",
+    \"platform\": \"darwin/arm64\"
+  },
+  \"kustomizeVersion\": \"v5.0.4-0.20230601165947-6ce0bf390ce3\",
+  \"serverVersion\": {
+    \"major\": \"1\",
+    \"minor\": \"27\",
+    \"gitVersion\": \"v1.27.4+k3s1\",
+    \"gitCommit\": \"36645e7311e9bdbbf2adb79ecd8bd68556bc86f6\",
+    \"gitTreeState\": \"clean\",
+    \"buildDate\": \"1970-01-01T01:01:01Z\",
+    \"goVersion\": \"go1.20.7\",
+    \"compiler\": \"gc\",
+    \"platform\": \"linux/amd64\"
+  }
+}
+")))
+    (should (equal '(1 27 4) (kubel-kubernetes-version)))))
 
 ;; (ert "kubel--test-.*")
 
