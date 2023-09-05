@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - Remove suffix "(default)" when acting on resources of StorageClasses
+- Better parsing of the kubectl version string via JSON
 
 ### Removed
 
