@@ -108,6 +108,7 @@
 (require 'subr-x)
 (require 'eshell)
 (require 'dired)
+(require 'json)
 
 (defgroup kubel nil "Customisation group for kubel."
   :group 'extensions)
