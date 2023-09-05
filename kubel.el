@@ -336,11 +336,14 @@ CMD is the command string to run."
 
 (defun kubel-kubernetes-version ()
   "Return a list with (major-version minor-version patch)."
-  (let ((version-string (if (null kubel--kubernetes-version-cached)
+  (let* ((version-json (json-read-from-string
+                        (if (null kubel--kubernetes-version-cached)
                             (setq kubel--kubernetes-version-cached
-                                  (kubel--exec-to-string "kubectl version"))
-                          kubel--kubernetes-version-cached)))
-    (string-match "GitVersion:\"v\\([0-9]*\\)\.\\([0-9]*\\)\.\\([0-9]*\\)[^0-9].*\"" version-string)
+                                  (kubel--exec-to-string (concat kubel-kubectl " version --output=json")))
+                           kubel--kubernetes-version-cached)))
+         (version-string (assoc-default 'gitVersion
+                                         (assoc-default 'serverVersion version-json))))
+    (string-match "v\\([0-9]*\\)\.\\([0-9]*\\)\.\\([0-9]*\\)[^0-9].*" version-string)
     (list
      (string-to-number (match-string 1 version-string))
      (string-to-number (match-string 2 version-string))
