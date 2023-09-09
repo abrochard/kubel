@@ -25,6 +25,7 @@ We now support managing pretty much any resource!
 - exec into a pod using tramp
 - quick run shell-command
 - scale replicas
+- multiple kubel buffers, each one with different context, namespace, and resource.
 
 ## Installation
 
@@ -74,6 +75,11 @@ To programmatically open a session for a specific context/namespace/resource, ca
 
 ```lisp
 (kubel-open "<context>" "<namespace>" "<OPTIONAL resource>")
+```
+
+Each kubel buffer will automatically be renamed using the following template:
+```
+*kubel session: |<context>|<namespace>|<resource>|*
 ```
 
 ## Shortcuts
