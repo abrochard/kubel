@@ -283,11 +283,6 @@ CMD is the command string to run."
 (defvar-local kubel-selector ""
   "Label selector for resources.")
 
-(defvar-local kubel--line-number nil
-  "Store the current line number to jump back after a refresh.")
-
-(defvar-local kubel-last-position nil)
-
 (defvar kubel-namespace-history '()
   "List of previously used namespaces.")
 
@@ -484,7 +479,7 @@ If MAX is the end of the line, dynamically adjust."
 
 (defun kubel--buffer-name-from-parameters (context namespace resource)
   "Return a preconfigured kubel buffer name."
-  (concat (format "*kubel session:  |%s|%s|%s|*" context namespace resource)))
+  (concat (format "*kubel:%s:%s:%s*" context namespace resource)))
 
 (defun kubel--buffer-name ()
   "Return kubel buffer name."
@@ -539,7 +534,7 @@ ARGS is a ist of arguments.
 READONLY If true buffer will be in readonly mode(view-mode)."
   (when (equal process-name "")
     (setq process-name "kubel-command"))
-  (let ((buffer-name (format "*kubel resource: |%s|%s|%s|*" kubel-context kubel-namespace (string-join args "_")))
+  (let ((buffer-name (format "*kubel-resource:%s:%s:%s*" kubel-context kubel-namespace (string-join args "_")))
         (error-buffer (kubel--process-error-buffer process-name))
         (cmd (append (list kubel-kubectl) (kubel--get-context-namespace) args)))
     (when (get-buffer buffer-name)
@@ -850,23 +845,26 @@ ARGS is the arguments list from transient."
          (kubel--buffer (get-buffer (kubel--buffer-name)))
          (last-default-directory (when kubel--buffer
                                    (with-current-buffer kubel--buffer default-directory))))
-    (setq kubel-namespace namespace)
-    (kubel--add-namespace-to-history namespace)
-    (kubel-refresh last-default-directory)))
+    (with-current-buffer (clone-buffer)
+      (setq kubel-namespace namespace)
+      (kubel--add-namespace-to-history namespace)
+      (switch-to-buffer (current-buffer))
+      (kubel-refresh last-default-directory))))
 
 (defun kubel-set-context ()
   "Set the context."
   (interactive)
   (let* ((kubel--buffer (get-buffer (kubel--buffer-name)))
          (last-default-directory (when kubel--buffer (with-current-buffer kubel--buffer default-directory))))
-    (setq kubel-context
-          (completing-read
-           "Select context: "
-           (split-string (kubel--exec-to-string (format "%s config view -o jsonpath='{.contexts[*].name}'" kubel-kubectl)) " ")))
-    (when kubel--buffer (kill-buffer kubel--buffer));; kill buffer for previous context if possible
-    (kubel--invalidate-context-caches)
-    (setq kubel-namespace "default")
-    (kubel-refresh last-default-directory)))
+    (with-current-buffer (clone-buffer)
+      (setq kubel-context
+            (completing-read
+             "Select context: "
+             (split-string (kubel--exec-to-string (format "%s config view -o jsonpath='{.contexts[*].name}'" kubel-kubectl)) " ")))
+      (kubel--invalidate-context-caches)
+      (setq kubel-namespace "default")
+      (switch-to-buffer (current-buffer))
+      (kubel-refresh last-default-directory))))
 
 (defun kubel--add-selector-to-history (selector)
   "Add SELECTOR to history if it isn't there already."
@@ -889,15 +887,17 @@ ARGS is the arguments list from transient."
 (defun kubel-set-label-selector ()
   "Set the selector."
   (interactive)
-  (let ((selector (completing-read
-                   "Selector: "
-                   (kubel--list-selectors))))
-    (when (equal selector "none")
-      (setq selector ""))
-    (setq kubel-selector selector))
-  (kubel--add-selector-to-history kubel-selector)
-  ;; Update pod list according to the label selector
-  (kubel-refresh))
+  (with-current-buffer (clone-buffer)
+    (let ((selector (completing-read
+                     "Selector: "
+                     (kubel--list-selectors))))
+      (when (equal selector "none")
+        (setq selector ""))
+      (setq kubel-selector selector))
+    (kubel--add-selector-to-history kubel-selector)
+    ;; Update pod list according to the label selector
+    (switch-to-buffer (current-buffer))
+    (kubel-refresh)))
 
 (defun kubel--fetch-api-resource-list ()
   "Fetch the API resource list."
@@ -919,9 +919,11 @@ the context caches, including the cached resource list."
                           kubel-kubernetes-resources-list))
          (kubel--buffer (get-buffer current-buffer-name))
          (last-default-directory (when kubel--buffer (with-current-buffer kubel--buffer default-directory))))
-    (setq kubel-resource
-	      (completing-read "Select resource: " resource-list))
-    (kubel-refresh last-default-directory)))
+    (with-current-buffer (clone-buffer)
+      (setq kubel-resource
+            (completing-read "Select resource: " resource-list))
+      (switch-to-buffer (current-buffer))
+      (kubel-refresh last-default-directory))))
 
 (defun kubel-set-output-format ()
   "Set output format of kubectl."
@@ -1179,6 +1181,30 @@ RESET is to be called if the search is nil after the first attempt."
   (setq kubel--selected-items '())
   (kubel-refresh))
 
+(defun kubel--read-buffer ()
+  "Return the list of all buffers of kubel pattern."
+  (let* ((other-buffer (other-buffer (current-buffer)))
+         (other-name (buffer-name other-buffer))
+         (buffers))
+    (dolist (buf (buffer-list))
+      (when (string-prefix-p "*kubel:" (buffer-name buf))
+        (push buf buffers)))
+    (let ((predicate
+           (lambda (buffer)
+             ;; BUFFER is an entry (BUF-NAME . BUF-OBJ) of Vbuffer_alist.
+             (memq (cdr buffer) buffers))))
+      (read-buffer
+       "Switch to buffer: "
+       (when (funcall predicate (cons other-name other-buffer)) other-name)
+       nil
+       predicate))))
+
+(defun kubel-switch-to-buffer (buffer-or-name)
+  "Display buffer BUFFER-OR-NAME in the selected window.
+When called interactively, prompts for a buffer belonging to kubel."
+  (interactive (list (kubel--read-buffer)))
+  (switch-to-buffer buffer-or-name))
+
 ;; popups
 
 (transient-define-prefix kubel-exec-popup ()
@@ -1230,6 +1256,7 @@ RESET is to be called if the search is nil after the first attempt."
     ("RET" "Resource details" kubel-describe-popup)
     ("E" "Quick edit" kubel-quick-edit)
     ("g" "Refresh" kubel-refresh)
+    ("b" "Buffers" kubel-switch-to-buffer)
     ("k" "Delete" kubel-delete-popup)
     ("r" "Rollout" kubel-rollout-history)]
    ["" ;; based on current view
@@ -1279,6 +1306,7 @@ RESET is to be called if the search is nil after the first attempt."
     (define-key map (kbd "M-p") 'kubel-jump-to-previous-highlight)
     (define-key map (kbd "$") 'kubel-show-process-buffer)
     (define-key map (kbd "s") 'kubel-set-label-selector)
+    (define-key map (kbd "b") 'kubel-switch-to-buffer)
     ;; based on view
     (define-key map (kbd "p") 'kubel-port-forward-pod)
     (define-key map (kbd "S") 'kubel-scale-replicas)
@@ -1323,11 +1351,13 @@ context, namespace, and resource.
 
 DIRECTORY is optional for TRAMP support."
   (interactive)
-  (kubel--save-line)
   (when directory (setq default-directory directory))
   (let ((name (kubel--buffer-name)))
-    (unless (get-buffer name)
-      (rename-buffer name))
+    ;; Remove old buffer if exist but not is current buffer
+    (if (get-buffer name)
+        (unless (equal (buffer-name (current-buffer)) name)
+          (kill-buffer (get-buffer name))))
+    (rename-buffer name)
     (message (format "Running kubectl for: %s..." name)))
   (let ((entries (kubel--populate-list)))
     (setq tabulated-list-format (car entries))
@@ -1335,9 +1365,15 @@ DIRECTORY is optional for TRAMP support."
   (setq tabulated-list-sort-key kubel--list-sort-key)
   (setq tabulated-list-sort-key nil)
   (tabulated-list-init-header)
-  (tabulated-list-print)
-  (kubel--current-state)
-  (kubel--jump-back-to-line))
+  (let ((line-num (line-number-at-pos (point)))
+        (current-id (tabulated-list-get-id)))
+    (tabulated-list-print t)
+    (unless (string-equal current-id (tabulated-list-get-id))
+      ;; tabulated-list could not follow the current entry, then fallback on
+      ;; keeping the same line.
+      (goto-char (point-min))
+      (forward-line (1- line-num))))
+  (kubel--current-state))
 
 ;;;###autoload
 (defun kubel-open (context namespace resource &optional directory)
@@ -1361,10 +1397,12 @@ DIRECTORY is optional for TRAMP support."
 DIRECTORY is optional for TRAMP support."
   (interactive)
   (let* ((name (kubel--buffer-name))
-         (buf (generate-new-buffer name)))
-    (switch-to-buffer buf)
+         (buf (or (get-buffer name)
+                  (get-buffer-create name))))
     (with-current-buffer buf
-      (kubel-mode)
+      (switch-to-buffer (current-buffer))
+      (unless (eq major-mode 'kubel-mode)
+        (kubel-mode))
       (kubel-refresh directory))))
 
 (define-derived-mode kubel-mode tabulated-list-mode "Kubel"
