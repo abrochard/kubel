@@ -53,7 +53,7 @@
   }
 }
 ")))
-    (should (equal '(1 27 4) (kubel-kubernetes-version)))))
+    (should (equal '(1 27) (kubel-kubernetes-version)))))
 
 ;; (ert "kubel--test-.*")
 

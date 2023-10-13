@@ -336,32 +336,27 @@ CMD is the command string to run."
   (setq kubel--label-values-cached nil))
 
 (defun kubel-kubernetes-version ()
-  "Return a list with (major-version minor-version patch)."
+  "Return a list with (major-version minor-version)."
   (let* ((version-json (json-read-from-string
                         (if (null kubel--kubernetes-version-cached)
                             (setq kubel--kubernetes-version-cached
                                   (kubel--exec-to-string (concat kubel-kubectl " version --output=json")))
                            kubel--kubernetes-version-cached)))
-         (version-string (assoc-default 'gitVersion
-                                         (assoc-default 'serverVersion version-json))))
-    (string-match "v\\([0-9]*\\)\.\\([0-9]*\\)\.\\([0-9]*\\)[^0-9].*" version-string)
+         (version-string (assoc-default 'serverVersion version-json)))
     (list
-     (string-to-number (match-string 1 version-string))
-     (string-to-number (match-string 2 version-string))
-     (string-to-number (match-string 3 version-string)))))
+     (string-to-number (cdr (assoc-string "major" version-string)))
+     (string-to-number (cdr (assoc-string "minor" version-string))))))
 
 (defun kubel-kubernetes-compatible-p (version)
   "Return TRUE if kubernetes version is greater than or equal to VERSION.
-VERSION should be a list of (major-version minor-version patch)."
+VERSION should be a list of (major-version minor-version)."
   (let*
       ((kubernetes-version (kubel-kubernetes-version))
        (kubernetes-major-version (nth 0 kubernetes-version))
-       (kubernetes-minor-version (nth 1 kubernetes-version))
-       (kubernetes-patch-version (nth 2 kubernetes-version)))
+       (kubernetes-minor-version (nth 1 kubernetes-version)))
     (and
      (<= (nth 0 version) kubernetes-major-version)
-     (or (<= (nth 1 version) kubernetes-minor-version) (< (nth 0 version) kubernetes-major-version))
-     (or (<= (nth 2 version) kubernetes-patch-version) (< (nth 1 version) kubernetes-minor-version)))))
+     (or (<= (nth 1 version) kubernetes-minor-version) (< (nth 0 version) kubernetes-major-version)))))
 
 (defun kubel--populate-list ()
   "Return a list with a tabulated list format and \"tabulated-list-entries\"."
@@ -898,7 +893,7 @@ the context caches, including the cached resource list."
   (interactive "P")
   (when refresh (kubel--invalidate-context-caches))
   (let* ((current-buffer-name (kubel--buffer-name))
-         (resource-list (if (kubel-kubernetes-compatible-p '(1 13 3))
+         (resource-list (if (kubel-kubernetes-compatible-p '(1 13))
                             (if (null kubel--kubernetes-resources-list-cached)
                                 (setq kubel--kubernetes-resources-list-cached
                                       (kubel--fetch-api-resource-list))
