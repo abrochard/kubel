@@ -289,34 +289,6 @@ CMD is the command string to run."
 (defvar kubel-selector-history '()
   "List of previously used selectors.")
 
-;; fallback list of resources if the version of kubectl doesn't support api-resources command
-(defvar kubel-kubernetes-resources-list
-  '("Pods"
-    "Services"
-    "Namespaces"
-    "Nodes"
-    "Configmaps"
-    "Secrets"
-    "Bindings"
-    "PersistentVolumeClaims"
-    "PersistentVolumes"
-    "ReplicationControllers"
-    "ResourceQuotas"
-    "ServiceAccounts"
-    "Deployments"
-    "DaemonSets"
-    "ReplicaSets"
-    "StatefulSets"
-    "Jobs"
-    "hpa"
-    "Images"
-    "Ingresses"
-    "ClusterRoles"
-    "RoleBindings"
-    "Roles"))
-
-(defvar kubel--kubernetes-version-cached nil)
-
 (defvar kubel--kubernetes-resources-list-cached nil)
 
 (defvar kubel--can-get-namespace-cached nil)
@@ -327,36 +299,19 @@ CMD is the command string to run."
 
 (defvar kubel--selected-items '())
 
+(defun kubel--kubernetes-resources-list ()
+  "Get list of resources from cache or from fetching the api resource."
+  (if (null kubel--kubernetes-resources-list-cached)
+      (setq kubel--kubernetes-resources-list-cached
+            (kubel--fetch-api-resource-list))
+    kubel--kubernetes-resources-list-cached))
+
 (defun kubel--invalidate-context-caches ()
   "Invalidate the context caches."
   (setq kubel--kubernetes-resources-list-cached nil)
-  (setq kubel--kubernetes-version-cached nil)
   (setq kubel--can-get-namespace-cached nil)
   (setq kubel--namespace-list-cached nil)
   (setq kubel--label-values-cached nil))
-
-(defun kubel-kubernetes-version ()
-  "Return a list with (major-version minor-version)."
-  (let* ((version-json (json-read-from-string
-                        (if (null kubel--kubernetes-version-cached)
-                            (setq kubel--kubernetes-version-cached
-                                  (kubel--exec-to-string (concat kubel-kubectl " version --output=json")))
-                           kubel--kubernetes-version-cached)))
-         (version-string (assoc-default 'serverVersion version-json)))
-    (list
-     (string-to-number (cdr (assoc-string "major" version-string)))
-     (string-to-number (cdr (assoc-string "minor" version-string))))))
-
-(defun kubel-kubernetes-compatible-p (version)
-  "Return TRUE if kubernetes version is greater than or equal to VERSION.
-VERSION should be a list of (major-version minor-version)."
-  (let*
-      ((kubernetes-version (kubel-kubernetes-version))
-       (kubernetes-major-version (nth 0 kubernetes-version))
-       (kubernetes-minor-version (nth 1 kubernetes-version)))
-    (and
-     (<= (nth 0 version) kubernetes-major-version)
-     (or (<= (nth 1 version) kubernetes-minor-version) (< (nth 0 version) kubernetes-major-version)))))
 
 (defun kubel--populate-list ()
   "Return a list with a tabulated list format and \"tabulated-list-entries\"."
@@ -893,12 +848,7 @@ the context caches, including the cached resource list."
   (interactive "P")
   (when refresh (kubel--invalidate-context-caches))
   (let* ((current-buffer-name (kubel--buffer-name))
-         (resource-list (if (kubel-kubernetes-compatible-p '(1 13))
-                            (if (null kubel--kubernetes-resources-list-cached)
-                                (setq kubel--kubernetes-resources-list-cached
-                                      (kubel--fetch-api-resource-list))
-                              kubel--kubernetes-resources-list-cached)
-                          kubel-kubernetes-resources-list))
+         (resource-list (kubel--kubernetes-resources-list))
          (kubel--buffer (get-buffer current-buffer-name))
          (last-default-directory (when kubel--buffer (with-current-buffer kubel--buffer default-directory))))
     (setq kubel-resource
@@ -1117,7 +1067,7 @@ RESET is to be called if the search is nil after the first attempt."
   "Quickly edit any resource."
   (interactive)
   (kubel--describe-resource
-   (completing-read "Select resource: " kubel-kubernetes-resources-list)))
+   (completing-read "Select resource: " kubel--kubernetes-resources-list)))
 
 (defun kubel-show-process-buffer ()
   "Show the kubel-process-buffer."
