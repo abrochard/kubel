@@ -1067,7 +1067,7 @@ RESET is to be called if the search is nil after the first attempt."
   "Quickly edit any resource."
   (interactive)
   (kubel--describe-resource
-   (completing-read "Select resource: " kubel--kubernetes-resources-list)))
+   (completing-read "Select resource: " (kubel--kubernetes-resources-list))))
 
 (defun kubel-show-process-buffer ()
   "Show the kubel-process-buffer."
