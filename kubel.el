@@ -289,8 +289,6 @@ CMD is the command string to run."
 (defvar kubel-selector-history '()
   "List of previously used selectors.")
 
-(defvar-local kubel--kubernetes-version-cached nil)
-
 (defvar-local kubel--can-get-namespace-cached nil)
 
 (defvar kubel--namespace-list-cached nil)
