@@ -19,6 +19,8 @@ All notable changes to this project will be documented in this file.
 - Better parsing of the kubectl version string via JSON
 
 ### Removed
+- `kubel-kubernetes-version` no longer cares about version patch
+- support for kubernetes v1.13 and below
 
 ## [3.0.0] - 2022-09-09
 ### Added
