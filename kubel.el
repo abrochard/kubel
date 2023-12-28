@@ -297,6 +297,8 @@ CMD is the command string to run."
 
 (defvar-local kubel--selected-items '())
 
+(defvar-local kubel--kubernetes-resources-list-cached nil)
+
 (defun kubel--kubernetes-resources-list ()
   "Get list of resources from cache or from fetching the api resource."
   (if (null kubel--kubernetes-resources-list-cached)
