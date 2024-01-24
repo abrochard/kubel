@@ -1267,19 +1267,6 @@ When called interactively, prompts for a buffer belonging to kubel."
     map)
   "Keymap for `kubel-mode'.")
 
-;;;###autoload
-(defun kubel-open (context &optional namespace resource directory)
-  "Open kubel pointing to CONTEXT and NAMESPACE.
-
-NAMEPACE is optional, will default to \"default\".
-RESOURCE is optional, will default to pods.
-DIRECTORY is optional for TRAMP support."
-  (setq kubel-context context)
-  (setq kubel-namespace (or namespace "default"))
-  (setq kubel-resource (or resource "Pods"))
-  (kubel directory))
-
-
 (defun kubel--current-state ()
   "Show in the Echo Area the current context, namespace, and resource."
   (message (concat
