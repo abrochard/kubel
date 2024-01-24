@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file.
 - run `kubectl describe pod`
 - `kubectl` apply a buffer to current context/namespace
 
-## [3.1.0] - 
+## [3.1.0] -
 ### Added
 - Support for multiple kubel buffers, each one with different context, namespace, and resource
 
@@ -22,6 +22,7 @@ All notable changes to this project will be documented in this file.
 ### Removed
 - `kubel-kubernetes-version` no longer cares about version patch
 - support for kubernetes v1.13 and below
+- support for emacs 25 and below
 
 ## [3.0.0] - 2022-09-09
 ### Added
