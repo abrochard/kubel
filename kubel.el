@@ -238,6 +238,21 @@ off  - always assume we cannot list namespaces"
                  (const :tag "Off" off))
   :group 'kubel)
 
+(defcustom kubel-shell-buffer-name-format "kubel:%C:%n:%t:%c@%p"
+  "Define the name format used for pod shell buffers.
+
+This is a format string with %-sequences that will be substituted
+with information about the shell's connection. The following
+%-sequences are defined:
+
+%t: The shell type. Examples of this are `shell` and `eshell`
+%c: The container name
+%p: The pod name
+%n: The current namespace
+%C: The current context"
+  :type 'string
+  :group 'kubel)
+
 (defun kubel--append-to-process-buffer (str)
   "Append string STR to the process buffer."
   (with-current-buffer (get-buffer-create kubel--process-buffer)
@@ -928,6 +943,22 @@ P can be a single number or a localhost:container port pair."
          (con-pod (kubel--get-container-under-cursor)))
     (find-file (format "/%skubectl:%s@%s:/" dir-prefix (car con-pod) (cdr con-pod)))))
 
+(defun kubel--shell-buffer-name (shell-type container pod)
+  "Generate the name for a pod's shell buffer.
+
+This uses `kubel-shell-buffer-name-format' as the buffer name
+format. See the documentation for it for more information on how
+to set this format.
+
+The values for the current namespace and context are pulled from
+the variables `kubel-namespace' and `kubel-context', respectively."
+  (format-spec kubel-shell-buffer-name-format
+               `((?t . ,shell-type)
+                 (?c . ,container)
+                 (?p . ,pod)
+                 (?n . ,kubel-namespace)
+                 (?C . ,kubel-context))))
+
 (defun kubel-exec-shell-pod ()
   "Exec into the pod under the cursor -> shell."
   (interactive)
@@ -937,7 +968,7 @@ P can be a single number or a localhost:container port pair."
          (container (car con-pod))
          (pod (cdr con-pod))
          (default-directory (format "/%skubectl:%s@%s:/" dir-prefix container pod)))
-    (shell (format "*kubel - shell - %s@%s*" container pod))))
+    (shell (kubel--shell-buffer-name "shell" container pod))))
 
 (defun kubel-exec-eshell-pod ()
   "Exec into the pod under the cursor -> eshell."
@@ -948,7 +979,8 @@ P can be a single number or a localhost:container port pair."
          (container (car con-pod))
          (pod (cdr con-pod))
          (default-directory (format "/%skubectl:%s@%s:/" dir-prefix container pod))
-         (eshell-buffer-name (format "*kubel - eshell - %s@%s*" container pod)))
+         (eshell-buffer-name
+          (kubel--shell-buffer-name "eshell" container pod)))
     (eshell)))
 
 (defun kubel-exec-vterm-pod ()
@@ -960,7 +992,8 @@ P can be a single number or a localhost:container port pair."
          (container (car con-pod))
          (pod (cdr con-pod))
          (default-directory (format "/%skubectl:%s@%s:/" dir-prefix container pod))
-         (vterm-buffer-name (format "*kubel - vterm - %s@%s*" container pod))
+         (vterm-buffer-name
+          (kubel--shell-buffer-name "vterm" container pod))
          (vterm-shell "/bin/sh"))
     (vterm)))
 
@@ -978,7 +1011,7 @@ P can be a single number or a localhost:container port pair."
          (container (car con-pod))
          (pod (cdr con-pod))
          (command (format "%s exec %s -c %s -i -t -- /usr/bin/env sh" (kubel--get-command-prefix) pod container)))
-    (with-current-buffer (ansi-term "bash" (concat "kubel:ansi-term:" container "@" pod))
+    (with-current-buffer (ansi-term "bash" (kubel--shell-buffer-name "ansi-term" container pod))
       (process-send-string (current-buffer) (format "%s\n" command)))))
 
 (defun kubel-exec-pod-by-shell-command ()
