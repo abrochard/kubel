@@ -105,9 +105,9 @@
     ("c" "Copy to clipboad..." kubel-copy-popup)
     ("$" "Show Process buffer" kubel-show-process-buffer)]])
 
-(evil-set-initial-state 'kubel-mode 'motion)
+(evil-set-initial-state 'kubel-mode 'normal)
 
-(evil-define-key 'motion kubel-evil-mode-map
+(evil-define-key 'normal kubel-evil-mode-map
   (kbd "RET") #'kubel-get-resource-details
   (kbd "K") #'kubel-set-kubectl-config-file
   (kbd "C") #'kubel-set-context
