@@ -253,6 +253,11 @@ with information about the shell's connection. The following
   :type 'string
   :group 'kubel)
 
+(defcustom kubel-same-buffer 'nil
+	"Use the same buffer for output."
+	:type 'boolean
+	:group 'kubel)
+
 (defun kubel--append-to-process-buffer (str)
   "Append string STR to the process buffer."
   (with-current-buffer (get-buffer-create kubel--process-buffer)
@@ -513,7 +518,9 @@ READONLY If true buffer will be in readonly mode(view-mode)."
                   :file-handler t
                   :stderr error-buffer
                   :command cmd)
-    (pop-to-buffer buffer-name)
+    (if kubel-same-buffer
+        (pop-to-buffer-same-window buffer-name)
+      (pop-to-buffer buffer-name))
     (if readonly
         (with-current-buffer buffer-name
           (view-mode)))))
