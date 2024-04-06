@@ -480,18 +480,23 @@ NAME is the buffer name."
   "Return the error buffer name for the PROCESS-NAME."
   (format "*%s:err*" process-name))
 
-(defun kubel--sentinel (process _)
-  "Sentinel function for PROCESS."
-  (let ((process-name (process-name process))
-        (exit-status (process-exit-status process)))
-    (kubel--append-to-process-buffer (format "[%s]\nexit-code: %s" process-name exit-status))
-    (unless (eq 0 exit-status)
-      (let ((err (with-current-buffer (kubel--process-error-buffer process-name)
-                   (buffer-string))))
-        (kubel--append-to-process-buffer (format "error: %s" err))
-        (error (format "Kubel process %s error: %s" process-name err))))))
+(defun kubel--sentinel (callback)
+  "Sentinel function used by KUBEL--EXEC.
 
-(defun kubel--exec (process-name args &optional readonly)
+CALLBACK is called when process completes successfully.
+"
+  (lambda (process event)
+    (let ((process-name (process-name process))
+          (exit-status (process-exit-status process)))
+      (kubel--append-to-process-buffer (format "[%s]\nexit-code: %s" process-name exit-status))
+      (if (eq 0 exit-status)
+          (when callback (funcall callback))
+        (let ((err (with-current-buffer (kubel--process-error-buffer process-name)
+                     (buffer-string))))
+          (kubel--append-to-process-buffer (format "error: %s" err))
+          (error (format "Kubel process %s error: %s" process-name err)))))))
+
+(defun kubel--exec (process-name args &optional callback readonly)
   "Utility function to run commands in the proper context and namespace.
 
 PROCESS-NAME is an identifier for the process.  Default to \"kubel-command\".
@@ -509,7 +514,7 @@ READONLY If true buffer will be in readonly mode(view-mode)."
     (kubel--log-command process-name cmd)
     (make-process :name process-name
                   :buffer buffer-name
-                  :sentinel #'kubel--sentinel
+                  :sentinel (kubel--sentinel callback)
                   :file-handler t
                   :stderr error-buffer
                   :command cmd)
@@ -583,14 +588,14 @@ NAME is the string name of the resource."
 NAME is the string name of the resource to decribe.
 DESCRIBE is boolean to describe instead of get resource details"
   (let* ((resource (kubel--select-resource name))
-         (process-name (format "kubel - %s - %s" name resource)))
+         (process-name (format "kubel - %s - %s" name resource))
+         (callback (lambda () (goto-char (point-min)))))
     (if describe
-        (kubel--exec process-name (list "describe" name resource))
-      (kubel--exec process-name (list "get" name "-o" kubel-output resource)))
+        (kubel--exec process-name (list "describe" name resource) callback)
+      (kubel--exec process-name (list "get" name "-o" kubel-output resource) callback))
     (when (string-equal kubel-output "yaml")
       (yaml-mode)
-      (kubel-yaml-editing-mode))
-    (goto-char (point-min))))
+      (kubel-yaml-editing-mode))))
 
 (defun kubel--show-rollout-revision (type name)
   "Show a specific revision of a certain resource.
@@ -599,10 +604,10 @@ TYPE is the resource type.
 NAME is the resource name."
   (let* ((typename (format "%s/%s" type name))
          (revision (car (split-string (kubel--select-rollout typename))))
-         (process-name (format "kubel - rollout - %s - %s" typename revision)))
+         (process-name (format "kubel - rollout - %s - %s" typename revision))
+         (callback (goto-char (point-min))))
     (kubel--exec process-name
-                 (list "rollout" "history" typename (format "--revision=%s" revision)))
-    (goto-char (point-min))))
+                 (list "rollout" "history" typename (format "--revision=%s" revision)) callback)))
 
 (defun kubel--list-rollout (typename)
   "Return a list of revisions with format '%number   %cause'.
@@ -660,8 +665,7 @@ Use C-c C-c to kubectl apply the current yaml buffer."
       (unless  (file-exists-p (format "%s/tmp/kubel" dir-prefix))
         (make-directory (format "%s/tmp/kubel" dir-prefix) t))
       (write-region (point-min) (point-max) filename)
-      (kubel--exec (format "kubectl - apply - %s" filename) (list "apply" "-f" filename-without-tramp-prefix))
-      (message "Applied %s" filename))))
+      (kubel--exec (format "kubectl - apply - %s" filename) (list "apply" "-f" filename-without-tramp-prefix) (lambda () (message "Applied %s" filename))))))
 
 (defun kubel-get-resource-details (&optional describe)
   "Get the details of the resource under the cursor.
@@ -672,17 +676,17 @@ Use C-c C-c to kubectl apply the current yaml buffer."
          (ctx kubel-context)
          (ns kubel-namespace)
          (res kubel-resource)
-         (process-name (format "kubel - %s - %s" kubel-resource resource)))
+         (process-name (format "kubel - %s - %s" kubel-resource resource))
+         (callback (lambda () (goto-char (point-min)))))
     (if describe
-        (kubel--exec process-name (list "describe" kubel-resource (kubel--get-resource-under-cursor)))
-      (kubel--exec process-name (list "get" kubel-resource (kubel--get-resource-under-cursor) "-o" kubel-output)))
+        (kubel--exec process-name (list "describe" kubel-resource (kubel--get-resource-under-cursor) callback))
+      (kubel--exec process-name (list "get" kubel-resource (kubel--get-resource-under-cursor) "-o" kubel-output) callback))
     (when (or (string-equal kubel-output "yaml") (transient-args 'kubel-describe-popup))
       (yaml-mode)
       (kubel-yaml-editing-mode)
       (setq kubel-context ctx)
       (setq kubel-namespace ns)
-      (setq kubel-resource res)
-      (goto-char (point-min)))))
+      (setq kubel-resource res))))
 
 (defun kubel--default-tail-arg (args)
   "Ugly function to make sure that there is at least the default tail.
@@ -712,7 +716,7 @@ TYPE is containers or initContainers."
                         (completing-read "Select container: " containers)))
            (process-name (format "kubel - logs - %s - %s" pod container)))
       (kubel--exec process-name
-                   (append '("logs") (kubel--default-tail-arg args) (list pod container)) t))))
+                   (append '("logs") (kubel--default-tail-arg args) (list pod container)) nil t))))
 
 (defun kubel-get-pod-logs--initContainer (&optional args)
   "Get the last N logs of the pod under the cursor.
@@ -731,7 +735,7 @@ ARGS is the arguments list from transient."
          (label (completing-read "Select container: " labels))
          (process-name (format "kubel - logs - %s" label)))
     (kubel--exec process-name
-                 (append '("logs") (kubel--default-tail-arg args) '("-l") (list label)) t)))
+                 (append '("logs") (kubel--default-tail-arg args) '("-l") (list label)) nil t)))
 
 (defun kubel-copy-resource-name ()
   "Copy the name of the pod under the cursor."
