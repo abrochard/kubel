@@ -496,7 +496,7 @@ CALLBACK is called when process completes successfully.
           (kubel--append-to-process-buffer (format "error: %s" err))
           (error (format "Kubel process %s error: %s" process-name err)))))))
 
-(defun kubel--exec (process-name args &optional callback readonly)
+(defun kubel--exec (process-name args &optional readonly callback)
   "Utility function to run commands in the proper context and namespace.
 
 PROCESS-NAME is an identifier for the process.  Default to \"kubel-command\".
@@ -592,8 +592,8 @@ DESCRIBE is boolean to describe instead of get resource details"
          (process-name (format "kubel - %s - %s" name resource))
          (callback (lambda () (goto-char (point-min)))))
     (if describe
-        (kubel--exec process-name (list "describe" name resource) callback)
-      (kubel--exec process-name (list "get" name "-o" kubel-output resource) callback))
+        (kubel--exec process-name (list "describe" name resource) nil callback)
+      (kubel--exec process-name (list "get" name "-o" kubel-output resource) nil callback))
     (when (string-equal kubel-output "yaml")
       (yaml-mode)
       (kubel-yaml-editing-mode))))
@@ -608,7 +608,7 @@ NAME is the resource name."
          (process-name (format "kubel - rollout - %s - %s" typename revision))
          (callback (goto-char (point-min))))
     (kubel--exec process-name
-                 (list "rollout" "history" typename (format "--revision=%s" revision)) callback)))
+                 (list "rollout" "history" typename (format "--revision=%s" revision)) nil callback)))
 
 (defun kubel--list-rollout (typename)
   "Return a list of revisions with format '%number   %cause'.
@@ -666,7 +666,7 @@ Use C-c C-c to kubectl apply the current yaml buffer."
       (unless  (file-exists-p (format "%s/tmp/kubel" dir-prefix))
         (make-directory (format "%s/tmp/kubel" dir-prefix) t))
       (write-region (point-min) (point-max) filename)
-      (kubel--exec (format "kubectl - apply - %s" filename) (list "apply" "-f" filename-without-tramp-prefix) (lambda () (message "Applied %s" filename))))))
+      (kubel--exec (format "kubectl - apply - %s" filename) (list "apply" "-f" filename-without-tramp-prefix) nil (lambda () (message "Applied %s" filename))))))
 
 (defun kubel-get-resource-details (&optional describe)
   "Get the details of the resource under the cursor.
@@ -680,8 +680,8 @@ Use C-c C-c to kubectl apply the current yaml buffer."
          (process-name (format "kubel - %s - %s" kubel-resource resource))
          (callback (lambda () (goto-char (point-min)))))
     (if describe
-        (kubel--exec process-name (list "describe" kubel-resource (kubel--get-resource-under-cursor) callback))
-      (kubel--exec process-name (list "get" kubel-resource (kubel--get-resource-under-cursor) "-o" kubel-output) callback))
+        (kubel--exec process-name (list "describe" kubel-resource (kubel--get-resource-under-cursor) nil callback))
+      (kubel--exec process-name (list "get" kubel-resource (kubel--get-resource-under-cursor) "-o" kubel-output) nil callback))
     (when (or (string-equal kubel-output "yaml") (transient-args 'kubel-describe-popup))
       (yaml-mode)
       (kubel-yaml-editing-mode)
@@ -717,7 +717,7 @@ TYPE is containers or initContainers."
                         (completing-read "Select container: " containers)))
            (process-name (format "kubel - logs - %s - %s" pod container)))
       (kubel--exec process-name
-                   (append '("logs") (kubel--default-tail-arg args) (list pod container)) nil t))))
+                   (append '("logs") (kubel--default-tail-arg args) (list pod container)) t nil))))
 
 (defun kubel-get-pod-logs--initContainer (&optional args)
   "Get the last N logs of the pod under the cursor.
@@ -736,7 +736,7 @@ ARGS is the arguments list from transient."
          (label (completing-read "Select container: " labels))
          (process-name (format "kubel - logs - %s" label)))
     (kubel--exec process-name
-                 (append '("logs") (kubel--default-tail-arg args) '("-l") (list label)) nil t)))
+                 (append '("logs") (kubel--default-tail-arg args) '("-l") (list label)) t nil)))
 
 (defun kubel-copy-resource-name ()
   "Copy the name of the pod under the cursor."
