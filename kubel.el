@@ -501,6 +501,7 @@ CALLBACK is called when process completes successfully.
 
 PROCESS-NAME is an identifier for the process.  Default to \"kubel-command\".
 ARGS is a ist of arguments.
+CALLBACK is a function that will be executed when the command completes.
 READONLY If true buffer will be in readonly mode(view-mode)."
   (when (equal process-name "")
     (setq process-name "kubel-command"))
