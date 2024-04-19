@@ -680,7 +680,7 @@ Use C-c C-c to kubectl apply the current yaml buffer."
          (process-name (format "kubel - %s - %s" kubel-resource resource))
          (callback (lambda () (goto-char (point-min)))))
     (if describe
-        (kubel--exec process-name (list "describe" kubel-resource (kubel--get-resource-under-cursor) nil callback))
+        (kubel--exec process-name (list "describe" kubel-resource (kubel--get-resource-under-cursor)) nil callback)
       (kubel--exec process-name (list "get" kubel-resource (kubel--get-resource-under-cursor) "-o" kubel-output) nil callback))
     (when (or (string-equal kubel-output "yaml") (transient-args 'kubel-describe-popup))
       (yaml-mode)
