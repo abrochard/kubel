@@ -226,6 +226,15 @@
   :type 'integer
   :group 'kubel)
 
+(defcustom kubel-list-wide nil
+  "Control whether list views show additional colums.
+
+true   - use '-o wide' for list views to show additional columns
+false  - do not use '-o wide' for list views, hiding additional columns"
+  :type 'boolean
+  :group 'kubel)
+
+
 (defcustom kubel-use-namespace-list 'auto
   "Control behavior for namespace completion.
 
@@ -330,7 +339,7 @@ CMD is the command string to run."
 
 (defun kubel--populate-list ()
   "Return a list with a tabulated list format and \"tabulated-list-entries\"."
-  (let*  ((body (kubel--exec-to-string (concat (kubel--get-command-prefix) " get " kubel-resource)))
+  (let*  ((body (kubel--exec-to-string (concat (kubel--get-command-prefix) " get " kubel-resource (if kubel-list-wide " -o wide" ""))))
           (entrylist (kubel--parse-body body)))
     (when (string-prefix-p "No resources found" body)
       (message "No resources found"))  ;; TODO exception here
