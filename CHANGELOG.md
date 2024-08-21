@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Support for multiple kubel buffers, each one with different context, namespace, and resource
 - Support for customization of shell buffer names
+- `kubel-kill-buffer` command to cancel an edit buffer without applying changes
 
 ### Changed
 - Remove suffix "(default)" when acting on resources of StorageClasses
