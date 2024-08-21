@@ -655,7 +655,7 @@ TYPENAME is the resource type/name."
 	    (yes-or-no-p "Resource modified; kill anyway? "))
     (kill-buffer (current-buffer))))
 
-(defvar kubel-yaml-editing-map
+(defvar kubel-yaml-editing-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-c") #'kubel-apply)
     (define-key map (kbd "C-c C-k") #'kubel-kill-buffer)
@@ -669,7 +669,7 @@ TYPENAME is the resource type/name."
 
 Allows simple apply of the changes made.
 
-\\{kubel-yaml-editing-map}")
+\\{kubel-yaml-editing-mode-map}")
 
 (defun kubel-apply ()
   "Save the current buffer to a temp file and try to kubectl apply it."
