@@ -1051,6 +1051,20 @@ the variables `kubel-namespace' and `kubel-context', respectively."
     (with-current-buffer (ansi-term "bash" (kubel--shell-buffer-name "ansi-term" container pod))
       (process-send-string (current-buffer) (format "%s\n" command)))))
 
+(defun kubel-exec-eat-pod ()
+  "Exec into the pod under the cursor -> eat."
+  (interactive)
+  (unless (fboundp 'eat-other-window)
+    (user-error "This command requires the `eat' package."))
+  (kubel-setup-tramp)
+  (let* ((dir-prefix (kubel--dir-prefix))
+         (con-pod (kubel--get-container-under-cursor))
+         (container (car con-pod))
+         (pod (cdr con-pod))
+         (default-directory (format "/%skubectl:%s@%s:/" dir-prefix container pod))
+         (eat-buffer-name (format "*eat:%s" default-directory)))
+    (eat-other-window)))
+
 (defun kubel-exec-pod-by-shell-command ()
   "Prompt shell with kubectl exec command at pod under cursor."
   (interactive)
@@ -1227,6 +1241,7 @@ When called interactively, prompts for a buffer belonging to kubel."
    ("d" "Dired" kubel-exec-pod)
    ("e" "Eshell" kubel-exec-eshell-pod)
    ("a" "Ansi-term" kubel-exec-ansi-term-pod)
+   ("t" "eat" kubel-exec-eat-pod)
    ("s" "Shell" kubel-exec-shell-pod)])
 
 (transient-define-prefix kubel-log-popup ()
