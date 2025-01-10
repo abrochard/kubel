@@ -23,6 +23,7 @@ All notable changes to this project will be documented in this file.
 - Remove suffix "(default)" when acting on resources of StorageClasses
 - Better parsing of the kubectl version string via JSON
 - Fix describe resources not going to top of buffer
+- using -- for all kubectl exec uses
 
 ### Removed
 - `kubel-kubernetes-version` no longer cares about version patch
