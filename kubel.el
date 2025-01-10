@@ -949,7 +949,7 @@ P can be a single number or a localhost:container port pair."
   (add-to-list 'tramp-methods
                `("kubectl"
                  (tramp-login-program      ,kubel-kubectl)
-                 (tramp-login-args         (,(kubel--get-context-namespace) ("exec" "-it") ("-c" "%u") ("%h") ("sh")))
+                 (tramp-login-args         (,(kubel--get-context-namespace) ("exec" "-it") ("-c" "%u") ("%h") ("--" "sh")))
                  (tramp-remote-shell       "sh")
                  (tramp-remote-shell-args  ("-i" "-c"))))) ;; add the current context/namespace to tramp methods
 
