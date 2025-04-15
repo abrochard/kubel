@@ -686,7 +686,7 @@ Allows simple apply of the changes made.
   (setq dir-prefix (or
                     (when (tramp-tramp-file-p default-directory)
                       (with-parsed-tramp-file-name default-directory nil
-                        (format "/%s%s:%s@%s:" (or hop "") method user host)))
+                        (format "/%s%s:%s:" (or hop "") method (if user (concat user "@" host) host))))
                     ""))
   (let* ((filename-without-tramp-prefix (format "/tmp/kubel/%s-%s.yaml"
                                                 (replace-regexp-in-string "/" "_"
@@ -969,7 +969,7 @@ P can be a single number or a localhost:container port pair."
   (or
    (when (tramp-tramp-file-p default-directory)
      (with-parsed-tramp-file-name default-directory nil
-       (format "%s%s:%s@%s|" (or hop "") method user host)))
+       (format "%s%s:%s|" (or hop "") method (if user (concat user "@" host) host))))
    ""))
 
 (defun kubel-exec-pod ()
