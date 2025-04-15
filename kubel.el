@@ -532,7 +532,7 @@ READONLY If true buffer will be in readonly mode(view-mode)."
                   :buffer buffer-name
                   :sentinel (kubel--sentinel callback)
                   :file-handler t
-                  :stderr error-buffer
+                  :stderr (get-buffer-create error-buffer)
                   :command cmd)
     (pop-to-buffer buffer-name)
     (if readonly
