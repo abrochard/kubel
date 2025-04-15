@@ -24,6 +24,8 @@ All notable changes to this project will be documented in this file.
 - Better parsing of the kubectl version string via JSON
 - Fix describe resources not going to top of buffer
 - using -- for all kubectl exec uses
+- Fix `kubel--exec` doesn't work on remote systems
+- Fix `dir-prefix` for TRAMP without explicitly specifically the username
 
 ### Removed
 - `kubel-kubernetes-version` no longer cares about version patch
