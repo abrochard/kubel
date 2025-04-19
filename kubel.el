@@ -1032,7 +1032,7 @@ the variables `kubel-namespace' and `kubel-context', respectively."
          (vterm-buffer-name
           (kubel--shell-buffer-name "vterm" container pod))
          (vterm-shell "/bin/sh"))
-    (vterm)))
+    (vterm nil)))
 
 ;;;###autoload
 (defun kubel-vterm-setup ()
