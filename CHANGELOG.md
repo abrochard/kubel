@@ -26,6 +26,8 @@ All notable changes to this project will be documented in this file.
 - using -- for all kubectl exec uses
 - Fix `kubel--exec` doesn't work on remote systems
 - Fix `dir-prefix` for TRAMP without explicitly specifically the username
+- vterm sessions to use their own buffers
+- case consistent resource names ("pods)
 
 ### Removed
 - `kubel-kubernetes-version` no longer cares about version patch
