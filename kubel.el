@@ -299,7 +299,7 @@ CMD is the command string to run."
 (defvar-local kubel-namespace "default"
   "Current namespace.")
 
-(defvar-local kubel-resource "Pods"
+(defvar-local kubel-resource "pods"
   "Current resource.")
 
 (defvar-local kubel-context
