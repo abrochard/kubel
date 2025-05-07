@@ -551,7 +551,7 @@ Strip the `*` prefix if the resource is selected"
   (append
    (unless (equal kubel-context "")
      (list "--context" kubel-context))
-   (unless (equal kubel-namespace "default")
+   (unless (equal kubel-namespace "")
      (list "-n" kubel-namespace))))
 
 (defun kubel--get-selector ()
