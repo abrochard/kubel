@@ -18,6 +18,7 @@ All notable changes to this project will be documented in this file.
 - `kubel-kill-buffer` command to cancel an edit buffer without applying changes
 - Support for "wide" list view
 - Support for `eat` terminal emulator
+- `kubel-set-namespace` support for optional parameter to refresh the namespace cache
 
 ### Changed
 - Remove suffix "(default)" when acting on resources of StorageClasses
