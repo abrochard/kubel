@@ -839,9 +839,12 @@ ARGS is the arguments list from transient."
   (unless (member namespace kubel-namespace-history)
     (push namespace kubel-namespace-history)))
 
-(defun kubel-set-namespace ()
-  "Set the namespace."
-  (interactive)
+(defun kubel-set-namespace (&optional refresh)
+  "Set the namespace.
+If called with a prefix argument REFRESH, refreshes
+the context caches, including the cached resource list."
+  (interactive "P")
+  (when refresh (kubel--invalidate-context-caches))
   (let* ((namespace (completing-read "Namespace: " (kubel--list-namespace)
                                      nil nil nil nil "default"))
          (kubel--buffer (get-buffer (kubel--buffer-name)))
