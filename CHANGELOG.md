@@ -29,6 +29,7 @@ All notable changes to this project will be documented in this file.
 - Fix `dir-prefix` for TRAMP without explicitly specifically the username
 - vterm sessions to use their own buffers
 - case consistent resource names ("pods)
+- Fix: don't assume that kubectl will use the namespace default implictely
 
 ### Removed
 - `kubel-kubernetes-version` no longer cares about version patch
