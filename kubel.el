@@ -268,6 +268,12 @@ This is used by `kubel-kill-buffer'."
   :type 'boolean
   :group 'kubel)
 
+(defcustom kubel-default-namespace "default"
+  "Default namespace for kubel to use. Change if you have no resources in
+`default' namespace."
+  :type 'string
+  :group 'kubel)
+
 (defun kubel--append-to-process-buffer (str)
   "Append string STR to the process buffer."
   (with-current-buffer (get-buffer-create kubel--process-buffer)
@@ -296,7 +302,7 @@ CMD is the command string to run."
     (with-current-buffer standard-output
       (shell-command cmd t "*kubel stderr*"))))
 
-(defvar-local kubel-namespace "default"
+(defvar-local kubel-namespace kubel-default-namespace
   "Current namespace.")
 
 (defvar-local kubel-resource "pods"
