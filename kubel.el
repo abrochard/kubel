@@ -1488,5 +1488,20 @@ DIRECTORY is optional for TRAMP support."
   (hl-line-mode 1)
   (run-mode-hooks 'kubel-mode-hook))
 
+(defvar kubel-global-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "C-c o K") #'kubel)
+    map)
+  "Keymap for `kubel-global-mode'.")
+
+;;;###autoload
+(define-minor-mode kubel-global-mode
+  "Global minor mode to provide keybindings for kubel.
+
+\\{kubel-global-mode-map}"
+  :global t
+  :group 'kubel
+  :keymap kubel-global-mode-map)
+
 (provide 'kubel)
 ;;; kubel.el ends here
