@@ -1196,8 +1196,10 @@ RESET is to be called if the search is nil after the first attempt."
   (interactive)
   (with-current-buffer (get-buffer-create kubel--process-buffer)
     (special-mode))
-  (display-buffer kubel--process-buffer
-                  '(nil (inhibit-same-window . t))))
+  (select-window
+   (display-buffer kubel--process-buffer
+                   '(display-buffer-below-selected
+                     (window-height . 0.4)))))
 
 (defun kubel-mark-item ()
   "Mark or unmark the item under cursor."
