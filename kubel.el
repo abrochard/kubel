@@ -1336,14 +1336,13 @@ When called interactively, prompts for a buffer belonging to kubel."
 (transient-define-prefix kubel-help-popup ()
   "Kubel Menu"
   [["Actions"
-    ;; global
     ("RET" "Resource details" kubel-describe-popup)
     ("E" "Quick edit" kubel-quick-edit)
     ("g" "Refresh" kubel-refresh)
     ("b" "Buffers" kubel-switch-to-buffer)
     ("k" "Delete" kubel-delete-popup)
     ("r" "Rollout" kubel-rollout-history)]
-   ["" ;; based on current view
+   ["Pod Actions"
     ("p" "Port forward" kubel-port-forward-pod)
     ("l" "Logs" kubel-log-popup)
     ("e" "Exec" kubel-exec-popup)
@@ -1354,8 +1353,8 @@ When called interactively, prompts for a buffer belonging to kubel."
     ("n" "Set namespace" kubel-set-namespace)
     ("R" "Set resource" kubel-set-resource)
     ("K" "Set kubectl config file" kubel-set-kubectl-config-file)
-    ("F" "Set output format" kubel-set-output-format)]
-   ["Filter"
+    ("F" "Set output format" kubel-set-output-format)]]
+  [["Filter"
     ("f" "Filter" kubel-set-filter)
     ("M-n" "Next highlight" kubel-jump-to-next-highlight)
     ("M-p" "Previous highlight" kubel-jump-to-previous-highlight)
@@ -1366,7 +1365,7 @@ When called interactively, prompts for a buffer belonging to kubel."
     ("M" "Mark all items" kubel-mark-all)
     ("U" "Unmark all items" kubel-unmark-all)]
    ["Utilities"
-    ("c" "Copy to clipboad..." kubel-copy-popup)
+    ("c" "Copy to clipboard..." kubel-copy-popup)
     ("$" "Show Process buffer" kubel-show-process-buffer)]])
 
 ;; mode map
