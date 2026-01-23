@@ -583,7 +583,7 @@ READONLY if non-nil, buffer will be in `view-mode'."
                   :file-handler t
                   :stderr (get-buffer-create error-buffer)
                   :command cmd)
-    (pop-to-buffer buffer-name)
+    (pop-to-buffer-same-window buffer-name)
     (if readonly
         (with-current-buffer buffer-name
           (view-mode)))))
@@ -887,6 +887,13 @@ ARGS is the arguments list from transient."
   "Add NAMESPACE to history if it isn't there already."
   (unless (member namespace kubel-namespace-history)
     (push namespace kubel-namespace-history)))
+
+(defun kubel-list-namespaces ()
+  "List all namespaces in the current context."
+  (interactive)
+  (kubel--exec-async "kubel-list-namespaces"
+                     (list "get" "namespaces")
+                     t nil))
 
 (defun kubel-set-namespace (&optional refresh)
   "Set the namespace.
@@ -1351,6 +1358,7 @@ When called interactively, prompts for a buffer belonging to kubel."
    ["Settings"
     ("C" "Set context" kubel-set-context)
     ("n" "Set namespace" kubel-set-namespace)
+    ("y" "List namespaces" kubel-list-namespaces)
     ("R" "Set resource" kubel-set-resource)
     ("K" "Set kubectl config file" kubel-set-kubectl-config-file)
     ("F" "Set output format" kubel-set-output-format)]]
@@ -1376,6 +1384,7 @@ When called interactively, prompts for a buffer belonging to kubel."
     (define-key map (kbd "K") 'kubel-set-kubectl-config-file)
     (define-key map (kbd "C") 'kubel-set-context)
     (define-key map (kbd "n") 'kubel-set-namespace)
+    (define-key map (kbd "y") 'kubel-list-namespaces)
     (define-key map (kbd "g") 'kubel-refresh)
     (define-key map (kbd "h") 'kubel-help-popup)
     (define-key map (kbd "?") 'kubel-help-popup)
