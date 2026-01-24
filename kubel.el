@@ -370,6 +370,9 @@ If SILENCE-WARNINGS is non-nil, stderr output is not displayed."
 
 (defvar kubel--namespace-list-cached nil)
 
+(defvar kubel--context-namespace-cache (make-hash-table :test 'equal)
+  "Cache mapping context names to their configured default namespace.")
+
 (defvar-local kubel--label-values-cached nil)
 
 (defvar-local kubel--selected-items '())
@@ -392,7 +395,24 @@ Used for back-navigation when pressing q.")
   (setq kubel--kubernetes-resources-list-cached nil)
   (setq kubel--can-get-namespace-cached nil)
   (setq kubel--namespace-list-cached nil)
-  (setq kubel--label-values-cached nil))
+  (setq kubel--label-values-cached nil)
+  (clrhash kubel--context-namespace-cache))
+
+(defun kubel--get-context-default-namespace (&optional context)
+  "Get the default namespace for CONTEXT from kubectl config.
+If CONTEXT is nil, uses `kubel-context'.
+Falls back to `kubel-default-namespace' if none is configured.
+Results are cached in `kubel--context-namespace-cache'."
+  (let ((ctx (or context kubel-context)))
+    (or (gethash ctx kubel--context-namespace-cache)
+        (let* ((cmd (if ctx
+                        (format "%s config view --minify -o jsonpath={..namespace} --context=%s"
+                                kubel-kubectl ctx)
+                      (format "%s config view --minify -o jsonpath={..namespace}"
+                              kubel-kubectl)))
+               (result (string-trim (shell-command-to-string cmd))))
+          (puthash ctx (if (string-empty-p result) kubel-default-namespace result)
+                   kubel--context-namespace-cache)))))
 
 (defun kubel--populate-list ()
   "Return a list with a tabulated list format and \"tabulated-list-entries\"."
@@ -978,9 +998,31 @@ or the marked namespace if exactly one is marked."
              "Select context: "
              (split-string (kubel--exec-sync (format "%s config view -o jsonpath='{.contexts[*].name}'" kubel-kubectl)) " ")))
       (kubel--invalidate-context-caches)
-      (setq kubel-namespace "default")
+      (setq kubel-namespace (kubel--get-context-default-namespace kubel-context))
       (switch-to-buffer (current-buffer))
       (kubel-refresh last-default-directory))))
+
+(defun kubel-set-context-default-namespace ()
+  "Set the default namespace for the current context in kubectl config.
+When viewing namespaces, uses the namespace under cursor or marked namespace.
+Otherwise, prompts with completing-read."
+  (interactive)
+  (let* ((from-namespace-list (equal kubel-resource "namespaces"))
+         (namespace (if from-namespace-list
+                        (cond
+                         ((> (length kubel--selected-items) 1)
+                          (user-error "Cannot set default namespace: multiple namespaces are marked"))
+                         ((= (length kubel--selected-items) 1)
+                          (car kubel--selected-items))
+                         (t
+                          (kubel--get-resource-under-cursor)))
+                      (completing-read "Set default namespace: " (kubel--list-namespace)
+                                       nil nil nil nil kubel-namespace)))
+         (cmd (format "%s config set-context %s --namespace=%s"
+                      kubel-kubectl kubel-context namespace)))
+    (shell-command-to-string cmd)
+    (remhash kubel-context kubel--context-namespace-cache)
+    (message "Set default namespace for context %s to %s" kubel-context namespace)))
 
 (defun kubel--add-selector-to-history (selector)
   "Add SELECTOR to history if it isn't there already."
@@ -1443,6 +1485,7 @@ When called interactively, prompts for a buffer belonging to kubel."
     (define-key map (kbd "K") 'kubel-set-kubectl-config-file)
     (define-key map (kbd "C") 'kubel-set-context)
     (define-key map (kbd "n") 'kubel-set-namespace)
+    (define-key map (kbd "N") 'kubel-set-context-default-namespace)
     (define-key map (kbd "y") 'kubel-list-namespaces)
     (define-key map (kbd "g") 'kubel-refresh)
     (define-key map (kbd "h") 'kubel-help-popup)
@@ -1545,11 +1588,12 @@ DIRECTORY is optional for TRAMP support."
       (switch-to-buffer (current-buffer))
       (unless (eq major-mode 'kubel-mode)
         (kubel-mode))
-      ;; Lazily initialize context on first use
+      ;; Lazily initialize context and namespace on first use
       (unless kubel-context
         (setq kubel-context
               (replace-regexp-in-string
-               "\n" "" (kubel--exec-sync "kubectl config current-context"))))
+               "\n" "" (kubel--exec-sync "kubectl config current-context")))
+        (setq kubel-namespace (kubel--get-context-default-namespace kubel-context)))
       (kubel-refresh directory))))
 
 (define-derived-mode kubel-mode tabulated-list-mode "Kubel"
