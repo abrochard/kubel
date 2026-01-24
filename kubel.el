@@ -283,6 +283,12 @@ This is used by `kubel-kill-buffer'."
 
 (defvar-local kubel--last-command nil)
 
+(defvar-local kubel--header-error nil
+  "Current error message to display, or nil if no error.")
+
+(defvar-local kubel--error-overlay nil
+  "Overlay used to display error message at top of buffer.")
+
 (defun kubel--log-command (process-name cmd)
   "Log the kubectl command to the process buffer.
 
@@ -343,22 +349,14 @@ Logs to process buffer and displays any stderr via `kubel--handle-stderr'."
 (defvar-local kubel-resource "pods"
   "Current resource.")
 
-(defvar-local kubel-context
-  (replace-regexp-in-string
-   "\n" "" (kubel--exec-sync "kubectl config current-context"))
-  "Current context.  Tries to smart default.")
+(defvar-local kubel-context nil
+  "Current context.  Initialized lazily on first use.")
 
 (defvar-local kubel-resource-filter ""
   "Substring filter for resource name.")
 
 (defvar-local kubel-selector ""
   "Label selector for resources.")
-
-(defvar-local kubel--header-error nil
-  "Current error message to display, or nil if no error.")
-
-(defvar-local kubel--error-overlay nil
-  "Overlay used to display error message at top of buffer.")
 
 (defvar kubel-namespace-history '()
   "List of previously used namespaces.")
@@ -546,9 +544,9 @@ NAME is the buffer name."
   "Sentinel function used by `kubel--exec-async'.
 CALLBACK is called when process completes successfully."
   (lambda (process event)
-    (let ((process-name (process-name process))
-          (exit-status (process-exit-status process))
-          (error-buffer (kubel--process-error-buffer process-name)))
+    (let* ((process-name (process-name process))
+           (exit-status (process-exit-status process))
+           (error-buffer (kubel--process-error-buffer process-name)))
       (kubel--append-to-process-buffer (format "[%s]\nexit-code: %s" process-name exit-status))
       (if (eq 0 exit-status)
           (progn
@@ -762,13 +760,8 @@ Allows simple apply of the changes made.
                      (set-buffer-modified-p nil)
                      (goto-char (point-min)))))
     (if describe
-        (kubel--exec-async process-name (list "describe" kubel-resource (kubel--get-resource-under-cursor)) nil callback)
-      (kubel--exec-async process-name (list "get" kubel-resource (kubel--get-resource-under-cursor) "-o" kubel-output) nil callback))
-    (when (or (string-equal kubel-output "yaml") (transient-args 'kubel-describe-popup))
-      (kubel-yaml-editing-mode)
-      (setq kubel-context ctx)
-      (setq kubel-namespace ns)
-      (setq kubel-resource res))))
+        (kubel--exec-async process-name (list "describe" kubel-resource (kubel--get-resource-under-cursor)) t callback)
+      (kubel--exec-async process-name (list "get" kubel-resource (kubel--get-resource-under-cursor) "-o" kubel-output) t callback))))
 
 (defun kubel--default-tail-arg (args)
   "Ugly function to make sure that there is at least the default tail.
@@ -891,9 +884,14 @@ ARGS is the arguments list from transient."
 (defun kubel-list-namespaces ()
   "List all namespaces in the current context."
   (interactive)
-  (kubel--exec-async "kubel-list-namespaces"
-                     (list "get" "namespaces")
-                     t nil))
+  (let* ((kubel--buffer (get-buffer (kubel--buffer-name)))
+         (last-default-directory (when kubel--buffer
+                                   (with-current-buffer kubel--buffer default-directory))))
+    (with-current-buffer (clone-buffer)
+      (setq kubel-resource "namespaces")
+      (setq kubel-selector "")
+      (switch-to-buffer (current-buffer))
+      (kubel-refresh last-default-directory))))
 
 (defun kubel-set-namespace (&optional refresh)
   "Set the namespace.
@@ -1483,6 +1481,11 @@ DIRECTORY is optional for TRAMP support."
       (switch-to-buffer (current-buffer))
       (unless (eq major-mode 'kubel-mode)
         (kubel-mode))
+      ;; Lazily initialize context on first use
+      (unless kubel-context
+        (setq kubel-context
+              (replace-regexp-in-string
+               "\n" "" (kubel--exec-sync "kubectl config current-context"))))
       (kubel-refresh directory))))
 
 (define-derived-mode kubel-mode tabulated-list-mode "Kubel"
