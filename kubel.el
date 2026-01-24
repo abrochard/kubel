@@ -926,11 +926,22 @@ ARGS is the arguments list from transient."
 (defun kubel-set-namespace (&optional refresh)
   "Set the namespace.
 If called with a prefix argument REFRESH, refreshes
-the context caches, including the cached resource list."
+the context caches, including the cached resource list.
+When viewing namespaces, selects the namespace under cursor,
+or the marked namespace if exactly one is marked."
   (interactive "P")
   (when refresh (kubel--invalidate-context-caches))
-  (let* ((namespace (completing-read "Namespace: " (kubel--list-namespace)
-                                     nil nil nil nil "default"))
+  (let* ((from-namespace-list (equal kubel-resource "namespaces"))
+         (namespace (if from-namespace-list
+                        (cond
+                         ((> (length kubel--selected-items) 1)
+                          (user-error "Cannot set namespace: multiple namespaces are marked"))
+                         ((= (length kubel--selected-items) 1)
+                          (car kubel--selected-items))
+                         (t
+                          (kubel--get-resource-under-cursor)))
+                      (completing-read "Namespace: " (kubel--list-namespace)
+                                       nil nil nil nil "default")))
          (kubel--buffer (get-buffer (kubel--buffer-name)))
          (parent-buffer (current-buffer))
          (last-default-directory (when kubel--buffer
@@ -938,6 +949,8 @@ the context caches, including the cached resource list."
     (with-current-buffer (clone-buffer)
       (setq kubel--parent-buffer parent-buffer)
       (setq kubel-namespace namespace)
+      (when from-namespace-list
+        (setq kubel-resource "pods"))
       (kubel--add-namespace-to-history namespace)
       (switch-to-buffer (current-buffer))
       (kubel-refresh last-default-directory))))
