@@ -625,9 +625,11 @@ READONLY if non-nil, buffer will be in `view-mode'."
           (view-mode)))))
 
 (defun kubel--get-resource-under-cursor ()
-  "Utility function to get the name of the resource under the cursor."
+  "Utility function to get the name of the resource under the cursor.
+Strips leading `*' mark indicator if present."
   (string-remove-suffix " (default)" ;; see https://github.com/abrochard/kubel/issues/106
-                        (aref (tabulated-list-get-entry) 0)))
+                        (replace-regexp-in-string
+                         "^\\*" "" (aref (tabulated-list-get-entry) 0))))
 
 (defun kubel--get-context-namespace ()
   "Utility function to return the proper context and namespace arguments."
@@ -1348,11 +1350,14 @@ RESET is to be called if the search is nil after the first attempt."
       (tabulated-list-print t))))
 
 (defun kubel-unmark-item ()
-  "Unmark the item under cursor."
+  "Unmark the item under cursor and move to next line."
   (interactive)
-  (let ((item (kubel--get-resource-under-cursor)))
+  (let ((item (kubel--get-resource-under-cursor))
+        (col (current-column)))
     (when (-contains? kubel--selected-items item)
       (setq kubel--selected-items (delete item kubel--selected-items))
+      (forward-line 1)
+      (move-to-column col)
       (tabulated-list-print t))))
 
 (defun kubel-mark-all ()
