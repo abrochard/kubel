@@ -326,9 +326,10 @@ STDERR-CONTENT is the stderr string from a kubectl command."
       (kubel--append-to-process-buffer (format "stderr: %s" trimmed))
       (kubel--set-header-error trimmed))))
 
-(defun kubel--exec-sync (cmd)
+(defun kubel--exec-sync (cmd &optional silence-warnings)
   "Run CMD synchronously and return output as string.
-Logs to process buffer and displays any stderr via `kubel--handle-stderr'."
+Logs to process buffer and displays any stderr via `kubel--handle-stderr'.
+If SILENCE-WARNINGS is non-nil, stderr output is not displayed."
   (kubel--log-command "kubectl-command" cmd)
   (let ((stderr-buffer (generate-new-buffer " *kubel-stderr-temp*"))
         (result nil))
@@ -338,8 +339,9 @@ Logs to process buffer and displays any stderr via `kubel--handle-stderr'."
                 (with-output-to-string
                   (with-current-buffer standard-output
                     (shell-command cmd t stderr-buffer))))
-          (kubel--handle-stderr (with-current-buffer stderr-buffer
-                                  (buffer-string))))
+          (unless silence-warnings
+            (kubel--handle-stderr (with-current-buffer stderr-buffer
+                                    (buffer-string)))))
       (kill-buffer stderr-buffer))
     result))
 
@@ -729,6 +731,13 @@ If no parent buffer exists, call `quit-window'."
             (kubel--set-header-error kubel--header-error)))
       (quit-window))))
 
+(defun kubel-kill-all-buffers ()
+  "Kill all kubel-related buffers."
+  (interactive)
+  (dolist (buf (buffer-list))
+    (when (string-prefix-p "*kubel:" (buffer-name buf))
+      (kill-buffer buf))))
+
 (defvar kubel-yaml-editing-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-c") #'kubel-apply)
@@ -875,9 +884,10 @@ ARGS is the arguments list from transient."
          (progn
            (unless kubel--can-get-namespace-cached
              (setq kubel--can-get-namespace-cached
-                   (string-match-p "yes\n"
+                   (string-match-p "yes"
                                    (kubel--exec-sync
-                                    (format "%s --context %s auth can-i list namespaces" kubel-kubectl kubel-context))))))
+                                    (format "%s --context %s auth can-i list namespaces" kubel-kubectl kubel-context)
+                                    t)))))  ; silence warnings
          kubel--can-get-namespace-cached)))
 
 (defun kubel--get-namespace ()
@@ -1440,6 +1450,7 @@ When called interactively, prompts for a buffer belonging to kubel."
     (define-key map (kbd "U") 'kubel-unmark-all)
 
     (define-key map (kbd "q") 'kubel-go-back)
+    (define-key map (kbd "Q") 'kubel-kill-all-buffers)
 
     map)
   "Keymap for `kubel-mode'.")
