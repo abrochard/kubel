@@ -326,10 +326,44 @@ STDERR-CONTENT is the stderr string from a kubectl command."
       (kubel--append-to-process-buffer (format "stderr: %s" trimmed))
       (kubel--set-header-error trimmed))))
 
+(defun kubel--gke-auth-error-p (output)
+  "Return non-nil if OUTPUT indicates a GKE authentication error."
+  (and output
+       (string-match-p "gke-gcloud-auth-plugin failed" output)))
+
+(defun kubel--prompt-gcloud-login ()
+  "Prompt user to run gcloud auth login and execute if confirmed.
+Auto-refreshes kubel on successful authentication.
+Shows output buffer only on error."
+  (when (y-or-n-p "GKE authentication expired. Run `gcloud auth login'? ")
+    (let ((kubel-buffer (current-buffer))
+          (output-buffer (get-buffer-create "*gcloud-auth*")))
+      (with-current-buffer output-buffer
+        (erase-buffer))
+      (message "Running gcloud auth login... Complete authentication in your browser.")
+      (make-process
+       :name "gcloud-auth"
+       :buffer output-buffer
+       :command '("gcloud" "auth" "login")
+       :sentinel (lambda (proc _event)
+                   (let ((exit-code (process-exit-status proc))
+                         (proc-buffer (process-buffer proc)))
+                     (if (= exit-code 0)
+                         (progn
+                           (message "GKE authentication successful, refreshing kubel...")
+                           (when (buffer-live-p kubel-buffer)
+                             (with-current-buffer kubel-buffer
+                               (kubel-refresh))))
+                       (progn
+                         (message "GKE authentication failed (exit code %d)" exit-code)
+                         (when (buffer-live-p proc-buffer)
+                           (display-buffer proc-buffer))))))))))
+
 (defun kubel--exec-sync (cmd &optional silence-warnings)
   "Run CMD synchronously and return output as string.
 Logs to process buffer and displays any stderr via `kubel--handle-stderr'.
-If SILENCE-WARNINGS is non-nil, stderr output is not displayed."
+If SILENCE-WARNINGS is non-nil, stderr output is not displayed.
+Detects GKE authentication errors and prompts to re-authenticate."
   (kubel--log-command "kubectl-command" cmd)
   (let ((stderr-buffer (generate-new-buffer " *kubel-stderr-temp*"))
         (result nil))
@@ -339,9 +373,11 @@ If SILENCE-WARNINGS is non-nil, stderr output is not displayed."
                 (with-output-to-string
                   (with-current-buffer standard-output
                     (shell-command cmd t stderr-buffer))))
-          (unless silence-warnings
-            (kubel--handle-stderr (with-current-buffer stderr-buffer
-                                    (buffer-string)))))
+          (let ((stderr-output (with-current-buffer stderr-buffer (buffer-string))))
+            (when (kubel--gke-auth-error-p stderr-output)
+              (kubel--prompt-gcloud-login))
+            (unless silence-warnings
+              (kubel--handle-stderr stderr-output))))
       (kill-buffer stderr-buffer))
     result))
 
