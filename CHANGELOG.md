@@ -20,6 +20,7 @@ All notable changes to this project will be documented in this file.
 - Support for `eat` terminal emulator
 - `kubel-set-namespace` support for optional parameter to refresh the namespace cache
 - Custom default namespace `kubel-default-namespace` with default to `"default"`
+- Better error handling
 
 ### Changed
 - Remove suffix "(default)" when acting on resources of StorageClasses
