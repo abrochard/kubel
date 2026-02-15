@@ -585,7 +585,7 @@ READONLY if non-nil, buffer will be in `view-mode'."
                   :file-handler t
                   :stderr (get-buffer-create error-buffer)
                   :command cmd)
-    (pop-to-buffer buffer-name)
+    (pop-to-buffer-same-window buffer-name)
     (if readonly
         (with-current-buffer buffer-name
           (view-mode)))))
@@ -1224,8 +1224,12 @@ RESET is to be called if the search is nil after the first attempt."
 (defun kubel-show-process-buffer ()
   "Show the kubel-process-buffer."
   (interactive)
-  (pop-to-buffer kubel--process-buffer)
-  (special-mode))
+  (with-current-buffer (get-buffer-create kubel--process-buffer)
+    (special-mode))
+  (select-window
+   (display-buffer kubel--process-buffer
+                   '(display-buffer-below-selected
+                     (window-height . 0.4)))))
 
 (defun kubel-mark-item ()
   "Mark or unmark the item under cursor."
