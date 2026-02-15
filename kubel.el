@@ -921,14 +921,39 @@ ARGS is the arguments list from transient."
   (unless (member namespace kubel-namespace-history)
     (push namespace kubel-namespace-history)))
 
+(defun kubel-list-namespaces ()
+  "List all namespaces in the current context."
+  (interactive)
+  (let* ((kubel--buffer (get-buffer (kubel--buffer-name)))
+         (parent-buffer (current-buffer))
+         (last-default-directory (when kubel--buffer
+                                   (with-current-buffer kubel--buffer default-directory))))
+    (with-current-buffer (clone-buffer)
+      (setq kubel--parent-buffer parent-buffer)
+      (setq kubel-resource "namespaces")
+      (setq kubel-selector "")
+      (switch-to-buffer (current-buffer))
+      (kubel-refresh last-default-directory))))
+
 (defun kubel-set-namespace (&optional refresh)
   "Set the namespace.
 If called with a prefix argument REFRESH, refreshes
-the context caches, including the cached resource list."
+the context caches, including the cached resource list.
+When viewing namespaces, selects the namespace under cursor,
+or the marked namespace if exactly one is marked."
   (interactive "P")
   (when refresh (kubel--invalidate-context-caches))
-  (let* ((namespace (completing-read "Namespace: " (kubel--list-namespace)
-                                     nil nil nil nil "default"))
+  (let* ((from-namespace-list (equal kubel-resource "namespaces"))
+         (namespace (if from-namespace-list
+                        (cond
+                         ((> (length kubel--selected-items) 1)
+                          (user-error "Cannot set namespace: multiple namespaces are marked"))
+                         ((= (length kubel--selected-items) 1)
+                          (car kubel--selected-items))
+                         (t
+                          (kubel--get-resource-under-cursor)))
+                      (completing-read "Namespace: " (kubel--list-namespace)
+                                       nil nil nil nil "default")))
          (kubel--buffer (get-buffer (kubel--buffer-name)))
          (parent-buffer (current-buffer))
          (last-default-directory (when kubel--buffer
@@ -936,6 +961,8 @@ the context caches, including the cached resource list."
     (with-current-buffer (clone-buffer)
       (setq kubel--parent-buffer parent-buffer)
       (setq kubel-namespace namespace)
+      (when from-namespace-list
+        (setq kubel-resource "pods"))
       (kubel--add-namespace-to-history namespace)
       (switch-to-buffer (current-buffer))
       (kubel-refresh last-default-directory))))
@@ -1396,6 +1423,7 @@ When called interactively, prompts for a buffer belonging to kubel."
    ["Settings"
     ("C" "Set context" kubel-set-context)
     ("n" "Set namespace" kubel-set-namespace)
+    ("y" "List namespaces" kubel-list-namespaces)
     ("R" "Set resource" kubel-set-resource)
     ("K" "Set kubectl config file" kubel-set-kubectl-config-file)
     ("F" "Set output format" kubel-set-output-format)]
@@ -1421,6 +1449,7 @@ When called interactively, prompts for a buffer belonging to kubel."
     (define-key map (kbd "K") 'kubel-set-kubectl-config-file)
     (define-key map (kbd "C") 'kubel-set-context)
     (define-key map (kbd "n") 'kubel-set-namespace)
+    (define-key map (kbd "y") 'kubel-list-namespaces)
     (define-key map (kbd "g") 'kubel-refresh)
     (define-key map (kbd "h") 'kubel-help-popup)
     (define-key map (kbd "?") 'kubel-help-popup)
