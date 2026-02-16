@@ -283,6 +283,12 @@ This is used by `kubel-kill-buffer'."
 
 (defvar-local kubel--last-command nil)
 
+(defvar-local kubel--header-error nil
+  "Current error message to display, or nil if no error.")
+
+(defvar-local kubel--error-overlay nil
+  "Overlay used to display error message at top of buffer.")
+
 (defun kubel--log-command (process-name cmd)
   "Log the kubectl command to the process buffer.
 
@@ -293,12 +299,32 @@ CMD is the kubectl command as a list."
     (kubel--append-to-process-buffer
      (format "[%s]\ncommand: %s" process-name str-cmd))))
 
+(defun kubel--set-header-error (error-msg)
+  "Set ERROR-MSG as an overlay at the top of the buffer."
+  (kubel--clear-header-error)
+  (setq kubel--header-error error-msg)
+  (when error-msg
+    (let ((ov (make-overlay (point-min) (point-min))))
+      (overlay-put ov 'before-string
+                   (propertize (format "⚠ Kubel error: %s  [Type `$' for details]\n" error-msg)
+                               'face 'error))
+      (overlay-put ov 'kubel-error t)
+      (setq kubel--error-overlay ov))))
+
+(defun kubel--clear-header-error ()
+  "Clear any error overlay from the buffer."
+  (when kubel--error-overlay
+    (delete-overlay kubel--error-overlay)
+    (setq kubel--error-overlay nil))
+  (setq kubel--header-error nil))
+
 (defun kubel--handle-stderr (stderr-content)
-  "Handle stderr output by logging to process buffer.
+  "Handle stderr output by logging to process buffer and displaying in header-line.
 STDERR-CONTENT is the stderr string from a kubectl command."
   (when (and stderr-content (not (string-empty-p stderr-content)))
     (let ((trimmed (string-trim stderr-content)))
-      (kubel--append-to-process-buffer (format "stderr: %s" trimmed)))))
+      (kubel--append-to-process-buffer (format "stderr: %s" trimmed))
+      (kubel--set-header-error trimmed))))
 
 (defun kubel--exec-sync (cmd &optional silence-warnings)
   "Run CMD synchronously and return output as string.
@@ -527,7 +553,9 @@ CALLBACK is called when process completes successfully."
            (error-buffer (kubel--process-error-buffer process-name)))
       (kubel--append-to-process-buffer (format "[%s]\nexit-code: %s" process-name exit-status))
       (if (eq 0 exit-status)
-          (when callback (funcall callback))
+          (progn
+            (kubel--clear-header-error)
+            (when callback (funcall callback)))
         (kubel--handle-stderr (with-current-buffer error-buffer
                                 (buffer-string))))
       ;; Clean up error buffer
@@ -1393,6 +1421,7 @@ context, namespace, and resource.
 
 DIRECTORY is optional for TRAMP support."
   (interactive)
+  (kubel--clear-header-error)
   (when directory (setq default-directory directory))
   (let ((name (kubel--buffer-name)))
     ;; Remove old buffer if exist but not is current buffer
