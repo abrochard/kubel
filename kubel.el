@@ -274,6 +274,11 @@ This is used by `kubel-kill-buffer'."
   :type 'string
   :group 'kubel)
 
+(defcustom kubel-same-buffer 'nil
+	"Use the same buffer for output."
+	:type 'boolean
+	:group 'kubel)
+
 (defun kubel--append-to-process-buffer (str)
   "Append string STR to the process buffer."
   (with-current-buffer (get-buffer-create kubel--process-buffer)
@@ -585,7 +590,9 @@ READONLY if non-nil, buffer will be in `view-mode'."
                   :file-handler t
                   :stderr (get-buffer-create error-buffer)
                   :command cmd)
-    (pop-to-buffer buffer-name)
+    (if kubel-same-buffer
+        (pop-to-buffer-same-window buffer-name)
+      (pop-to-buffer buffer-name))
     (if readonly
         (with-current-buffer buffer-name
           (view-mode)))))
