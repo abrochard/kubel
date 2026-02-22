@@ -33,6 +33,7 @@ All notable changes to this project will be documented in this file.
 - case consistent resource names ("pods)
 - Fix: don't assume that kubectl will use the namespace default implictely
 - better buffer behavior
+- Lazy context initialization to avoid kubectl calls at load time
 
 ### Removed
 - `kubel-kubernetes-version` no longer cares about version patch
