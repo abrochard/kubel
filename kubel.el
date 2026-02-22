@@ -1459,6 +1459,15 @@ DIRECTORY is optional for TRAMP support."
         (pop-to-buffer-same-window tmpname)
         (kubel-refresh directory)))))
 
+(defun kubel--init-context ()
+  "Initialize context and namespace if not already set.
+Defers the kubectl call until first use to avoid blocking Emacs startup."
+  (unless kubel-context
+    (setq kubel-context
+          (replace-regexp-in-string
+           "\n" "" (kubel--exec-sync "kubectl config current-context")))
+    (setq kubel-namespace kubel-default-namespace)))
+
 ;;;###autoload
 (defun kubel (&optional directory)
   "Invoke the kubel buffer.
@@ -1471,12 +1480,7 @@ DIRECTORY is optional for TRAMP support."
       (switch-to-buffer (current-buffer))
       (unless (eq major-mode 'kubel-mode)
         (kubel-mode))
-      ;; Lazily initialize context and namespace on first use
-      (unless kubel-context
-        (setq kubel-context
-              (replace-regexp-in-string
-               "\n" "" (kubel--exec-sync "kubectl config current-context")))
-        (setq kubel-namespace kubel-default-namespace))
+      (kubel--init-context)
       (kubel-refresh directory))))
 
 (define-derived-mode kubel-mode tabulated-list-mode "Kubel"
