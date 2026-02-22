@@ -351,10 +351,8 @@ If SILENCE-WARNINGS is non-nil, stderr output is not displayed."
 (defvar-local kubel-resource "pods"
   "Current resource.")
 
-(defvar-local kubel-context
-  (replace-regexp-in-string
-   "\n" "" (kubel--exec-sync "kubectl config current-context"))
-  "Current context.  Tries to smart default.")
+(defvar-local kubel-context nil
+  "Current context.  Initialized lazily on first use.")
 
 (defvar-local kubel-resource-filter ""
   "Substring filter for resource name.")
@@ -764,13 +762,8 @@ Allows simple apply of the changes made.
                      (set-buffer-modified-p nil)
                      (goto-char (point-min)))))
     (if describe
-        (kubel--exec-async process-name (list "describe" kubel-resource (kubel--get-resource-under-cursor)) nil callback)
-      (kubel--exec-async process-name (list "get" kubel-resource (kubel--get-resource-under-cursor) "-o" kubel-output) nil callback))
-    (when (or (string-equal kubel-output "yaml") (transient-args 'kubel-describe-popup))
-      (kubel-yaml-editing-mode)
-      (setq kubel-context ctx)
-      (setq kubel-namespace ns)
-      (setq kubel-resource res))))
+        (kubel--exec-async process-name (list "describe" kubel-resource (kubel--get-resource-under-cursor)) t callback)
+      (kubel--exec-async process-name (list "get" kubel-resource (kubel--get-resource-under-cursor) "-o" kubel-output) t callback))))
 
 (defun kubel--default-tail-arg (args)
   "Ugly function to make sure that there is at least the default tail.
@@ -1466,6 +1459,15 @@ DIRECTORY is optional for TRAMP support."
         (pop-to-buffer-same-window tmpname)
         (kubel-refresh directory)))))
 
+(defun kubel--init-context ()
+  "Initialize context and namespace if not already set.
+Defers the kubectl call until first use to avoid blocking Emacs startup."
+  (unless kubel-context
+    (setq kubel-context
+          (replace-regexp-in-string
+           "\n" "" (kubel--exec-sync "kubectl config current-context")))
+    (setq kubel-namespace kubel-default-namespace)))
+
 ;;;###autoload
 (defun kubel (&optional directory)
   "Invoke the kubel buffer.
@@ -1478,6 +1480,7 @@ DIRECTORY is optional for TRAMP support."
       (switch-to-buffer (current-buffer))
       (unless (eq major-mode 'kubel-mode)
         (kubel-mode))
+      (kubel--init-context)
       (kubel-refresh directory))))
 
 (define-derived-mode kubel-mode tabulated-list-mode "Kubel"
