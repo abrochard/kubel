@@ -376,6 +376,10 @@ If SILENCE-WARNINGS is non-nil, stderr output is not displayed."
 
 (defvar-local kubel--kubernetes-resources-list-cached nil)
 
+(defvar-local kubel--parent-buffer nil
+  "The buffer that spawned this kubel buffer.
+Used for back-navigation when pressing q.")
+
 (defun kubel--kubernetes-resources-list ()
   "Get list of resources from cache or from fetching the api resource."
   (if (null kubel--kubernetes-resources-list-cached)
@@ -713,6 +717,27 @@ TYPENAME is the resource type/name."
 	    (yes-or-no-p "Resource modified; kill anyway? "))
     (kill-buffer (current-buffer))))
 
+(defun kubel-go-back ()
+  "Kill current buffer and return to parent kubel buffer.
+If no parent buffer exists, call `quit-window'."
+  (interactive)
+  (let ((parent kubel--parent-buffer))
+    (if (and parent (buffer-live-p parent))
+        (progn
+          (kill-buffer (current-buffer))
+          (switch-to-buffer parent)
+          ;; Re-display error overlay if there was an error
+          (when kubel--header-error
+            (kubel--set-header-error kubel--header-error)))
+      (quit-window))))
+
+(defun kubel-kill-all-buffers ()
+  "Kill all kubel-related buffers."
+  (interactive)
+  (dolist (buf (buffer-list))
+    (when (string-prefix-p "*kubel:" (buffer-name buf))
+      (kill-buffer buf))))
+
 (defvar kubel-yaml-editing-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "C-c C-c") #'kubel-apply)
@@ -893,9 +918,11 @@ the context caches, including the cached resource list."
   (let* ((namespace (completing-read "Namespace: " (kubel--list-namespace)
                                      nil nil nil nil "default"))
          (kubel--buffer (get-buffer (kubel--buffer-name)))
+         (parent-buffer (current-buffer))
          (last-default-directory (when kubel--buffer
                                    (with-current-buffer kubel--buffer default-directory))))
     (with-current-buffer (clone-buffer)
+      (setq kubel--parent-buffer parent-buffer)
       (setq kubel-namespace namespace)
       (kubel--add-namespace-to-history namespace)
       (switch-to-buffer (current-buffer))
@@ -905,8 +932,10 @@ the context caches, including the cached resource list."
   "Set the context."
   (interactive)
   (let* ((kubel--buffer (get-buffer (kubel--buffer-name)))
+         (parent-buffer (current-buffer))
          (last-default-directory (when kubel--buffer (with-current-buffer kubel--buffer default-directory))))
     (with-current-buffer (clone-buffer)
+      (setq kubel--parent-buffer parent-buffer)
       (setq kubel-context
             (completing-read
              "Select context: "
@@ -937,17 +966,19 @@ the context caches, including the cached resource list."
 (defun kubel-set-label-selector ()
   "Set the selector."
   (interactive)
-  (with-current-buffer (clone-buffer)
-    (let ((selector (completing-read
+  (let ((parent-buffer (current-buffer)))
+    (with-current-buffer (clone-buffer)
+      (setq kubel--parent-buffer parent-buffer)
+      (let ((selector (completing-read
                      "Selector: "
                      (kubel--list-selectors))))
       (when (equal selector "none")
         (setq selector ""))
       (setq kubel-selector selector))
-    (kubel--add-selector-to-history kubel-selector)
-    ;; Update pod list according to the label selector
-    (switch-to-buffer (current-buffer))
-    (kubel-refresh)))
+      (kubel--add-selector-to-history kubel-selector)
+      ;; Update pod list according to the label selector
+      (switch-to-buffer (current-buffer))
+      (kubel-refresh))))
 
 (defun kubel--fetch-api-resource-list ()
   "Fetch the API resource list."
@@ -963,8 +994,10 @@ the context caches, including the cached resource list."
   (let* ((current-buffer-name (kubel--buffer-name))
          (resource-list (kubel--kubernetes-resources-list))
          (kubel--buffer (get-buffer current-buffer-name))
+         (parent-buffer (current-buffer))
          (last-default-directory (when kubel--buffer (with-current-buffer kubel--buffer default-directory))))
     (with-current-buffer (clone-buffer)
+      (setq kubel--parent-buffer parent-buffer)
       (setq kubel-resource
             (completing-read "Select resource: " resource-list))
       (switch-to-buffer (current-buffer))
@@ -1400,6 +1433,9 @@ When called interactively, prompts for a buffer belonging to kubel."
     (define-key map (kbd "u") 'kubel-unmark-item)
     (define-key map (kbd "M") 'kubel-mark-all)
     (define-key map (kbd "U") 'kubel-unmark-all)
+
+    (define-key map (kbd "q") 'kubel-go-back)
+    (define-key map (kbd "Q") 'kubel-kill-all-buffers)
 
     map)
   "Keymap for `kubel-mode'.")
