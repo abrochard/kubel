@@ -3,13 +3,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 - more unit tests
-- `q` to exit resource details (`quit-window` or `kill-buffer`)
 - show diff and confirmation before applying a change
 - easily get logs for a previous pod instance
 - top po command + sort by usage
 - safe way to help with rollbacks?
 - run `kubectl describe pod`
-- `kubectl` apply a buffer to current context/namespace
 
 ## [3.1.0] -
 ### Added
@@ -21,24 +19,25 @@ All notable changes to this project will be documented in this file.
 - `kubel-set-namespace` support for optional parameter to refresh the namespace cache
 - Custom default namespace `kubel-default-namespace` with default to `"default"`
 - Better error handling
+- Buffer tracking with dired-style `q` to go back and `Q` to clean up everything.
 
 ### Changed
 - Remove suffix "(default)" when acting on resources of StorageClasses
 - Better parsing of the kubectl version string via JSON
 - Fix describe resources not going to top of buffer
-- using -- for all kubectl exec uses
+- Using -- for all kubectl exec uses
 - Fix `kubel--exec` doesn't work on remote systems
 - Fix `dir-prefix` for TRAMP without explicitly specifically the username
-- vterm sessions to use their own buffers
-- case consistent resource names ("pods)
+- Vterm sessions to use their own buffers
+- Case consistent resource names ("pods)
 - Fix: don't assume that kubectl will use the namespace default implictely
-- better buffer behavior
+- Better buffer behavior
 - Lazy context initialization to avoid kubectl calls at load time
 
 ### Removed
 - `kubel-kubernetes-version` no longer cares about version patch
-- support for kubernetes v1.13 and below
-- support for emacs 25 and below
+- Support for kubernetes v1.13 and below
+- Support for emacs 25 and below
 
 ## [3.0.0] - 2022-09-09
 ### Added
