@@ -522,15 +522,27 @@ If MAX is the end of the line, dynamically adjust."
   "Return non-nil if there are items selected."
   (>= (length kubel--selected-items) 1))
 
+(defun kubel--print-entry (id cols)
+  "Custom entry printer that applies `dired-marked' face to selected items.
+ID is the entry identifier (resource name).
+COLS is the vector of column values.
+When selected, prepends `*' to NAME and applies `dired-marked' face to entire row."
+  (let* ((is-selected (-contains? kubel--selected-items id))
+         (first-col (aref cols 0))
+         (modified-cols (if is-selected
+                            (vconcat (vector (propertize (concat "*" first-col) 'face 'dired-marked))
+                                     (mapcar (lambda (col) (propertize col 'face 'dired-marked))
+                                             (seq-drop cols 1)))
+                          cols)))
+    (tabulated-list-print-entry id modified-cols)))
+
 (defun kubel--propertize-status (status)
   "Return the status in proper font color.
 
 STATUS is the pod status string."
   (let ((status-face (cdr (assoc status kubel-status-faces)))
-        (match (or (equal kubel-resource-filter "") (string-match-p kubel-resource-filter status)))
-        (selected (and (kubel--items-selected-p) (-contains? kubel--selected-items status))))
+        (match (or (equal kubel-resource-filter "") (string-match-p kubel-resource-filter status))))
     (cond (status-face (propertize status 'face status-face))
-          (selected (propertize (concat "*" status) 'face 'dired-marked))
           ((not match) (propertize status 'face 'shadow))
           (t status))))
 
@@ -594,10 +606,10 @@ READONLY if non-nil, buffer will be in `view-mode'."
 
 (defun kubel--get-resource-under-cursor ()
   "Utility function to get the name of the resource under the cursor.
-Strip the `*` prefix if the resource is selected"
+Strips leading `*' mark indicator if present."
   (string-remove-suffix " (default)" ;; see https://github.com/abrochard/kubel/issues/106
                         (replace-regexp-in-string
-                         "^\*" "" (aref (tabulated-list-get-entry) 0))))
+                         "^\\*" "" (aref (tabulated-list-get-entry) 0))))
 
 (defun kubel--get-context-namespace ()
   "Utility function to return the proper context and namespace arguments."
@@ -1258,23 +1270,26 @@ RESET is to be called if the search is nil after the first attempt."
                      (window-height . 0.4)))))
 
 (defun kubel-mark-item ()
-  "Mark or unmark the item under cursor."
+  "Mark the item under cursor and move to next line."
   (interactive)
-  (let ((item (kubel--get-resource-under-cursor)))
+  (let ((item (kubel--get-resource-under-cursor))
+        (col (current-column)))
     (unless (-contains? kubel--selected-items item)
-      (progn
-        (push item kubel--selected-items)
-        (forward-line 1)
-        (kubel-refresh)))))
+      (push item kubel--selected-items)
+      (forward-line 1)
+      (move-to-column col)
+      (tabulated-list-print t))))
 
 (defun kubel-unmark-item ()
-  "Unmark the item under cursor."
+  "Unmark the item under cursor and move to next line."
   (interactive)
-  (let ((item (kubel--get-resource-under-cursor)))
+  (let ((item (kubel--get-resource-under-cursor))
+        (col (current-column)))
     (when (-contains? kubel--selected-items item)
-      (progn
-        (setq kubel--selected-items (delete item kubel--selected-items))
-        (kubel-refresh)))))
+      (setq kubel--selected-items (delete item kubel--selected-items))
+      (forward-line 1)
+      (move-to-column col)
+      (tabulated-list-print t))))
 
 (defun kubel-mark-all ()
   "Mark all items."
@@ -1285,13 +1300,13 @@ RESET is to be called if the search is nil after the first attempt."
     (while (not (eobp))
       (push (kubel--get-resource-under-cursor) kubel--selected-items)
       (forward-line 1)))
-  (kubel-refresh))
+  (tabulated-list-print t))
 
 (defun kubel-unmark-all ()
   "Unmark all items."
   (interactive)
   (setq kubel--selected-items '())
-  (kubel-refresh))
+  (tabulated-list-print t))
 
 (defun kubel--read-buffer ()
   "Return the list of all buffers of kubel pattern."
@@ -1526,6 +1541,7 @@ DIRECTORY is optional for TRAMP support."
   (setq truncate-lines t)
   (setq mode-name "Kubel")
   (setq major-mode 'kubel-mode)
+  (setq-local tabulated-list-printer #'kubel--print-entry)
   (use-local-map kubel-mode-map)
   (hl-line-mode 1)
   (run-mode-hooks 'kubel-mode-hook))
