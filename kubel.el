@@ -1071,16 +1071,35 @@ P can be a single number or a localhost:container port pair."
          (process-name (format "kubel - port-forward - %s:%s" pod port)))
     (kubel--exec-async process-name (list "port-forward" pod port))))
 
-(defun kubel-setup-tramp ()
-  "Setup a kubectl TRAMP."
-  (setq tramp-methods (delete (assoc "kubectl" tramp-methods) tramp-methods)) ;; cleanup previous tramp method
-  ;; TODO error message if resource is not pod
-  (add-to-list 'tramp-methods
-               `("kubectl"
-                 (tramp-login-program      ,kubel-kubectl)
-                 (tramp-login-args         (,(kubel--get-context-namespace) ("exec" "-it") ("-c" "%u") ("%h") ("--" "sh")))
-                 (tramp-remote-shell       "sh")
-                 (tramp-remote-shell-args  ("-i" "-c"))))) ;; add the current context/namespace to tramp methods
+(defvar kubel--tramp-method-cache nil
+  "Alist mapping (context . namespace) to TRAMP method names.
+Names are \"kubel\", \"kubel1\", \"kubel2\", etc.")
+
+(defun kubel--get-tramp-method ()
+  "Return the TRAMP method name for the current context and namespace.
+Reuses an existing method if one has already been registered for
+this combination, otherwise creates a new one with the next
+available name (kubel, kubel1, kubel2, ...)."
+  (let* ((key (cons (or kubel-context "") (or kubel-namespace "")))
+         (cached (assoc key kubel--tramp-method-cache)))
+    (if cached
+        (cdr cached)
+      (let* ((idx (length kubel--tramp-method-cache))
+             (name (if (= idx 0) "kubel" (format "kubel%d" idx))))
+        (add-to-list 'tramp-methods
+                     `(,name
+                       (tramp-login-program      ,kubel-kubectl)
+                       (tramp-login-args         (,(kubel--get-context-namespace) ("exec" "-it") ("-c" "%u") ("%h") ("--" "sh")))
+                       (tramp-remote-shell       "sh")
+                       (tramp-remote-shell-args  ("-i" "-c"))))
+        (push (cons key name) kubel--tramp-method-cache)
+        name))))
+
+(defun kubel--tramp-url (con-pod)
+  "Build a TRAMP URL for CON-POD `(container . pod)' in current context/namespace."
+  (let ((dir-prefix (kubel--dir-prefix))
+        (method (kubel--get-tramp-method)))
+    (format "/%s%s:%s@%s:/" dir-prefix method (car con-pod) (cdr con-pod))))
 
 (defun kubel--get-container-under-cursor ()
   "Get `(container . pod)' name under cursor."
@@ -1104,10 +1123,7 @@ P can be a single number or a localhost:container port pair."
 (defun kubel-exec-pod ()
   "Exec into the pod under the cursor -> `find-file."
   (interactive)
-  (kubel-setup-tramp)
-  (let* ((dir-prefix (kubel--dir-prefix))
-         (con-pod (kubel--get-container-under-cursor)))
-    (find-file (format "/%skubectl:%s@%s:/" dir-prefix (car con-pod) (cdr con-pod)))))
+  (find-file (kubel--tramp-url (kubel--get-container-under-cursor))))
 
 (defun kubel--shell-buffer-name (shell-type container pod)
   "Generate the name for a pod's shell buffer.
@@ -1128,38 +1144,26 @@ the variables `kubel-namespace' and `kubel-context', respectively."
 (defun kubel-exec-shell-pod ()
   "Exec into the pod under the cursor -> shell."
   (interactive)
-  (kubel-setup-tramp)
-  (let* ((dir-prefix (kubel--dir-prefix))
-         (con-pod (kubel--get-container-under-cursor))
-         (container (car con-pod))
-         (pod (cdr con-pod))
-         (default-directory (format "/%skubectl:%s@%s:/" dir-prefix container pod)))
-    (shell (kubel--shell-buffer-name "shell" container pod))))
+  (let* ((con-pod (kubel--get-container-under-cursor))
+         (default-directory (kubel--tramp-url con-pod)))
+    (shell (kubel--shell-buffer-name "shell" (car con-pod) (cdr con-pod)))))
 
 (defun kubel-exec-eshell-pod ()
   "Exec into the pod under the cursor -> eshell."
   (interactive)
-  (kubel-setup-tramp)
-  (let* ((dir-prefix (kubel--dir-prefix))
-         (con-pod (kubel--get-container-under-cursor))
-         (container (car con-pod))
-         (pod (cdr con-pod))
-         (default-directory (format "/%skubectl:%s@%s:/" dir-prefix container pod))
+  (let* ((con-pod (kubel--get-container-under-cursor))
+         (default-directory (kubel--tramp-url con-pod))
          (eshell-buffer-name
-          (kubel--shell-buffer-name "eshell" container pod)))
+          (kubel--shell-buffer-name "eshell" (car con-pod) (cdr con-pod))))
     (eshell)))
 
 (defun kubel-exec-vterm-pod ()
   "Exec into the pod under the cursor -> vterm."
   (interactive)
-  (kubel-setup-tramp)
-  (let* ((dir-prefix (kubel--dir-prefix))
-         (con-pod (kubel--get-container-under-cursor))
-         (container (car con-pod))
-         (pod (cdr con-pod))
-         (default-directory (format "/%skubectl:%s@%s:/" dir-prefix container pod))
+  (let* ((con-pod (kubel--get-container-under-cursor))
+         (default-directory (kubel--tramp-url con-pod))
          (vterm-buffer-name
-          (kubel--shell-buffer-name "vterm" container pod))
+          (kubel--shell-buffer-name "vterm" (car con-pod) (cdr con-pod)))
          (vterm-shell "/bin/sh"))
     (vterm nil)))
 
@@ -1185,19 +1189,15 @@ the variables `kubel-namespace' and `kubel-context', respectively."
   (interactive)
   (unless (fboundp 'eat-other-window)
     (user-error "This command requires the `eat' package."))
-  (kubel-setup-tramp)
-  (let* ((dir-prefix (kubel--dir-prefix))
-         (con-pod (kubel--get-container-under-cursor))
-         (container (car con-pod))
-         (pod (cdr con-pod))
-         (default-directory (format "/%skubectl:%s@%s:/" dir-prefix container pod))
+  (let* ((con-pod (kubel--get-container-under-cursor))
+         (default-directory (kubel--tramp-url con-pod))
+         (eat-shell "sh")
          (eat-buffer-name (format "*eat:%s" default-directory)))
     (eat-other-window)))
 
 (defun kubel-exec-pod-by-shell-command ()
   "Prompt shell with kubectl exec command at pod under cursor."
   (interactive)
-  (kubel-setup-tramp)
   (let* ((con-pod (kubel--get-container-under-cursor))
          (command (read-string "Shell command: " (format "%s exec %s -c %s -- " (kubel--get-command-prefix) (cdr con-pod) (car con-pod)))))
     (shell-command command)))
