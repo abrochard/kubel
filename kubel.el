@@ -753,7 +753,7 @@ If no parent buffer exists, call `quit-window'."
   "Kill all kubel-related buffers."
   (interactive)
   (dolist (buf (buffer-list))
-    (when (string-prefix-p "*kubel:" (buffer-name buf))
+    (when (string-match-p "^\\*kubel\\(-resource\\)?:" (buffer-name buf))
       (kill-buffer buf))))
 
 (defvar kubel-yaml-editing-mode-map
