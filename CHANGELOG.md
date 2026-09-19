@@ -36,6 +36,7 @@ All notable changes to this project will be documented in this file.
 - Lazy context initialization to avoid kubectl calls at load time
 - Better behavior for marking/unmarking resources
 - Fixed TRAMP method clobbering when switching context/namespace
+- Fixed `kubel-kill-all-buffers` to also kill resource buffers
 
 ### Removed
 - `kubel-kubernetes-version` no longer cares about version patch
