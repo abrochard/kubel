@@ -396,7 +396,7 @@ Used for back-navigation when pressing q.")
 
 (defun kubel--populate-list ()
   "Return a list with a tabulated list format and \"tabulated-list-entries\"."
-  (let*  ((body (kubel--exec-sync (concat (kubel--get-command-prefix) " get " kubel-resource (if kubel-list-wide " -o wide" ""))))
+  (let*  ((body (kubel--exec-sync (concat (kubel--get-list-command-prefix) " get " kubel-resource (if kubel-list-wide " -o wide" ""))))
           (entrylist (kubel--parse-body body)))
     (when (string-prefix-p "No resources found" body)
       (message "No resources found"))  ;; TODO exception here
@@ -625,7 +625,18 @@ Strips leading `*' mark indicator if present."
     (list "--selector" kubel-selector)))
 
 (defun kubel--get-command-prefix ()
-  "Utility function to prefix the kubectl command with proper context and namespace."
+  "Utility function to prefix the kubectl command with proper context and namespace.
+
+The label selector is deliberately left out.  kubectl rejects a resource name
+combined with `--selector' (\"name cannot be provided when a selector is
+specified\"), and `exec' does not accept `--selector' at all.  Use
+`kubel--get-list-command-prefix' for commands that list resources."
+  (mapconcat 'identity (append (list kubel-kubectl) (kubel--get-context-namespace)) " "))
+
+(defun kubel--get-list-command-prefix ()
+  "Utility function to prefix a kubectl command that lists resources.
+
+Same as `kubel--get-command-prefix', with the label selector appended."
   (mapconcat 'identity (append (list kubel-kubectl) (kubel--get-context-namespace) (kubel--get-selector)) " "))
 
 (defun kubel--get-containers (pod-name &optional type)
@@ -647,7 +658,7 @@ TYPE is containers or initContainers."
             (replace-regexp-in-string
              "map\\[\\(.+?\\)\\]" "\\1"
              (kubel--exec-sync
-              (format "%s get pod -o jsonpath='{.items[*].metadata.labels}'" (kubel--get-command-prefix)))))))
+              (format "%s get pod -o jsonpath='{.items[*].metadata.labels}'" (kubel--get-list-command-prefix)))))))
          (splitted (mapcan (lambda (s) (split-string s ","))
                            raw-labels))
          (cleaned (mapcar (lambda (s) (replace-regexp-in-string "[{|\"|}]" "" s)) splitted))
@@ -659,7 +670,7 @@ TYPE is containers or initContainers."
 
 NAME is the string name of the resource."
   (let ((cmd (format "%s get %s -o=jsonpath='{.items[*].metadata.name}'"
-                     (kubel--get-command-prefix) name)))
+                     (kubel--get-list-command-prefix) name)))
     (completing-read (concat (s-upper-camel-case name) ": ")
                      (split-string (kubel--exec-sync cmd) " "))))
 
