@@ -1213,6 +1213,177 @@ the variables `kubel-namespace' and `kubel-context', respectively."
          (command (read-string "Shell command: " (format "%s exec %s -c %s -- " (kubel--get-command-prefix) (cdr con-pod) (car con-pod)))))
     (shell-command command)))
 
+(defvar kubel-exec-command-history nil
+  "History of commands run with `kubel-exec-command-on-pods'.")
+
+(defun kubel--exec-command-args (pod container command)
+  "Build the argv for running COMMAND in CONTAINER of POD.
+
+The label selector is not part of the command: kubectl rejects it together
+with a pod name."
+  (append (list kubel-kubectl)
+          (kubel--get-context-namespace)
+          (list "exec" pod "-c" container "--"
+                "/usr/bin/env" "sh" "-c" command)))
+
+(defun kubel--pods-under-selection ()
+  "Return the marked pods, or the pod under cursor if none is marked.
+
+`kubel--selected-items' is push-ordered, so it is reversed to match the
+order of the list buffer."
+  (if (kubel--items-selected-p)
+      (reverse kubel--selected-items)
+    (list (kubel--get-resource-under-cursor))))
+
+(defvar kubel--exec-batch nil
+  "State of the running batch execution, or nil.")
+
+(defcustom kubel-exec-max-parallel 8
+  "How many pods `kubel-exec-command-on-pods' talks to at the same time."
+  :type 'integer
+  :group 'kubel)
+
+(defun kubel--exec-abort ()
+  "Stop the running batch execution, if any."
+  (let ((batch kubel--exec-batch))
+    (when batch
+      (dolist (proc (plist-get batch :processes))
+        (when (process-live-p proc)
+          (set-process-sentinel proc #'ignore)
+          (delete-process proc)))
+      (dolist (run (plist-get batch :runs))
+        (let ((buf (plist-get run :out)))
+          (when (buffer-live-p buf) (kill-buffer buf))))
+      (setq kubel--exec-batch nil))))
+
+(defun kubel--exec-launch (job)
+  "Start JOB asynchronously and remember it in the current batch."
+  (let* ((pod (plist-get job :pod))
+         (args (plist-get job :args))
+         (buf (generate-new-buffer (format " *kubel-exec:%s*" pod)))
+         (batch kubel--exec-batch)
+         (origin (plist-get batch :origin))
+         (proc (make-process
+                :name (format "kubel-exec:%s" pod)
+                :buffer buf
+                :command args
+                :noquery t
+                :sentinel #'kubel--exec-sentinel)))
+    (process-put proc 'kubel-job job)
+    (plist-put batch :processes (cons proc (plist-get batch :processes)))
+    (unless (buffer-live-p origin)
+      (setq origin (current-buffer)))
+    (with-current-buffer origin
+      (kubel--log-command (format "kubel - exec-on-pods - %s" pod) args))))
+
+(defun kubel--exec-start-next (batch)
+  "Start the next queued job of BATCH, if any."
+  (let ((queue (plist-get batch :queue)))
+    (when queue
+      (plist-put batch :queue (cdr queue))
+      (kubel--exec-launch (car queue))
+      (plist-put batch :pending (1+ (plist-get batch :pending)))
+      t)))
+
+(defun kubel--exec-sentinel (proc _event)
+  "Collect PROC's result and finish the batch when every pod is done."
+  (when (memq (process-status proc) '(exit signal))
+    (let ((batch kubel--exec-batch))
+      (when (and batch (memq proc (plist-get batch :processes)))
+        (let* ((job (process-get proc 'kubel-job))
+               (pod (plist-get job :pod))
+               (code (process-exit-status proc)))
+          (plist-put batch :runs
+                     (cons (list :pod pod
+                                 :container (plist-get job :container)
+                                 :out (process-buffer proc)
+                                 :err (process-get proc 'kubel-stderr)
+                                 :exit code)
+                           (plist-get batch :runs)))
+          (plist-put batch :processes (delq proc (plist-get batch :processes)))
+          (unless (equal code 0)
+            (plist-put batch :failed (1+ (plist-get batch :failed))))
+          ;; One pod finished: account for it, then start a queued one, which
+          ;; adds itself back to :pending.
+          (plist-put batch :pending (1- (plist-get batch :pending)))
+          (unless (kubel--exec-start-next batch)
+            (when (<= (plist-get batch :pending) 0)
+              (kubel--exec-render batch))))))))
+
+(defun kubel--exec-render (batch)
+  "Write the collected output of BATCH into *kubel exec*."
+  (let* ((pods (plist-get batch :pods))
+         (runs (plist-get batch :runs))
+         (failed (plist-get batch :failed))
+         (total (length pods)))
+    (with-current-buffer (get-buffer-create "*kubel exec*")
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (insert (format "command: %s\npods: %d, container: %s\n"
+                        (plist-get batch :command) total
+                        (plist-get batch :container)))
+        (dolist (pod pods)
+          (let* ((run (car (seq-filter (lambda (r) (equal pod (plist-get r :pod))) runs)))
+                 (out (plist-get run :out)))
+            (insert (format "\n=== %s (%s) ===\n" pod (plist-get run :container)))
+            (when (buffer-live-p out)
+              (insert (with-current-buffer out (buffer-string)))
+              (kill-buffer out))
+            (insert (format "[exit %s]\n" (plist-get run :exit)))))
+        (insert (format "\ndone: %d/%d ok\n" (- total failed) total)))
+      (special-mode))
+    (display-buffer "*kubel exec*")
+    (message "kubel: %d/%d pods ok" (- total failed) total)
+    (setq kubel--exec-batch nil)))
+
+(defun kubel-exec-command-on-pods (command)
+  "Run COMMAND in every marked pod, or in the pod under cursor.
+
+With several containers, ask once and use that container name for every
+pod that has it.  Commands run asynchronously, at most
+`kubel-exec-max-parallel' at a time; output, exit status and an ok/failed
+summary of the whole batch are collected in *kubel exec* once the last pod
+finished."
+  (interactive (list (read-string "Command: " nil 'kubel-exec-command-history)))
+  (kubel--exec-abort)
+  (let* ((origin (current-buffer))
+         (pods (kubel--pods-under-selection))
+         (containers (kubel--get-containers (car pods)))
+         (container (if (equal (length containers) 1)
+                        (car containers)
+                      (completing-read "Select container: " containers)))
+         (jobs (mapcar (lambda (pod)
+                         (let* ((pod-containers (kubel--get-containers pod))
+                                (pod-container (if (member container pod-containers)
+                                                   container
+                                                 (car pod-containers))))
+                           (list :pod pod
+                                 :container pod-container
+                                 :args (kubel--exec-command-args pod pod-container command))))
+                       pods)))
+    (setq kubel--exec-batch
+          (list :command command :container container :pods pods
+                :queue nil :runs nil :processes nil
+                :pending 0 :failed 0 :origin origin))
+    (with-current-buffer (get-buffer-create "*kubel exec*")
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (insert (format "command: %s\npods: %d, container: %s\n\nrunning...\n"
+                        command (length pods) container)))
+      (special-mode))
+    (display-buffer "*kubel exec*")
+    (let ((parallel (max 1 kubel-exec-max-parallel))
+          (started 0))
+      (dolist (job jobs)
+        (if (< started parallel)
+            (progn
+              (kubel--exec-launch job)
+              (setq started (1+ started)))
+          (plist-put kubel--exec-batch :queue
+                     (append (plist-get kubel--exec-batch :queue) (list job)))))
+      (plist-put kubel--exec-batch :pending started))
+    (message "kubel: running on %d pod(s)..." (length pods))))
+
 (defun kubel-delete-resource ()
   "Kubectl delete resource under cursor."
   (interactive)
@@ -1385,6 +1556,7 @@ When called interactively, prompts for a buffer belonging to kubel."
   "Kubel Exec Menu"
   ["Actions"
    ("!" "Shell command" kubel-exec-pod-by-shell-command)
+   ("x" "Shell command on marked pods" kubel-exec-command-on-pods)
    ("d" "Dired" kubel-exec-pod)
    ("e" "Eshell" kubel-exec-eshell-pod)
    ("a" "Ansi-term" kubel-exec-ansi-term-pod)

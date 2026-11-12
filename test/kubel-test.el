@@ -31,6 +31,17 @@ does not accept `--selector' at all."
     (should (equal "kubectl --context ctx -n ns --selector app=foo"
                    (kubel--get-list-command-prefix)))))
 
+(ert-deftest kubel--test-exec-command-args ()
+  "Batch exec argv must not carry the label selector."
+  (let ((kubel-kubectl "kubectl")
+        (kubel-context "ctx")
+        (kubel-namespace "ns")
+        (kubel-selector "app=foo"))
+    (should (equal '("kubectl" "--context" "ctx" "-n" "ns"
+                     "exec" "my-pod" "-c" "workload" "--"
+                     "/usr/bin/env" "sh" "-c" "hostname")
+                   (kubel--exec-command-args "my-pod" "workload" "hostname")))))
+
 ;; (ert "kubel--test-.*")
 
 (provide 'kubel-test)
